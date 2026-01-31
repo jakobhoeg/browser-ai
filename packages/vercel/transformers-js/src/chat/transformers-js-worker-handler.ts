@@ -10,9 +10,13 @@ import {
   type ProgressInfo,
 } from "@huggingface/transformers";
 import { decodeGeneratedText } from "./decode-utils";
-import { parseJsonFunctionCalls } from "../tool-calling";
+import {
+  parseJsonFunctionCalls,
+  ToolCallFenceDetector,
+  type ToolDefinition,
+  type ParsedToolCall,
+} from "@browser-ai/shared";
 import { convertToolsToHuggingFaceFormat } from "./convert-tools";
-import { ToolCallFenceDetector } from "../streaming/tool-call-detector";
 import type {
   WorkerMessage,
   WorkerGlobalScope,
@@ -22,7 +26,6 @@ import type {
   WorkerGenerateData,
   WorkerLoadData,
 } from "./transformers-js-worker-types";
-import type { ToolDefinition, ParsedToolCall } from "../tool-calling/types";
 import type { PretrainedModelOptions } from "@huggingface/transformers";
 
 declare const self: WorkerGlobalScope;

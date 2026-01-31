@@ -11,20 +11,18 @@ import {
   LanguageModelV3GenerateResult,
   LanguageModelV3StreamResult,
 } from "@ai-sdk/provider";
-import { convertToBrowserAIMessages } from "./convert-to-browser-ai-messages";
 import {
   buildJsonToolSystemPrompt,
   parseJsonFunctionCalls,
-} from "./tool-calling";
-import type { ParsedToolCall } from "./tool-calling";
-import {
-  gatherUnsupportedSettingWarnings,
   createUnsupportedToolWarning,
-} from "./utils/warnings";
+  isFunctionTool,
+  ToolCallFenceDetector,
+  type ParsedToolCall,
+} from "@browser-ai/shared";
+import { convertToBrowserAIMessages } from "./convert-to-browser-ai-messages";
+import { gatherUnsupportedSettingWarnings } from "./utils/warnings";
 import { hasMultimodalContent, getExpectedInputs } from "./utils/prompt-utils";
-import { isFunctionTool } from "./utils/tool-utils";
 import { SessionManager } from "./models/session-manager";
-import { ToolCallFenceDetector } from "./streaming/tool-call-detector";
 
 export type BrowserAIChatModelId = "text";
 

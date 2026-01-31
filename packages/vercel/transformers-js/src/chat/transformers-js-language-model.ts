@@ -25,14 +25,15 @@ import type {
   ModelInstance,
   GenerationOptions,
 } from "./transformers-js-worker-types";
-import { parseJsonFunctionCalls } from "../tool-calling";
-import type { ParsedToolCall, ToolDefinition } from "../tool-calling";
 import {
+  parseJsonFunctionCalls,
   createUnsupportedSettingWarning,
   createUnsupportedToolWarning,
-} from "../utils/warnings";
-import { isFunctionTool } from "../utils/tool-utils";
-import { ToolCallFenceDetector } from "../streaming/tool-call-detector";
+  isFunctionTool,
+  ToolCallFenceDetector,
+  type ParsedToolCall,
+  type ToolDefinition,
+} from "@browser-ai/shared";
 import {
   createMainThreadGenerationStream,
   createWorkerGenerationStream,

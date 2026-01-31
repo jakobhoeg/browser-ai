@@ -10,7 +10,7 @@ import type {
   ModelInstance,
   GenerationOptions,
 } from "./transformers-js-worker-types";
-import type { ToolDefinition, ParsedToolCall } from "../tool-calling/types";
+import type { ToolDefinition, ParsedToolCall } from "@browser-ai/shared";
 import { convertToolsToHuggingFaceFormat } from "./convert-tools";
 
 /**

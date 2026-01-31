@@ -26,18 +26,16 @@ import { Availability } from "./types";
 import {
   buildJsonToolSystemPrompt,
   parseJsonFunctionCalls,
-} from "./tool-calling";
-import type { ParsedToolCall, ToolDefinition } from "./tool-calling";
-import {
   createUnsupportedSettingWarning,
   createUnsupportedToolWarning,
-} from "./utils/warnings";
-import { isFunctionTool } from "./utils/tool-utils";
+  isFunctionTool,
+  ToolCallFenceDetector,
+  type ToolDefinition,
+} from "@browser-ai/shared";
 import {
   prependSystemPromptToMessages,
   extractSystemPrompt,
 } from "./utils/prompt-utils";
-import { ToolCallFenceDetector } from "./streaming/tool-call-detector";
 
 declare global {
   interface Navigator {
