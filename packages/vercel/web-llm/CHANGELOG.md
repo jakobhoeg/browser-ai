@@ -1,5 +1,11 @@
 # @browser-ai/web-llm
 
+## 2.0.3
+
+### Patch Changes
+
+- f8b6996: fix: correct ESM export paths to use .mjs extension
+
 ## 2.0.2
 
 ### Patch Changes

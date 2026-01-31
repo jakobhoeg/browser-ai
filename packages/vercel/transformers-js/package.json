@@ -1,6 +1,6 @@
 {
   "name": "@browser-ai/transformers-js",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Transformers.js provider for Vercel AI SDK - Run 🤗 Transformers directly in the browser.",
   "author": {
     "name": "Jakob Hoeg Mørk",

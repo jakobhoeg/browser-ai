@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.0.2
+
+### Patch Changes
+
+- f8b6996: fix: correct ESM export paths to use .mjs extension
+
 ## 2.0.1
 
 ### Patch Changes
