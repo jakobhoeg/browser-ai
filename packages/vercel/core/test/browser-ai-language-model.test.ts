@@ -100,12 +100,19 @@ describe("BrowserAIChatLanguageModel", () => {
     });
 
     expect(result.text).toBe("I am a helpful assistant.");
+
+    // Verify system prompt is passed via initialPrompts (Prompt API spec)
+    const createCall = (globalThis.LanguageModel as any).create.mock.calls[0][0];
+    expect(createCall.initialPrompts).toEqual([
+      { role: "system", content: "You are a helpful assistant." },
+    ]);
+
+    // Verify messages passed to prompt() don't include system prompt
     const [messagesArg, optionsArg] = mockPrompt.mock.calls[0];
     expect(optionsArg).toEqual({});
     expect(messagesArg).toHaveLength(1);
     expect(messagesArg[0].role).toBe("user");
     expect(messagesArg[0].content).toEqual([
-      { type: "text", value: "You are a helpful assistant.\n\n" },
       { type: "text", value: "Who are you?" },
     ]);
   });
@@ -501,13 +508,20 @@ Running the tool now.`);
         },
       ]);
 
+      // Verify tool instructions are passed via initialPrompts (Prompt API spec)
+      const createCall = (globalThis.LanguageModel as any).create.mock.calls[0][0];
+      expect(createCall.initialPrompts[0].role).toBe("system");
+      expect(createCall.initialPrompts[0].content).toContain("getWeather");
+      expect(createCall.initialPrompts[0].content).toContain("```tool_call");
+      expect(createCall.initialPrompts[0].content).toContain("Available Tools");
+
+      // Verify messages passed to prompt() are the raw user messages
       const promptCallArgs = mockPrompt.mock.calls[0][0] as any[];
       const firstUserMessage = promptCallArgs[0];
-      const firstContentPart = firstUserMessage.content[0];
-      expect(firstContentPart.type).toBe("text");
-      expect(firstContentPart.value).toContain("getWeather");
-      expect(firstContentPart.value).toContain("```tool_call");
-      expect(firstContentPart.value).toContain("Available Tools");
+      expect(firstUserMessage.role).toBe("user");
+      expect(firstUserMessage.content[0].value).toBe(
+        "What is the weather in Seattle?",
+      );
     });
 
     it("should emit only the first tool call when parallel execution is disabled", async () => {
@@ -660,11 +674,19 @@ Running the tool now.`;
         finishReason: { raw: "tool-calls", unified: "tool-calls" },
       });
 
+      // Verify tool instructions are passed via initialPrompts (Prompt API spec)
+      const createCall = (globalThis.LanguageModel as any).create.mock.calls[0][0];
+      expect(createCall.initialPrompts[0].role).toBe("system");
+      expect(createCall.initialPrompts[0].content).toContain("getWeather");
+      expect(createCall.initialPrompts[0].content).toContain("```tool_call");
+      expect(createCall.initialPrompts[0].content).toContain("Available Tools");
+
+      // Verify messages passed to promptStreaming are the raw user messages
       const promptCallArgs = mockPromptStreaming.mock.calls[0][0];
-      const firstContentPart = promptCallArgs[0].content[0];
-      expect(firstContentPart.value).toContain("getWeather");
-      expect(firstContentPart.value).toContain("```tool_call");
-      expect(firstContentPart.value).toContain("Available Tools");
+      expect(promptCallArgs[0].role).toBe("user");
+      expect(promptCallArgs[0].content[0].value).toBe(
+        "What is the weather in Seattle?",
+      );
     });
 
     it("should emit only the first streaming tool call when parallel execution is disabled", async () => {

@@ -21,11 +21,7 @@ import {
   gatherUnsupportedSettingWarnings,
   createUnsupportedToolWarning,
 } from "./utils/warnings";
-import {
-  hasMultimodalContent,
-  getExpectedInputs,
-  prependSystemPromptToMessages,
-} from "./utils/prompt-utils";
+import { hasMultimodalContent, getExpectedInputs } from "./utils/prompt-utils";
 import { isFunctionTool } from "./utils/tool-utils";
 import { SessionManager } from "./models/session-manager";
 import { ToolCallFenceDetector } from "./streaming/tool-call-detector";
@@ -290,22 +286,17 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       functionTools,
     } = converted;
 
-    const session = await this.getSession(undefined, expectedInputs, undefined);
+    const systemPrompt = buildJsonToolSystemPrompt(systemMessage, functionTools, {
+      allowParallelToolCalls: false,
+    });
 
-    // Build system prompt with JSON tool calling
-    const systemPrompt = await buildJsonToolSystemPrompt(
-      systemMessage,
-      functionTools,
-      {
-        allowParallelToolCalls: false,
-      },
+    const session = await this.getSession(
+      undefined,
+      expectedInputs,
+      systemPrompt || undefined,
     );
 
-    const promptMessages = prependSystemPromptToMessages(
-      messages,
-      systemPrompt,
-    );
-    const rawResponse = await session.prompt(promptMessages, promptOptions);
+    const rawResponse = await session.prompt(messages, promptOptions);
 
     // Parse JSON tool calls from response
     const { toolCalls, textContent } = parseJsonFunctionCalls(rawResponse);
@@ -347,7 +338,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
             reasoning: undefined,
           },
         },
-        request: { body: { messages: promptMessages, options: promptOptions } },
+        request: { body: { messages, options: promptOptions } },
         warnings,
       };
     }
@@ -375,7 +366,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
           reasoning: undefined,
         },
       },
-      request: { body: { messages: promptMessages, options: promptOptions } },
+      request: { body: { messages, options: promptOptions } },
       warnings,
     };
   }
@@ -430,19 +421,15 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       functionTools,
     } = converted;
 
-    const session = await this.getSession(undefined, expectedInputs, undefined);
+    // Build system prompt with JSON tool calling instructions
+    const systemPrompt = buildJsonToolSystemPrompt(systemMessage, functionTools, {
+      allowParallelToolCalls: false,
+    });
 
-    // Build system prompt with JSON tool calling
-    const systemPrompt = await buildJsonToolSystemPrompt(
-      systemMessage,
-      functionTools,
-      {
-        allowParallelToolCalls: false,
-      },
-    );
-    const promptMessages = prependSystemPromptToMessages(
-      messages,
-      systemPrompt,
+    const session = await this.getSession(
+      undefined,
+      expectedInputs,
+      systemPrompt || undefined,
     );
 
     // Pass abort signal to the native streaming method
@@ -450,7 +437,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       ...promptOptions,
       signal: options.abortSignal,
     };
-    const conversationHistory = [...promptMessages];
+    const conversationHistory = [...messages];
     const textId = "text-0";
 
     const stream = new ReadableStream<LanguageModelV3StreamPart>({
@@ -819,7 +806,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
 
     return {
       stream,
-      request: { body: { messages: promptMessages, options: promptOptions } },
+      request: { body: { messages, options: promptOptions } },
     };
   }
 }
