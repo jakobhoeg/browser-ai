@@ -9,7 +9,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@browser-ai/shared/testing": path.resolve(__dirname, "../shared/src/testing.ts"),
+      "@browser-ai/shared/testing": path.resolve(
+        __dirname,
+        "../shared/src/testing.ts",
+      ),
       "@browser-ai/shared": path.resolve(__dirname, "../shared/src/index.ts"),
     },
   },
