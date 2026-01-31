@@ -57,6 +57,7 @@
     "ai": "^6.0.0"
   },
   "devDependencies": {
+    "@browser-ai/shared": "*",
     "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^1.0.0",
     "jsdom": "^26.1.0",

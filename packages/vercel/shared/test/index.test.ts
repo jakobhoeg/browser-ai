@@ -12,12 +12,21 @@ import {
 describe("@browser-ai/shared exports", () => {
   describe("isFunctionTool", () => {
     it("should return true for function tools", () => {
-      const functionTool = { type: "function" as const, name: "test" };
+      const functionTool = {
+        type: "function" as const,
+        name: "test",
+        inputSchema: { type: "object" as const },
+      };
       expect(isFunctionTool(functionTool)).toBe(true);
     });
 
     it("should return false for provider tools", () => {
-      const providerTool = { type: "provider" as const, name: "test" };
+      const providerTool = {
+        type: "provider",
+        name: "test",
+        id: "test.provider",
+        args: {},
+      } as const;
       expect(isFunctionTool(providerTool)).toBe(false);
     });
   });
@@ -38,7 +47,12 @@ describe("@browser-ai/shared exports", () => {
 
   describe("createUnsupportedToolWarning", () => {
     it("should create a warning object with tool name", () => {
-      const tool = { type: "provider" as const, name: "customTool" };
+      const tool = {
+        type: "provider",
+        name: "customTool",
+        id: "custom.tool",
+        args: {},
+      } as const;
       const warning = createUnsupportedToolWarning(tool, "Not supported");
       expect(warning).toEqual({
         type: "unsupported",
