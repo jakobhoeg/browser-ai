@@ -7,4 +7,5 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   clean: true,
+  noExternal: ["@browser-ai/shared"],
 });
