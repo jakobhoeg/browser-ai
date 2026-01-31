@@ -102,7 +102,8 @@ describe("BrowserAIChatLanguageModel", () => {
     expect(result.text).toBe("I am a helpful assistant.");
 
     // Verify system prompt is passed via initialPrompts (Prompt API spec)
-    const createCall = (globalThis.LanguageModel as any).create.mock.calls[0][0];
+    const createCall = (globalThis.LanguageModel as any).create.mock
+      .calls[0][0];
     expect(createCall.initialPrompts).toEqual([
       { role: "system", content: "You are a helpful assistant." },
     ]);
@@ -509,7 +510,8 @@ Running the tool now.`);
       ]);
 
       // Verify tool instructions are passed via initialPrompts (Prompt API spec)
-      const createCall = (globalThis.LanguageModel as any).create.mock.calls[0][0];
+      const createCall = (globalThis.LanguageModel as any).create.mock
+        .calls[0][0];
       expect(createCall.initialPrompts[0].role).toBe("system");
       expect(createCall.initialPrompts[0].content).toContain("getWeather");
       expect(createCall.initialPrompts[0].content).toContain("```tool_call");
@@ -675,7 +677,8 @@ Running the tool now.`;
       });
 
       // Verify tool instructions are passed via initialPrompts (Prompt API spec)
-      const createCall = (globalThis.LanguageModel as any).create.mock.calls[0][0];
+      const createCall = (globalThis.LanguageModel as any).create.mock
+        .calls[0][0];
       expect(createCall.initialPrompts[0].role).toBe("system");
       expect(createCall.initialPrompts[0].content).toContain("getWeather");
       expect(createCall.initialPrompts[0].content).toContain("```tool_call");

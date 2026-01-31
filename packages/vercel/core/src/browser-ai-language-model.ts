@@ -286,9 +286,13 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       functionTools,
     } = converted;
 
-    const systemPrompt = buildJsonToolSystemPrompt(systemMessage, functionTools, {
-      allowParallelToolCalls: false,
-    });
+    const systemPrompt = buildJsonToolSystemPrompt(
+      systemMessage,
+      functionTools,
+      {
+        allowParallelToolCalls: false,
+      },
+    );
 
     const session = await this.getSession(
       undefined,
@@ -422,9 +426,13 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
     } = converted;
 
     // Build system prompt with JSON tool calling instructions
-    const systemPrompt = buildJsonToolSystemPrompt(systemMessage, functionTools, {
-      allowParallelToolCalls: false,
-    });
+    const systemPrompt = buildJsonToolSystemPrompt(
+      systemMessage,
+      functionTools,
+      {
+        allowParallelToolCalls: false,
+      },
+    );
 
     const session = await this.getSession(
       undefined,
