@@ -108,7 +108,8 @@ describe("@browser-ai/shared exports", () => {
     });
 
     it("should parse XML-style tool calls", () => {
-      const input = '<tool_call>{"name": "search", "arguments": {"q": "test"}}</tool_call>';
+      const input =
+        '<tool_call>{"name": "search", "arguments": {"q": "test"}}</tool_call>';
       const result = parseJsonFunctionCalls(input);
       expect(result.toolCalls[0].toolName).toBe("search");
       expect(result.toolCalls[0].args).toEqual({ q: "test" });
@@ -127,7 +128,8 @@ describe("@browser-ai/shared exports", () => {
     });
 
     it("should support parameters field", () => {
-      const input = '```tool_call\n{"name": "test", "parameters": {"x": 1}}\n```';
+      const input =
+        '```tool_call\n{"name": "test", "parameters": {"x": 1}}\n```';
       const result = parseJsonFunctionCalls(input);
       expect(result.toolCalls[0].args).toEqual({ x: 1 });
     });
@@ -142,7 +144,7 @@ describe("@browser-ai/shared exports", () => {
 
   describe("hasJsonFunctionCalls", () => {
     it("should return true when tool calls present", () => {
-      expect(hasJsonFunctionCalls('```tool_call\n{}\n```')).toBe(true);
+      expect(hasJsonFunctionCalls("```tool_call\n{}\n```")).toBe(true);
       expect(hasJsonFunctionCalls("<tool_call>{}</tool_call>")).toBe(true);
     });
 
