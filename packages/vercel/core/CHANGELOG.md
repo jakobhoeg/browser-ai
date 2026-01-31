@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.0.3
+
+### Patch Changes
+
+- 9385bd6: fix: use initialPrompts for system prompts per Prompt API spec
+
 ## 2.0.2
 
 ### Patch Changes
