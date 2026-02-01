@@ -11,7 +11,7 @@ If you've encountered an issue/bug/etc., please report it to us.
 
 ## Code contributions
 
-Wether you're looking to improve packages, create new example applications or just make minor adjustments, you're more than welcome to do so!
+Whether you're looking to improve packages, create new example applications or just make minor adjustments, you're more than welcome to do so!
 Just make sure to follow the steps below.
 
 ### Environment setup
