@@ -17,6 +17,8 @@ Creates a Transformers.js language model instance.
   - `isVisionModel?: boolean` - Whether this is a vision model (default: false)
   - `worker?: Worker` - Web Worker for off-main-thread execution
   - `initProgressCallback?: (progress: { progress: number }) => void` - Progress callback
+  - `localModelPath?: string` - Path to load local models from (Node.js only)
+  - `cacheDir?: string` - Directory for caching model files (Node.js only)
 
 **Returns:** `TransformersJSLanguageModel`
 
