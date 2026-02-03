@@ -1,5 +1,12 @@
 # @browser-ai/transformers-js
 
+## 2.0.3
+
+### Patch Changes
+
+- 0f51e16: refactor: extract shared utilities into internal @browser-ai/shared package
+- ce8bcb7: allow configuration of local model path and cache dir
+
 ## 2.0.2
 
 ### Patch Changes

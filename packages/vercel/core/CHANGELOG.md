@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.0.4
+
+### Patch Changes
+
+- 0f51e16: refactor: extract shared utilities into internal @browser-ai/shared package
+
 ## 2.0.3
 
 ### Patch Changes
