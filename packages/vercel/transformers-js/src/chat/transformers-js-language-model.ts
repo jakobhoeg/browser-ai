@@ -16,6 +16,7 @@ import {
   AutoProcessor,
   AutoModelForVision2Seq,
   StoppingCriteria,
+  env,
   type PretrainedModelOptions,
   type ProgressInfo,
 } from "@huggingface/transformers";
@@ -68,6 +69,20 @@ export interface TransformersJSModelSettings extends Pick<
    * Optional Web Worker to run the model off the main thread
    */
   worker?: Worker;
+  /**
+   * Optional path to load local models from.
+   * Overrides the transformers.js env.localModelPath setting.
+   * @see https://huggingface.co/docs/transformers.js/api/env
+   * @example '~/models' or '/path/to/models'
+   */
+  localModelPath?: string;
+  /**
+   * Optional directory to use for caching files.
+   * Overrides the transformers.js env.cacheDir setting.
+   * @see https://huggingface.co/docs/transformers.js/api/env
+   * @example '~/model-cache' or '/path/to/cache'
+   */
+  cacheDir?: string;
 }
 
 /**
@@ -265,7 +280,17 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
     onInitProgress?: (progress: { progress: number }) => void,
   ): Promise<void> {
     try {
-      const { isVisionModel, device, dtype } = this.config;
+      const { isVisionModel, device, dtype, localModelPath, cacheDir } =
+        this.config;
+
+      // Configure transformers.js environment settings
+      if (localModelPath) {
+        env.localModelPath = localModelPath;
+      }
+      if (cacheDir) {
+        env.cacheDir = cacheDir;
+      }
+
       const progress_callback = this.createProgressTracker(onInitProgress);
 
       // Set device based on environment

@@ -33,13 +33,19 @@ vi.mock("@huggingface/transformers", () => {
       /* no-op */
     }
   }
+  // Mock env object for testing localModelPath and cacheDir
+  const env = {
+    localModelPath: undefined as string | undefined,
+    cacheDir: undefined as string | undefined,
+  };
   return {
     AutoTokenizer: { from_pretrained: vi.fn().mockResolvedValue(tokenizer) },
     AutoModelForCausalLM: { from_pretrained: vi.fn().mockResolvedValue(model) },
     TextStreamer,
     StoppingCriteria,
     StoppingCriteriaList,
-    __TEST_MOCK__: { tokenizer, model },
+    env,
+    __TEST_MOCK__: { tokenizer, model, env },
   };
 });
 
@@ -48,12 +54,17 @@ import { TransformersJSLanguageModel } from "../src";
 describe("TransformersJSLanguageModel", () => {
   let tokenizerMock: any;
   let modelMock: any;
+  let envMock: any;
   beforeEach(() => {
     vi.clearAllMocks();
     // Load mocked module to access test doubles
     return import("@huggingface/transformers").then((m: any) => {
       tokenizerMock = m.__TEST_MOCK__.tokenizer;
       modelMock = m.__TEST_MOCK__.model;
+      envMock = m.__TEST_MOCK__.env;
+      // Reset env mock values
+      envMock.localModelPath = undefined;
+      envMock.cacheDir = undefined;
     });
   });
 
@@ -239,5 +250,68 @@ describe("TransformersJSLanguageModel", () => {
     // Should pass empty content to chat template
     const applyChatCall = tokenizerMock.apply_chat_template.mock.calls[0];
     expect(applyChatCall[0]).toEqual([{ role: "user", content: "" }]);
+  });
+
+  it("should configure env.localModelPath when provided", async () => {
+    const model = new TransformersJSLanguageModel(
+      "HuggingFaceTB/SmolLM2-360M-Instruct",
+      { localModelPath: "/custom/models" },
+    );
+
+    tokenizerMock.apply_chat_template.mockReturnValue({
+      input_ids: { data: new Array(2).fill(1) },
+    });
+    (modelMock.generate as any).mockImplementation(async (args: any) => {
+      if (args.streamer) {
+        args.streamer.on_finalized_text("Hello");
+      }
+      return Promise.resolve();
+    });
+
+    await model.createSessionWithProgress();
+
+    expect(envMock.localModelPath).toBe("/custom/models");
+  });
+
+  it("should configure env.cacheDir when provided", async () => {
+    const model = new TransformersJSLanguageModel(
+      "HuggingFaceTB/SmolLM2-360M-Instruct",
+      { cacheDir: "/custom/cache" },
+    );
+
+    tokenizerMock.apply_chat_template.mockReturnValue({
+      input_ids: { data: new Array(2).fill(1) },
+    });
+    (modelMock.generate as any).mockImplementation(async (args: any) => {
+      if (args.streamer) {
+        args.streamer.on_finalized_text("Hello");
+      }
+      return Promise.resolve();
+    });
+
+    await model.createSessionWithProgress();
+
+    expect(envMock.cacheDir).toBe("/custom/cache");
+  });
+
+  it("should not modify env when localModelPath and cacheDir are not provided", async () => {
+    const model = new TransformersJSLanguageModel(
+      "HuggingFaceTB/SmolLM2-360M-Instruct",
+    );
+
+    tokenizerMock.apply_chat_template.mockReturnValue({
+      input_ids: { data: new Array(2).fill(1) },
+    });
+    (modelMock.generate as any).mockImplementation(async (args: any) => {
+      if (args.streamer) {
+        args.streamer.on_finalized_text("Hello");
+      }
+      return Promise.resolve();
+    });
+
+    await model.createSessionWithProgress();
+
+    expect(envMock.localModelPath).toBeUndefined();
+    expect(envMock.cacheDir).toBeUndefined();
   });
 });
