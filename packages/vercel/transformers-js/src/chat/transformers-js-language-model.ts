@@ -34,6 +34,7 @@ import {
   ToolCallFenceDetector,
   type ParsedToolCall,
   type ToolDefinition,
+  type DownloadProgressCallback,
 } from "@browser-ai/shared";
 import {
   createMainThreadGenerationStream,
@@ -55,7 +56,7 @@ export interface TransformersJSModelSettings extends Pick<
   /**
    * Progress callback for model initialization
    */
-  initProgressCallback?: (progress: { progress: number }) => void;
+  initProgressCallback?: DownloadProgressCallback;
   /**
    * Raw progress callback from Transformers.js
    */
@@ -251,7 +252,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
   };
 
   private async getSession(
-    onInitProgress?: (progress: { progress: number }) => void,
+    onInitProgress?: DownloadProgressCallback,
   ): Promise<ModelInstance> {
     if (this.modelInstance && this.isInitialized) {
       return this.modelInstance;
@@ -277,7 +278,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
   }
 
   private async _initializeModel(
-    onInitProgress?: (progress: { progress: number }) => void,
+    onInitProgress?: DownloadProgressCallback,
   ): Promise<void> {
     try {
       const { isVisionModel, device, dtype, localModelPath, cacheDir } =
@@ -333,7 +334,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
         }
       }
 
-      onInitProgress?.({ progress: 1.0 });
+      onInitProgress?.(1.0);
       this.isInitialized = true;
     } catch (error) {
       this.modelInstance = undefined;
@@ -376,9 +377,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
     return "auto";
   }
 
-  private createProgressTracker(
-    onInitProgress?: (progress: { progress: number }) => void,
-  ) {
+  private createProgressTracker(onInitProgress?: DownloadProgressCallback) {
     const fileProgress = new Map<string, { loaded: number; total: number }>();
 
     return (p: ProgressInfo) => {
@@ -420,7 +419,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
       }
 
       if (totalBytes > 0) {
-        onInitProgress({ progress: Math.min(1, totalLoaded / totalBytes) });
+        onInitProgress(Math.min(1, totalLoaded / totalBytes));
       }
     };
   }
@@ -571,7 +570,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
    * Creates a session with download progress monitoring
    */
   public async createSessionWithProgress(
-    onDownloadProgress?: (progress: { progress: number }) => void,
+    onDownloadProgress?: DownloadProgressCallback,
   ): Promise<TransformersJSLanguageModel> {
     // If a worker is provided and we're in browser environment, initialize the worker
     // (and forward progress) instead of initializing the model on the main thread
@@ -723,13 +722,13 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
   }
 
   private async initializeWorker(
-    onInitProgress?: (progress: { progress: number }) => void,
+    onInitProgress?: DownloadProgressCallback,
   ): Promise<void> {
     if (!this.config.worker) return;
 
     // If already ready, optionally emit completion progress
     if (this.workerReady) {
-      if (onInitProgress) onInitProgress({ progress: 1 });
+      if (onInitProgress) onInitProgress(1);
       return;
     }
 
@@ -747,7 +746,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
           if (msg.status === "ready") {
             worker.removeEventListener("message", onMessage);
             this.workerReady = true;
-            if (onInitProgress) onInitProgress({ progress: 1 });
+            if (onInitProgress) onInitProgress(1);
             resolve();
             return;
           }

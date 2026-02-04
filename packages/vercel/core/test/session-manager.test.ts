@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { SessionManager } from "../src/models/session-manager";
-import type { ProgressCallback } from "../src/models/session-manager";
+import type { DownloadProgressCallback } from "@browser-ai/shared";
 
 describe("SessionManager", () => {
   beforeEach(() => {
@@ -183,7 +183,7 @@ describe("SessionManager", () => {
     });
 
     it("should handle download progress callback", async () => {
-      const progressCallback: ProgressCallback = vi.fn();
+      const progressCallback: DownloadProgressCallback = vi.fn();
       const mockCreate = vi.fn().mockResolvedValue({
         prompt: vi.fn(),
         destroy: vi.fn(),
@@ -240,7 +240,7 @@ describe("SessionManager", () => {
         addEventListener: vi.fn(),
       };
       const mockCreate = vi.fn().mockResolvedValue(mockSession);
-      const progressCallback: ProgressCallback = vi.fn();
+      const progressCallback: DownloadProgressCallback = vi.fn();
 
       vi.stubGlobal("LanguageModel", {
         availability: vi.fn().mockResolvedValue("available"),

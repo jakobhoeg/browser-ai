@@ -910,9 +910,9 @@ Running the tool now.`;
 
     it("should create a session without progress callback", async () => {
       const model = new BrowserAIChatLanguageModel("text");
-      const session = await model.createSessionWithProgress();
+      const result = await model.createSessionWithProgress();
 
-      expect(session).toBe(mockSession);
+      expect(result).toBe(model);
       expect(LanguageModel.create).toHaveBeenCalledWith(
         expect.not.objectContaining({
           monitor: expect.any(Function),
@@ -949,9 +949,9 @@ Running the tool now.`;
         return Promise.resolve(mockSession);
       });
 
-      const session = await model.createSessionWithProgress(progressCallback);
+      const result = await model.createSessionWithProgress(progressCallback);
 
-      expect(session).toBe(mockSession);
+      expect(result).toBe(model);
       expect(LanguageModel.create).toHaveBeenCalledWith(
         expect.objectContaining({
           monitor: expect.any(Function),
@@ -975,14 +975,14 @@ Running the tool now.`;
       const model = new BrowserAIChatLanguageModel("text");
 
       // First call should create a new session
-      const session1 = await model.createSessionWithProgress();
-      expect(session1).toBe(mockSession);
+      const result1 = await model.createSessionWithProgress();
+      expect(result1).toBe(model);
       expect(LanguageModel.create).toHaveBeenCalledTimes(1);
 
       // Second call should reuse the existing session
-      const session2 = await model.createSessionWithProgress();
-      expect(session2).toBe(mockSession);
-      expect(session1).toBe(session2);
+      const result2 = await model.createSessionWithProgress();
+      expect(result2).toBe(model);
+      expect(result1).toBe(result2);
       expect(LanguageModel.create).toHaveBeenCalledTimes(1);
     });
 

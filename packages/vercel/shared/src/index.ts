@@ -5,6 +5,7 @@ export type {
   ParsedToolCall,
   ToolResult,
   ParsedResponse,
+  DownloadProgressCallback,
 } from "./types";
 
 // Utils

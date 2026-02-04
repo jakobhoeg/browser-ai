@@ -18,6 +18,7 @@ import {
   isFunctionTool,
   ToolCallFenceDetector,
   type ParsedToolCall,
+  type DownloadProgressCallback,
 } from "@browser-ai/shared";
 import { convertToBrowserAIMessages } from "./convert-to-browser-ai-messages";
 import { gatherUnsupportedSettingWarnings } from "./utils/warnings";
@@ -169,7 +170,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
     options?: LanguageModelCreateOptions,
     expectedInputs?: Array<{ type: "text" | "image" | "audio" }>,
     systemMessage?: string,
-    onDownloadProgress?: (progress: number) => void,
+    onDownloadProgress?: DownloadProgressCallback,
   ): Promise<LanguageModel> {
     return this.sessionManager.getSession({
       ...options,
@@ -393,14 +394,15 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
    * );
    * ```
    *
-   * @param onDownloadProgress Optional callback receiving progress values 0-1 during model download
-   * @returns Promise resolving to a configured LanguageModel session
+   * @param onDownloadProgress Optional callback receiving progress values from 0 to 1
+   * @returns Promise resolving to the model instance
    * @throws {LoadSettingError} When the Prompt API is not available or model is unavailable
    */
   public async createSessionWithProgress(
-    onDownloadProgress?: (progress: number) => void,
-  ): Promise<LanguageModel> {
-    return this.sessionManager.createSessionWithProgress(onDownloadProgress);
+    onDownloadProgress?: DownloadProgressCallback,
+  ): Promise<BrowserAIChatLanguageModel> {
+    await this.sessionManager.createSessionWithProgress(onDownloadProgress);
+    return this;
   }
 
   /**
