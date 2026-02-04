@@ -14,6 +14,7 @@ import {
   type FeatureExtractionPipeline,
   type Tensor,
 } from "@huggingface/transformers";
+import type { DownloadProgressCallback } from "@browser-ai/shared";
 
 export type TransformersJSEmbeddingModelId = string;
 
@@ -38,7 +39,7 @@ export interface TransformersJSEmbeddingSettings extends Pick<
   /**
    * Progress callback for model initialization
    */
-  initProgressCallback?: (progress: { progress: number }) => void;
+  initProgressCallback?: DownloadProgressCallback;
   /**
    * Raw progress callback from Transformers.js
    */
@@ -92,7 +93,7 @@ export class TransformersJSEmbeddingModel implements EmbeddingModelV3 {
   }
 
   private async getSession(
-    onInitProgress?: (progress: { progress: number }) => void,
+    onInitProgress?: DownloadProgressCallback,
   ): Promise<[PreTrainedTokenizer, FeatureExtractionPipeline]> {
     if (this.pipeline && this.tokenizer && this.isInitialized) {
       return [this.tokenizer, this.pipeline];
@@ -118,7 +119,7 @@ export class TransformersJSEmbeddingModel implements EmbeddingModelV3 {
   }
 
   private async _initializeModel(
-    onInitProgress?: (progress: { progress: number }) => void,
+    onInitProgress?: DownloadProgressCallback,
   ): Promise<void> {
     try {
       const { device, dtype } = this.config;
@@ -148,7 +149,7 @@ export class TransformersJSEmbeddingModel implements EmbeddingModelV3 {
       this.tokenizer = tokenizer;
       this.pipeline = embeddingPipeline as FeatureExtractionPipeline;
 
-      onInitProgress?.({ progress: 1.0 });
+      onInitProgress?.(1.0);
       this.isInitialized = true;
     } catch (error) {
       this.pipeline = null;
@@ -192,9 +193,7 @@ export class TransformersJSEmbeddingModel implements EmbeddingModelV3 {
     return "q8";
   }
 
-  private createProgressTracker(
-    onInitProgress?: (progress: { progress: number }) => void,
-  ) {
+  private createProgressTracker(onInitProgress?: DownloadProgressCallback) {
     const fileProgress = new Map<string, { loaded: number; total: number }>();
 
     return (p: ProgressInfo) => {
@@ -236,7 +235,7 @@ export class TransformersJSEmbeddingModel implements EmbeddingModelV3 {
       }
 
       if (totalBytes > 0) {
-        onInitProgress({ progress: Math.min(1, totalLoaded / totalBytes) });
+        onInitProgress(Math.min(1, totalLoaded / totalBytes));
       }
     };
   }
@@ -290,7 +289,7 @@ export class TransformersJSEmbeddingModel implements EmbeddingModelV3 {
    * Creates a session with download progress monitoring
    */
   public async createSessionWithProgress(
-    onDownloadProgress?: (progress: { progress: number }) => void,
+    onDownloadProgress?: DownloadProgressCallback,
   ): Promise<TransformersJSEmbeddingModel> {
     await this._initializeModel(onDownloadProgress);
     return this;

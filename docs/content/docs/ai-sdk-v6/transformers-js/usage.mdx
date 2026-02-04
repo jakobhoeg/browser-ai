@@ -74,7 +74,7 @@ if (availability === "unavailable") {
 }
 
 if (availability === "downloadable") {
-  await model.createSessionWithProgress(({ progress }) => {
+  await model.createSessionWithProgress((progress) => {
     console.log(`Download progress: ${Math.round(progress * 100)}%`);
   });
 }

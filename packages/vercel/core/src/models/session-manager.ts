@@ -4,12 +4,7 @@
  */
 
 import { LoadSettingError } from "@ai-sdk/provider";
-
-/**
- * Progress callback for model download events
- * @param progress - Download progress from 0 to 1
- */
-export type ProgressCallback = (progress: number) => void;
+import type { DownloadProgressCallback } from "@browser-ai/shared";
 
 /**
  * Custom provider options that extend the standard API
@@ -25,7 +20,7 @@ export interface SessionCreateOptions
   extends LanguageModelCreateOptions, CustomProviderOptions {
   systemMessage?: string;
   expectedInputs?: Array<{ type: "text" | "image" | "audio" }>;
-  onDownloadProgress?: ProgressCallback;
+  onDownloadProgress?: DownloadProgressCallback;
 }
 
 /**
@@ -47,7 +42,7 @@ export interface SessionCreateOptions
  * // Create session with progress tracking
  * const session = await manager.getSession({
  *   temperature: 0.7,
- *   onDownloadProgress: (p) => console.log(`${p * 100}%`)
+ *   onDownloadProgress: (progress) => console.log(`${progress * 100}%`)
  * });
  * ```
  */
@@ -135,7 +130,7 @@ export class SessionManager {
    *
    * This is a convenience method for users who want explicit progress tracking.
    *
-   * @param onDownloadProgress - Optional callback receiving progress (0-1) during download
+   * @param onDownloadProgress - Optional callback receiving progress values from 0 to 1
    * @returns Promise resolving to a LanguageModel session
    * @throws {LoadSettingError} When Prompt API is not available or model is unavailable
    *
@@ -149,7 +144,7 @@ export class SessionManager {
    * ```
    */
   async createSessionWithProgress(
-    onDownloadProgress?: ProgressCallback,
+    onDownloadProgress?: DownloadProgressCallback,
   ): Promise<LanguageModel> {
     return this.getSession({ onDownloadProgress });
   }
