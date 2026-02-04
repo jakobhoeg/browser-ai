@@ -125,7 +125,7 @@ export class ClientSideChatTransport implements ChatTransport<BrowserAIUIMessage
 
         // Only track progress if model needs downloading
         if (availability !== "available") {
-          await this.model.createSessionWithProgress((progress: number) => {
+          await this.model.createSessionWithProgress((progress) => {
             const percent = Math.round(progress * 100);
 
             if (progress >= 1) {
