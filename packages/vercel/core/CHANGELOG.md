@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.1.0
+
+### Minor Changes
+
+- acc8791: refactor: unify `createSessionWithProgress` to use a `(progress: number) => void` callback across all packages
+
 ## 2.0.4
 
 ### Patch Changes
