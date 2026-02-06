@@ -91,6 +91,11 @@ for await (const chunk of result.textStream) {
 }
 ```
 
+## Example applications
+
+- Huggingface Transformers.js: [next-vercel-ai-sdk-v5-transformers-js-example](https://github.com/huggingface/transformers.js-examples/tree/main/next-vercel-ai-sdk-v5)
+- Huggingface Transformers.js: [next-vercel-ai-sdk-v6-transformers-js-example](https://github.com/huggingface/transformers.js-examples/blob/main/next-vercel-ai-sdk-v6-tool-calling)
+
 ## Sponsors
 
 This project is proudly sponsored by [Chrome for Developers](https://developer.chrome.com/).
