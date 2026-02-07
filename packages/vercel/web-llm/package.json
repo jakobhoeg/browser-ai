@@ -1,6 +1,6 @@
 {
   "name": "@browser-ai/web-llm",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "WebLLM provider for Vercel AI SDK v5+ (High-performance in-browser LLM inference)",
   "author": {
     "name": "Jakob Hoeg Mørk",

@@ -1,5 +1,11 @@
 # @browser-ai/web-llm
 
+## 2.1.1
+
+### Patch Changes
+
+- 8ba3a0e: feat: add embedding model provider with WebLLMEmbeddingModel class
+
 ## 2.1.0
 
 ### Minor Changes
