@@ -91,7 +91,7 @@ export class WebLLMEmbeddingModel implements EmbeddingModelV3 {
     if (availability === "unavailable") {
       throw new LoadSettingError({
         message:
-          "WebLLM is not available. A browser with WebGPU support is required.",
+          "WebLLM is not available. This library requires a browser with WebGPU support.",
       });
     }
 
