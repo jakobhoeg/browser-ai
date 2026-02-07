@@ -186,9 +186,7 @@ describe("WebLLMEmbeddingModel", () => {
       mockEmbeddingsCreate.mockImplementation(() => {
         abortController.abort();
         return Promise.resolve({
-          data: [
-            { index: 0, embedding: [0.1, 0.2, 0.3], object: "embedding" },
-          ],
+          data: [{ index: 0, embedding: [0.1, 0.2, 0.3], object: "embedding" }],
           model: "test-model",
           usage: { prompt_tokens: 5, total_tokens: 5, extra: {} },
         });
