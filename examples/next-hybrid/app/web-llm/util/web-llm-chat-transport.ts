@@ -10,11 +10,7 @@ import {
   tool,
   stepCountIs,
 } from "ai";
-import {
-  WebLLMProgress,
-  WebLLMUIMessage,
-  WebLLMLanguageModel,
-} from "@browser-ai/web-llm";
+import { WebLLMUIMessage, WebLLMLanguageModel } from "@browser-ai/web-llm";
 import z from "zod";
 
 export const createTools = () => ({
@@ -112,42 +108,40 @@ export class WebLLMChatTransport implements ChatTransport<WebLLMUIMessage> {
 
         // Only track progress if model needs downloading
         if (availability !== "available") {
-          await model.createSessionWithProgress(
-            (progress: { progress: number }) => {
-              const percent = Math.round(progress.progress * 100);
+          await model.createSessionWithProgress((progress) => {
+            const percent = Math.round(progress * 100);
 
-              if (progress.progress >= 1) {
-                if (downloadProgressId) {
-                  writer.write({
-                    type: "data-modelDownloadProgress",
-                    id: downloadProgressId,
-                    data: {
-                      status: "complete",
-                      progress: 100,
-                      message:
-                        "Model finished downloading! Getting ready for inference...",
-                    },
-                  });
-                }
-                return;
+            if (progress >= 1) {
+              if (downloadProgressId) {
+                writer.write({
+                  type: "data-modelDownloadProgress",
+                  id: downloadProgressId,
+                  data: {
+                    status: "complete",
+                    progress: 100,
+                    message:
+                      "Model finished downloading! Getting ready for inference...",
+                  },
+                });
               }
+              return;
+            }
 
-              if (!downloadProgressId) {
-                downloadProgressId = `download-${Date.now()}`;
-              }
+            if (!downloadProgressId) {
+              downloadProgressId = `download-${Date.now()}`;
+            }
 
-              writer.write({
-                type: "data-modelDownloadProgress",
-                id: downloadProgressId,
-                data: {
-                  status: "downloading",
-                  progress: percent,
-                  message: `Downloading browser AI model... ${percent}%`,
-                },
-                transient: !downloadProgressId, // transient only on first write
-              });
-            },
-          );
+            writer.write({
+              type: "data-modelDownloadProgress",
+              id: downloadProgressId,
+              data: {
+                status: "downloading",
+                progress: percent,
+                message: `Downloading browser AI model... ${percent}%`,
+              },
+              transient: !downloadProgressId, // transient only on first write
+            });
+          });
         }
 
         const result = streamText({

@@ -16,7 +16,9 @@ Creates a Transformers.js language model instance.
   - `dtype?: "auto" | "fp32" | "fp16" | "q8" | "q4" | "q4f16"` - Data type for model weights
   - `isVisionModel?: boolean` - Whether this is a vision model (default: false)
   - `worker?: Worker` - Web Worker for off-main-thread execution
-  - `initProgressCallback?: (progress: { progress: number }) => void` - Progress callback
+  - `initProgressCallback?: (progress: number) => void` - Progress callback
+  - `localModelPath?: string` - Path to load local models from (Node.js only)
+  - `cacheDir?: string` - Directory for caching model files (Node.js only)
 
 **Returns:** `TransformersJSLanguageModel`
 
@@ -82,7 +84,7 @@ Checks the current availability status of the model.
 Creates a language model session with optional download progress monitoring.
 
 **Parameters:**
-- `onProgress?: (progress: { progress: number }) => void` - Callback receiving progress values from 0 to 1
+- `onProgress?: (progress: number) => void` - Callback receiving progress values from 0 to 1
 
 **Returns:** `Promise<TransformersJSLanguageModel>`
 
@@ -97,7 +99,7 @@ Checks current availability status for the embedding model.
 Creates/initializes an embedding model session with optional progress monitoring.
 
 **Parameters:**
-- `onProgress?: (p: { progress: number }) => void`
+- `onProgress?: (progress: number) => void`
 
 **Returns:** `Promise<TransformersJSEmbeddingModel>`
 
@@ -112,7 +114,7 @@ Checks current availability status for the transcription model.
 Creates/initializes a transcription model session with optional progress monitoring.
 
 **Parameters:**
-- `onProgress?: (p: { progress: number }) => void`
+- `onProgress?: (progress: number) => void`
 
 **Returns:** `Promise<TransformersJSTranscriptionModel>`
 

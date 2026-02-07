@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseJsonFunctionCalls } from "../src/tool-calling/parse-json-function-calls";
+import { parseJsonFunctionCalls } from "@browser-ai/shared";
 
 describe("parseJsonFunctionCalls", () => {
   it("returns empty array for text without tool calls", () => {

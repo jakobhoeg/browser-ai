@@ -5,7 +5,7 @@ import type {
   Processor,
   ProgressInfo,
 } from "@huggingface/transformers";
-import type { ToolDefinition, ParsedToolCall } from "../tool-calling/types";
+import type { ToolDefinition, ParsedToolCall } from "@browser-ai/shared";
 
 export interface GenerationOptions {
   max_new_tokens?: number;

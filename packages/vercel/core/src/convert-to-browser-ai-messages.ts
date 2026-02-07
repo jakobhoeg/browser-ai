@@ -5,8 +5,7 @@ import {
   LanguageModelV3ToolResultOutput,
   UnsupportedFunctionalityError,
 } from "@ai-sdk/provider";
-import { formatToolResults } from "./tool-calling/format-tool-results";
-import type { ToolResult } from "./tool-calling/types";
+import { formatToolResults, type ToolResult } from "@browser-ai/shared";
 export interface ConvertedMessages {
   systemMessage?: string;
   messages: LanguageModelMessage[];

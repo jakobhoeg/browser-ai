@@ -1,6 +1,6 @@
 {
   "name": "@browser-ai/core",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Browser AI model provider for Vercel AI SDK (Chrome & Edge)",
   "author": {
     "name": "Jakob Hoeg Mørk",
@@ -16,7 +16,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     }
   },
@@ -57,6 +57,7 @@
     "ai": "^6.0.0"
   },
   "devDependencies": {
+    "@browser-ai/shared": "*",
     "@types/dom-chromium-ai": "^0.0.10",
     "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^1.0.0",

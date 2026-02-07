@@ -10,9 +10,17 @@ import type {
 /**
  * Creates a warning for an unsupported setting
  *
- * @param feature - Name of the feature that is not supported
+ * @param setting - Name of the setting that is not supported
  * @param details - Additional details about why it's not supported
  * @returns A call warning object
+ *
+ * @example
+ * ```typescript
+ * const warning = createUnsupportedSettingWarning(
+ *   "maxOutputTokens",
+ *   "maxOutputTokens is not supported by this provider"
+ * );
+ * ```
  */
 export function createUnsupportedSettingWarning(
   feature: string,
@@ -31,6 +39,14 @@ export function createUnsupportedSettingWarning(
  * @param tool - The provider-defined tool that is not supported
  * @param details - Additional details about why it's not supported
  * @returns A call warning object
+ *
+ * @example
+ * ```typescript
+ * const warning = createUnsupportedToolWarning(
+ *   providerTool,
+ *   "Only function tools are supported"
+ * );
+ * ```
  */
 export function createUnsupportedToolWarning(
   tool: LanguageModelV3ProviderTool,
@@ -38,7 +54,7 @@ export function createUnsupportedToolWarning(
 ): SharedV3Warning {
   return {
     type: "unsupported",
-    feature: `tool type "${tool.type}"`,
+    feature: `tool:${tool.name}`,
     details,
   };
 }

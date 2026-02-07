@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { parseJsonFunctionCalls } from "../src/tool-calling/parse-json-function-calls";
-import { buildJsonToolSystemPrompt } from "../src/tool-calling/build-json-system-prompt";
+import {
+  parseJsonFunctionCalls,
+  buildJsonToolSystemPrompt,
+  type ToolDefinition,
+} from "@browser-ai/shared";
 import { extractSystemPrompt } from "../src/utils/prompt-utils";
-import type { ToolDefinition } from "../src/tool-calling/types";
 
 describe("parseJsonFunctionCalls", () => {
   it("returns empty array for text without tool calls", () => {

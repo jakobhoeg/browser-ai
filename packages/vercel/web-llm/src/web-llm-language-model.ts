@@ -26,18 +26,17 @@ import { Availability } from "./types";
 import {
   buildJsonToolSystemPrompt,
   parseJsonFunctionCalls,
-} from "./tool-calling";
-import type { ParsedToolCall, ToolDefinition } from "./tool-calling";
-import {
   createUnsupportedSettingWarning,
   createUnsupportedToolWarning,
-} from "./utils/warnings";
-import { isFunctionTool } from "./utils/tool-utils";
+  isFunctionTool,
+  ToolCallFenceDetector,
+  type ToolDefinition,
+  type DownloadProgressCallback,
+} from "@browser-ai/shared";
 import {
   prependSystemPromptToMessages,
   extractSystemPrompt,
 } from "./utils/prompt-utils";
-import { ToolCallFenceDetector } from "./streaming/tool-call-detector";
 import {
   isMobile,
   checkWebGPU,
@@ -540,21 +539,27 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
    *
    * @example
    * ```typescript
-   * const engine = await model.createSessionWithProgress(
+   * const model = await model.createSessionWithProgress(
    *   (progress) => {
-   *     console.log(`Download progress: ${Math.round(progress.loaded * 100)}%`);
+   *     console.log(`Download progress: ${Math.round(progress * 100)}%`);
    *   }
    * );
    * ```
    *
-   * @param onInitProgress Optional callback receiving progress reports during model download
-   * @returns Promise resolving to a configured WebLLM engine
+   * @param onDownloadProgress Optional callback receiving progress values from 0 to 1
+   * @returns Promise resolving to the model instance
    * @throws {LoadSettingError} When WebLLM is not available or model is unavailable
    */
   public async createSessionWithProgress(
-    onInitProgress?: (progress: InitProgressReport) => void,
-  ): Promise<MLCEngineInterface> {
-    return this.getEngine(undefined, onInitProgress);
+    onDownloadProgress?: DownloadProgressCallback,
+  ): Promise<WebLLMLanguageModel> {
+    const adaptedCallback = onDownloadProgress
+      ? (report: InitProgressReport) => {
+          onDownloadProgress(report.progress);
+        }
+      : undefined;
+    await this.getEngine(undefined, adaptedCallback);
+    return this;
   }
 
   /**

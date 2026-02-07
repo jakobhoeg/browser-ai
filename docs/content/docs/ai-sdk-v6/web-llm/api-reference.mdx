@@ -14,7 +14,7 @@ Creates a WebLLM model instance.
 - `modelId`: The model identifier from the [supported list of models](https://github.com/mlc-ai/web-llm/blob/main/src/config.ts)
 - `settings` (optional): Configuration options
   - `appConfig?: AppConfig` - Custom app configuration for WebLLM
-  - `initProgressCallback?: (progress: WebLLMProgress) => void` - Progress callback for model initialization
+  - `initProgressCallback?: (progress: number) => void` - Progress callback for model initialization
   - `engineConfig?: MLCEngineConfig` - Engine configuration options
   - `worker?: Worker` - A web worker instance to run the model in for better performance
 
@@ -78,10 +78,9 @@ Checks the current availability status of the WebLLM model.
 Creates a language model session with optional download progress monitoring.
 
 **Parameters:**
+- `onProgress?: (progress: number) => void` - Optional callback that receives progress values from 0 to 1 during model download
 
-- `onProgress?: (progress: WebLLMProgress) => void` - Optional callback that receives progress reports during model download
-
-**Returns:** `Promise<MLCEngineInterface>` - The configured language model session
+**Returns:** `Promise<WebLLMLanguageModel>` - The configured language model instance
 
 ### `WebLLMLanguageModel.isModelInitialized`
 
@@ -129,16 +128,12 @@ type WebLLMUIMessage = UIMessage<
 >;
 ```
 
-### `WebLLMProgress`
+### `DownloadProgressCallback`
 
-The progress report type returned during model initialization.
+The callback type for receiving model download progress. Shared across all `@browser-ai` packages.
 
 ```typescript
-interface WebLLMProgress {
-  progress: number; // 0-1
-  timeElapsed: number; // in ms
-  text: string; // progress text
-}
+type DownloadProgressCallback = (progress: number) => void;
 ```
 
 ### `WebLLMModelId`
@@ -156,7 +151,7 @@ Configuration options for the WebLLM model.
 ```typescript
 interface WebLLMSettings {
   appConfig?: AppConfig;
-  initProgressCallback?: (progress: WebLLMProgress) => void;
+  initProgressCallback?: (progress: number) => void;
   engineConfig?: MLCEngineConfig;
   worker?: Worker;
 }

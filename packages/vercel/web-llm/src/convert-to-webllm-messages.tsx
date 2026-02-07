@@ -5,9 +5,7 @@ import {
   UnsupportedFunctionalityError,
 } from "@ai-sdk/provider";
 import * as webllm from "@mlc-ai/web-llm";
-import { formatToolResults } from "./tool-calling";
-import type { ToolResult } from "./tool-calling";
-import { ca } from "zod/v4/locales";
+import { formatToolResults, type ToolResult } from "@browser-ai/shared";
 
 /**
  * Converts the AI SDK ToolResultOutput format to a simple value + error flag

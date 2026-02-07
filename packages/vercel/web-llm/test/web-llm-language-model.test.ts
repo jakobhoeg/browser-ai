@@ -223,7 +223,7 @@ describe("WebLLMLanguageModel", () => {
   });
 
   describe("createSessionWithProgress", () => {
-    it("should call initProgressCallback during initialization", async () => {
+    it("should call onDownloadProgress with unified progress during initialization", async () => {
       mockEngineConstructor.mockImplementation((config) => {
         if (config.initProgressCallback) {
           config.initProgressCallback({ progress: 0.5, text: "loading" });
@@ -231,14 +231,12 @@ describe("WebLLMLanguageModel", () => {
       });
 
       const model = new WebLLMLanguageModel("test-model");
-      const initProgressCallback = vi.fn();
+      const onDownloadProgress = vi.fn();
 
-      await model.createSessionWithProgress(initProgressCallback);
+      const result = await model.createSessionWithProgress(onDownloadProgress);
 
-      expect(initProgressCallback).toHaveBeenCalledWith({
-        progress: 0.5,
-        text: "loading",
-      });
+      expect(onDownloadProgress).toHaveBeenCalledWith(0.5);
+      expect(result).toBe(model);
     });
   });
 

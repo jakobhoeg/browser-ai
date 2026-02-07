@@ -2,7 +2,7 @@ import type {
   JSONSchema7,
   LanguageModelV3FunctionTool,
 } from "@ai-sdk/provider";
-import type { ToolDefinition } from "./types";
+import type { ToolDefinition } from "../types";
 
 /**
  * Builds an enhanced system prompt for JSON-based tool calling.

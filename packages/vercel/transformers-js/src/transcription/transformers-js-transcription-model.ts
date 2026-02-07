@@ -16,6 +16,7 @@ import {
   type ProgressInfo,
   type Tensor,
 } from "@huggingface/transformers";
+import type { DownloadProgressCallback } from "@browser-ai/shared";
 
 export type TransformersJSTranscriptionModelId = string;
 
@@ -26,7 +27,7 @@ export interface TransformersJSTranscriptionSettings extends Pick<
   /**
    * Progress callback for model initialization
    */
-  initProgressCallback?: (progress: { progress: number }) => void;
+  initProgressCallback?: DownloadProgressCallback;
   /**
    * Raw progress callback from Transformers.js
    */
@@ -102,7 +103,7 @@ export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
   }
 
   private async getSession(
-    onInitProgress?: (progress: { progress: number }) => void,
+    onInitProgress?: DownloadProgressCallback,
   ): Promise<TranscriptionModelInstance> {
     if (this.modelInstance && this.isInitialized) {
       return this.modelInstance;
@@ -128,7 +129,7 @@ export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
   }
 
   private async _initializeModel(
-    onInitProgress?: (progress: { progress: number }) => void,
+    onInitProgress?: DownloadProgressCallback,
   ): Promise<void> {
     try {
       const { device, dtype } = this.config;
@@ -162,7 +163,7 @@ export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
         }
       }
 
-      onInitProgress?.({ progress: 1.0 });
+      onInitProgress?.(1.0);
       this.isInitialized = true;
     } catch (error) {
       this.modelInstance = undefined;
@@ -204,9 +205,7 @@ export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
     };
   }
 
-  private createProgressTracker(
-    onInitProgress?: (progress: { progress: number }) => void,
-  ) {
+  private createProgressTracker(onInitProgress?: DownloadProgressCallback) {
     const fileProgress = new Map<string, { loaded: number; total: number }>();
 
     return (p: ProgressInfo) => {
@@ -247,7 +246,7 @@ export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
       }
 
       if (totalBytes > 0) {
-        onInitProgress({ progress: Math.min(1, totalLoaded / totalBytes) });
+        onInitProgress(Math.min(1, totalLoaded / totalBytes));
       }
     };
   }
@@ -363,7 +362,7 @@ export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
    * Creates a session with download progress monitoring
    */
   public async createSessionWithProgress(
-    onDownloadProgress?: (progress: { progress: number }) => void,
+    onDownloadProgress?: DownloadProgressCallback,
   ): Promise<TransformersJSTranscriptionModel> {
     // If a worker is provided and we're in browser environment, initialize the worker
     // (and forward progress) instead of initializing the model on the main thread
@@ -509,13 +508,13 @@ export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
   }
 
   private async initializeWorker(
-    onInitProgress?: (progress: { progress: number }) => void,
+    onInitProgress?: DownloadProgressCallback,
   ): Promise<void> {
     if (!this.config.worker) return;
 
     // If already ready, optionally emit completion progress
     if (this.workerReady) {
-      if (onInitProgress) onInitProgress({ progress: 1 });
+      if (onInitProgress) onInitProgress(1);
       return;
     }
 
@@ -533,7 +532,7 @@ export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
           if (msg.status === "ready") {
             worker.removeEventListener("message", onMessage);
             this.workerReady = true;
-            if (onInitProgress) onInitProgress({ progress: 1 });
+            if (onInitProgress) onInitProgress(1);
             resolve();
             return;
           }

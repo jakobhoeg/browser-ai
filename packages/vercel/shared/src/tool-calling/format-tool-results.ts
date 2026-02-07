@@ -1,4 +1,4 @@
-import type { ToolResult } from "./types";
+import type { ToolResult } from "../types";
 
 /**
  * Builds a JSON-serializable payload for a single tool result.

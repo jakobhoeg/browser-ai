@@ -8,4 +8,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   // external: ["@mlc-ai/web-llm"],
+  noExternal: ["@browser-ai/shared"],
 });

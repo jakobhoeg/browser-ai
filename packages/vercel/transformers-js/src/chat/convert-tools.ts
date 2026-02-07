@@ -2,7 +2,7 @@ import type {
   JSONSchema7,
   LanguageModelV3FunctionTool,
 } from "@ai-sdk/provider";
-import type { ToolDefinition } from "../tool-calling/types";
+import type { ToolDefinition } from "@browser-ai/shared";
 
 /**
  * HuggingFace tool definition format compatible with apply_chat_template

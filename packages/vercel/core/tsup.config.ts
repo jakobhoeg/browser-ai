@@ -8,4 +8,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   external: ["@ai-sdk/provider", "ai"],
+  noExternal: ["@browser-ai/shared"],
 });

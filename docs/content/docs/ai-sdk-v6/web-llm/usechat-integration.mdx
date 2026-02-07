@@ -22,7 +22,6 @@ import {
   stepCountIs,
 } from "ai";
 import {
-  WebLLMProgress,
   WebLLMUIMessage,
   WebLLMLanguageModel,
 } from "@browser-ai/web-llm";
@@ -79,10 +78,10 @@ export class WebLLMChatTransport implements ChatTransport<WebLLMUIMessage> {
 
         // Only track progress if model needs downloading
         if (availability !== "available") {
-          await model.createSessionWithProgress((progress: WebLLMProgress) => {
-            const percent = Math.round(progress.progress * 100);
+          await model.createSessionWithProgress((progress) => {
+            const percent = Math.round(progress * 100);
 
-            if (progress.progress >= 1) {
+            if (progress >= 1) {
               if (downloadProgressId) {
                 writer.write({
                   type: "data-modelDownloadProgress",
