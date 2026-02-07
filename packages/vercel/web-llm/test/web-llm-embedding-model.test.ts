@@ -4,6 +4,7 @@ import { WebLLMEmbeddingModel, webLLM } from "../src";
 const mockEmbeddingsCreate = vi.fn();
 const mockReload = vi.fn();
 const mockEngineConstructor = vi.fn();
+const mockInterruptGenerate = vi.fn();
 
 vi.mock("@mlc-ai/web-llm", () => ({
   MLCEngine: vi.fn().mockImplementation((config) => {
@@ -11,11 +12,13 @@ vi.mock("@mlc-ai/web-llm", () => ({
     return {
       embeddings: { create: mockEmbeddingsCreate },
       reload: mockReload,
+      interruptGenerate: mockInterruptGenerate,
     };
   }),
   CreateWebWorkerMLCEngine: vi.fn().mockImplementation(() =>
     Promise.resolve({
       embeddings: { create: mockEmbeddingsCreate },
+      interruptGenerate: mockInterruptGenerate,
     }),
   ),
 }));
@@ -175,6 +178,28 @@ describe("WebLLMEmbeddingModel", () => {
           abortSignal: abortController.signal,
         }),
       ).rejects.toThrow("Operation was aborted");
+    });
+
+    it("should call interruptGenerate when abort signal fires during embedding", async () => {
+      const abortController = new AbortController();
+      mockEmbeddingsCreate.mockImplementation(() => {
+        abortController.abort();
+        return Promise.resolve({
+          data: [
+            { index: 0, embedding: [0.1, 0.2, 0.3], object: "embedding" },
+          ],
+          model: "test-model",
+          usage: { prompt_tokens: 5, total_tokens: 5, extra: {} },
+        });
+      });
+
+      const model = new WebLLMEmbeddingModel("test-model");
+      await model.doEmbed({
+        values: ["hello"],
+        abortSignal: abortController.signal,
+      });
+
+      expect(mockInterruptGenerate).toHaveBeenCalled();
     });
   });
 

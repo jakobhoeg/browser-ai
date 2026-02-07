@@ -214,10 +214,20 @@ export class WebLLMEmbeddingModel implements EmbeddingModelV3 {
 
     const engine = await this.getEngine();
 
+    const abortHandler = () => {
+      engine.interruptGenerate();
+    };
+
+    if (abortSignal) {
+      abortSignal.addEventListener("abort", abortHandler);
+    }
+
     try {
       const response = await engine.embeddings.create({
         input: values,
         model: this.modelId,
+        ...(abortSignal &&
+          !this.config.options.worker && { signal: abortSignal }),
       });
 
       const sortedEmbeddings = response.data
@@ -243,6 +253,10 @@ export class WebLLMEmbeddingModel implements EmbeddingModelV3 {
       throw new Error(
         `WebLLM embedding failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
+    } finally {
+      if (abortSignal) {
+        abortSignal.removeEventListener("abort", abortHandler);
+      }
     }
   }
 }
