@@ -346,7 +346,8 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       // https://webllm.mlc.ai/docs/user/api_reference.html#generationconfig
       requestOptions.extra_body = {
         enable_thinking: providerOptions.extra_body.enable_thinking,
-        enable_latency_breakdown: providerOptions.extra_body.enable_latency_breakdown,
+        enable_latency_breakdown:
+          providerOptions.extra_body.enable_latency_breakdown,
       };
     }
 
