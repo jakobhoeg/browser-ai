@@ -1,5 +1,11 @@
 # @browser-ai/web-llm
 
+## 2.1.2
+
+### Patch Changes
+
+- 7bd5bbe: feat: add webllm generation config
+
 ## 2.1.1
 
 ### Patch Changes
