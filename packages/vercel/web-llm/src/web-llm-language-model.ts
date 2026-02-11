@@ -260,6 +260,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
     seed,
     tools,
     toolChoice,
+    providerOptions,
   }: Parameters<LanguageModelV3["doGenerate"]>[0]) {
     const warnings: SharedV3Warning[] = [];
 
@@ -340,6 +341,15 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       top_p: topP,
       seed,
     };
+
+    if (providerOptions?.extra_body) {
+      // https://webllm.mlc.ai/docs/user/api_reference.html#generationconfig
+      requestOptions.extra_body = {
+        enable_thinking: providerOptions.extra_body.enable_thinking,
+        enable_latency_breakdown:
+          providerOptions.extra_body.enable_latency_breakdown,
+      };
+    }
 
     // Handle response format
     if (responseFormat?.type === "json") {
