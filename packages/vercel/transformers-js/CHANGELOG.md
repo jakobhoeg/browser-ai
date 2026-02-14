@@ -1,5 +1,11 @@
 # @browser-ai/transformers-js
 
+## 2.1.2
+
+### Patch Changes
+
+- e8000c4: fix: worker model loading by preserving use_external_data_format defaults
+
 ## 2.1.1
 
 ### Patch Changes
