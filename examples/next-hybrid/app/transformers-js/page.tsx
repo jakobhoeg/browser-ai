@@ -47,6 +47,10 @@ import { AudioFileDisplay } from "@/components/audio-file-display";
 import { ModelSelector } from "@/components/model-selector";
 import { TransformersChatTransport } from "./util/transformers-chat-transport";
 import {
+  runWorkerBenchmark,
+  type WorkerBenchmarkResult,
+} from "./util/worker-benchmark";
+import {
   doesBrowserSupportTransformersJS,
   transformersJS,
   TransformersUIMessage,
@@ -82,7 +86,15 @@ function TransformersJSChat({
 }) {
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<FileList | undefined>(undefined);
+  const [isBenchmarkRunning, setIsBenchmarkRunning] = useState(false);
+  const [benchmarkStatus, setBenchmarkStatus] = useState<string | null>(null);
+  const [benchmarkResult, setBenchmarkResult] =
+    useState<WorkerBenchmarkResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canRunBenchmark =
+    useClientSideInference &&
+    modelConfig.supportsWorker &&
+    !modelConfig.isVisionModel;
 
   const chatTransport = useMemo(() => {
     if (useClientSideInference) {
@@ -169,6 +181,34 @@ function TransformersJSChat({
     navigator.clipboard.writeText(textContent);
   };
 
+  const handleRunBenchmark = async () => {
+    if (!canRunBenchmark || isBenchmarkRunning) {
+      return;
+    }
+
+    setIsBenchmarkRunning(true);
+    setBenchmarkResult(null);
+    setBenchmarkStatus("Preparing worker benchmark...");
+
+    try {
+      const result = await runWorkerBenchmark(modelConfig, setBenchmarkStatus);
+      setBenchmarkResult(result);
+      setBenchmarkStatus("Benchmark complete");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Benchmark failed";
+      setBenchmarkStatus(message);
+      toast.error(message);
+    } finally {
+      setIsBenchmarkRunning(false);
+    }
+  };
+
+  useEffect(() => {
+    setBenchmarkResult(null);
+    setBenchmarkStatus(null);
+  }, [modelConfig.id]);
+
   return (
     <div className="flex flex-col h-[calc(100dvh)] max-w-4xl mx-auto">
       <header>
@@ -176,6 +216,92 @@ function TransformersJSChat({
           <ModelSelector />
           <ModeToggle />
         </div>
+        {canRunBenchmark && (
+          <div className="px-4 pb-2">
+            <div className="rounded-lg border p-3 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="font-medium">Worker Perf Benchmark</p>
+                  <p className="text-muted-foreground">
+                    Runs a fixed 6-turn script and reports TTFT/latency + KV
+                    cache reuse.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleRunBenchmark}
+                  disabled={isBenchmarkRunning}
+                >
+                  {isBenchmarkRunning ? "Running..." : "Run Benchmark"}
+                </Button>
+              </div>
+
+              {benchmarkStatus && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {benchmarkStatus}
+                </p>
+              )}
+
+              {benchmarkResult && (
+                <div className="mt-3 space-y-2">
+                  <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                    <div className="rounded border p-2">
+                      Avg TTFT: {benchmarkResult.summary.avgTtftMs.toFixed(1)}ms
+                    </div>
+                    <div className="rounded border p-2">
+                      Avg Total: {benchmarkResult.summary.avgTotalMs.toFixed(1)}
+                      ms
+                    </div>
+                    <div className="rounded border p-2">
+                      Avg t/s:{" "}
+                      {benchmarkResult.summary.avgTokensPerSecond.toFixed(2)}
+                    </div>
+                    <div className="rounded border p-2">
+                      Cache reuse:{" "}
+                      {(benchmarkResult.summary.cacheReuseRate * 100).toFixed(0)}
+                      %
+                    </div>
+                  </div>
+                  <div className="overflow-auto rounded border">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted/40">
+                        <tr>
+                          <th className="px-2 py-1 text-left">Turn</th>
+                          <th className="px-2 py-1 text-left">TTFT</th>
+                          <th className="px-2 py-1 text-left">Total</th>
+                          <th className="px-2 py-1 text-left">In</th>
+                          <th className="px-2 py-1 text-left">Out</th>
+                          <th className="px-2 py-1 text-left">KV</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {benchmarkResult.turns.map((turn) => (
+                          <tr key={turn.turn} className="border-t">
+                            <td className="px-2 py-1">{turn.turn}</td>
+                            <td className="px-2 py-1">
+                              {turn.ttftMs !== null
+                                ? `${turn.ttftMs.toFixed(1)}ms`
+                                : "n/a"}
+                            </td>
+                            <td className="px-2 py-1">
+                              {turn.totalMs.toFixed(1)}ms
+                            </td>
+                            <td className="px-2 py-1">{turn.inputTokens}</td>
+                            <td className="px-2 py-1">{turn.outputTokens}</td>
+                            <td className="px-2 py-1">
+                              {turn.usedPastKeyValues ? "yes" : "no"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </header>
       {messages.length === 0 && (
         <div className="flex h-full flex-col items-center justify-center text-center">

@@ -136,6 +136,8 @@ export class TransformersJSWorkerHandler {
   private stopping_criteria = new InterruptableStoppingCriteria();
   private isVisionModel = false;
   private currentModelKey = "default";
+  private past_key_values_cache: unknown = null;
+  private cachedSequenceTokenIds: number[] | null = null;
 
   async generate(
     messages: WorkerGenerateData[],
@@ -204,6 +206,15 @@ export class TransformersJSWorkerHandler {
         return_dict: true,
         ...(hfTools ? { tools: hfTools } : {}),
       });
+    }
+
+    const inputTokenIds = isVision ? null : this.extractTokenIds(inputs.input_ids);
+    if (
+      !isVision &&
+      this.past_key_values_cache !== null &&
+      (!inputTokenIds || !this.canReuseCache(inputTokenIds))
+    ) {
+      this.clearGenerationCache();
     }
 
     // Setup performance tracking and tool call detection
@@ -277,16 +288,46 @@ export class TransformersJSWorkerHandler {
 
     this.sendMessage({ status: "start" });
 
-    const allOptions = Object.assign({}, inputs, generationOptions);
-    const generationOutput = await model.generate(allOptions);
+    const baseOptions = Object.assign({}, inputs, generationOptions);
+    let usedPastKeyValues = !isVision && this.past_key_values_cache !== null;
+    const withCacheOptions = usedPastKeyValues
+      ? Object.assign({}, baseOptions, {
+          past_key_values: this.past_key_values_cache,
+        })
+      : baseOptions;
+
+    let generationOutput: unknown;
+    try {
+      generationOutput = await model.generate(withCacheOptions);
+    } catch (error) {
+      // If cached prefill is rejected by runtime/model, retry once without cache.
+      if (
+        !isVision &&
+        this.past_key_values_cache !== null &&
+        numTokens === 0
+      ) {
+        this.clearGenerationCache();
+        usedPastKeyValues = false;
+        generationOutput = await model.generate(baseOptions);
+      } else {
+        throw error;
+      }
+    }
     const sequences = (generationOutput as any).sequences || generationOutput;
+    const inputLength = isVision
+      ? 0
+      : (inputTokenIds?.length ?? inputs.input_ids.data.length);
 
     const decoded = decodeGeneratedText(
       processor,
       sequences,
       isVision,
-      isVision ? 0 : inputs.input_ids.data.length,
+      inputLength,
     );
+
+    if (!isVision) {
+      this.updateGenerationCache(generationOutput);
+    }
 
     // Parse tool calls from the complete response if tools are available
     let toolCalls: ParsedToolCall[] = [];
@@ -299,6 +340,9 @@ export class TransformersJSWorkerHandler {
     self.postMessage({
       status: "complete",
       output: decoded,
+      inputLength,
+      numTokens,
+      usedPastKeyValues,
       toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
     });
   }
@@ -306,6 +350,7 @@ export class TransformersJSWorkerHandler {
   async load(options?: WorkerLoadData) {
     try {
       ModelManager.clearCache();
+      this.clearGenerationCache();
 
       this.isVisionModel = options?.isVisionModel || false;
 
@@ -359,6 +404,86 @@ export class TransformersJSWorkerHandler {
   reset() {
     this.stopping_criteria.reset();
     ModelManager.clearCache();
+    this.clearGenerationCache();
+  }
+
+  private clearGenerationCache() {
+    this.past_key_values_cache = null;
+    this.cachedSequenceTokenIds = null;
+  }
+
+  private canReuseCache(inputTokenIds: number[]): boolean {
+    if (!this.cachedSequenceTokenIds) {
+      return false;
+    }
+
+    if (inputTokenIds.length < this.cachedSequenceTokenIds.length) {
+      return false;
+    }
+
+    for (let i = 0; i < this.cachedSequenceTokenIds.length; i++) {
+      if (inputTokenIds[i] !== this.cachedSequenceTokenIds[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private updateGenerationCache(generationOutput: unknown) {
+    const output = generationOutput as { past_key_values?: unknown };
+    if (!output?.past_key_values) {
+      this.clearGenerationCache();
+      return;
+    }
+
+    const sequenceTokenIds = this.extractFirstSequenceTokenIds(generationOutput);
+    if (!sequenceTokenIds) {
+      this.clearGenerationCache();
+      return;
+    }
+
+    this.past_key_values_cache = output.past_key_values;
+    this.cachedSequenceTokenIds = sequenceTokenIds;
+  }
+
+  private extractFirstSequenceTokenIds(generationOutput: unknown): number[] | null {
+    const output = generationOutput as { sequences?: unknown };
+    const sequences = output?.sequences ?? generationOutput;
+
+    if (Array.isArray(sequences)) {
+      if (sequences.length === 0) {
+        return null;
+      }
+
+      const first = sequences[0];
+      if (typeof first === "number") {
+        return (sequences as number[]).slice();
+      }
+      return this.extractTokenIds(first);
+    }
+
+    return this.extractTokenIds(sequences);
+  }
+
+  private extractTokenIds(value: unknown): number[] | null {
+    if (!value || typeof value !== "object") {
+      return null;
+    }
+
+    const maybeData = (value as { data?: unknown }).data;
+    if (Array.isArray(maybeData)) {
+      return maybeData.slice();
+    }
+
+    if (ArrayBuffer.isView(maybeData)) {
+      if (maybeData instanceof DataView) {
+        return null;
+      }
+      return Array.from(maybeData as unknown as ArrayLike<number>);
+    }
+
+    return null;
   }
 
   private sendMessage(message: {

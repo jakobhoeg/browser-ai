@@ -61,6 +61,7 @@ export type WorkerResponse =
       tps?: number;
       numTokens?: number;
       inputLength?: number;
+      usedPastKeyValues?: boolean;
       toolCalls?: ParsedToolCall[];
     }
   | ProgressInfo;
