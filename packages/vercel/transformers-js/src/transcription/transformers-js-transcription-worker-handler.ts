@@ -237,8 +237,9 @@ export class TransformersJSTranscriptionWorkerHandler {
 
       // Run model with dummy input to compile shaders
       try {
+        const numMelBins = (model.config as any).num_mel_bins ?? 80;
         await (model as any).generate({
-          inputs: full([1, 80, 3000], 0.0),
+          inputs: full([1, numMelBins, 3000], 0.0),
           max_new_tokens: 1,
         });
       } catch (error) {
