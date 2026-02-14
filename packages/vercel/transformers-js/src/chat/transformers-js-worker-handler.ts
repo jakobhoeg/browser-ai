@@ -289,8 +289,8 @@ export class TransformersJSWorkerHandler {
     this.sendMessage({ status: "start" });
 
     const baseOptions = Object.assign({}, inputs, generationOptions);
-    let usedPastKeyValues = !isVision && this.past_key_values_cache !== null;
-    const withCacheOptions = usedPastKeyValues
+    const withCacheOptions =
+      !isVision && this.past_key_values_cache !== null
       ? Object.assign({}, baseOptions, {
           past_key_values: this.past_key_values_cache,
         })
@@ -307,7 +307,6 @@ export class TransformersJSWorkerHandler {
         numTokens === 0
       ) {
         this.clearGenerationCache();
-        usedPastKeyValues = false;
         generationOutput = await model.generate(baseOptions);
       } else {
         throw error;
@@ -342,7 +341,6 @@ export class TransformersJSWorkerHandler {
       output: decoded,
       inputLength,
       numTokens,
-      usedPastKeyValues,
       toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
     });
   }
