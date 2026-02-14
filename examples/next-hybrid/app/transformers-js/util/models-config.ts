@@ -26,14 +26,14 @@ export const MODELS: ModelConfig[] = [
     name: "Granite 4.0 350M (Tool calling)",
     device: "webgpu",
     dtype: "fp16",
-    supportsWorker: false,
+    supportsWorker: true,
   },
   {
     id: "onnx-community/LFM2-1.2B-Tool-ONNX",
     name: "LFM2 1.2B-Tool",
     device: "webgpu",
     dtype: "fp16",
-    supportsWorker: false,
+    supportsWorker: true,
   },
   {
     id: "HuggingFaceTB/SmolVLM-256M-Instruct",
