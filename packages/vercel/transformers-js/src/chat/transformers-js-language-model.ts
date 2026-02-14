@@ -54,6 +54,11 @@ export interface TransformersJSModelSettings extends Pick<
   "device" | "dtype"
 > {
   /**
+   * Optional ONNX external data format toggle.
+   * Keep undefined to use Transformers.js defaults.
+   */
+  use_external_data_format?: boolean;
+  /**
    * Progress callback for model initialization
    */
   initProgressCallback?: DownloadProgressCallback;
@@ -281,8 +286,14 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
     onInitProgress?: DownloadProgressCallback,
   ): Promise<void> {
     try {
-      const { isVisionModel, device, dtype, localModelPath, cacheDir } =
-        this.config;
+      const {
+        isVisionModel,
+        device,
+        dtype,
+        localModelPath,
+        cacheDir,
+        use_external_data_format,
+      } = this.config;
 
       // Configure transformers.js environment settings
       if (localModelPath) {
@@ -309,6 +320,9 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
           AutoModelForVision2Seq.from_pretrained(this.modelId, {
             dtype: resolvedDtype,
             device: resolvedDevice,
+            ...(use_external_data_format !== undefined
+              ? { use_external_data_format }
+              : {}),
             progress_callback,
           }),
         ]);
@@ -322,6 +336,9 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
           AutoModelForCausalLM.from_pretrained(this.modelId, {
             dtype: resolvedDtype,
             device: resolvedDevice,
+            ...(use_external_data_format !== undefined
+              ? { use_external_data_format }
+              : {}),
             progress_callback,
           }),
         ]);
@@ -771,6 +788,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
           modelId: this.modelId,
           dtype: this.config.dtype,
           device: this.config.device,
+          use_external_data_format: this.config.use_external_data_format,
           isVisionModel: this.config.isVisionModel,
         },
       });
