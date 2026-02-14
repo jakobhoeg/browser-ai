@@ -54,7 +54,7 @@ class ModelManager {
       modelId,
       dtype = "auto",
       device = "auto",
-      use_external_data_format = false,
+      use_external_data_format,
       isVisionModel = false,
     } = config;
 
@@ -93,7 +93,9 @@ class ModelManager {
       AutoModelForCausalLM.from_pretrained(modelId, {
         dtype: options.dtype,
         device: options.device,
-        use_external_data_format: options.use_external_data_format,
+        ...(options.use_external_data_format !== undefined
+          ? { use_external_data_format: options.use_external_data_format }
+          : {}),
         progress_callback: options.progressCallback,
       }),
     ]);
@@ -116,7 +118,9 @@ class ModelManager {
       AutoModelForVision2Seq.from_pretrained(modelId, {
         dtype: options.dtype || "fp32",
         device: options.device || "webgpu",
-        use_external_data_format: options.use_external_data_format,
+        ...(options.use_external_data_format !== undefined
+          ? { use_external_data_format: options.use_external_data_format }
+          : {}),
         progress_callback: options.progressCallback,
       }),
     ]);

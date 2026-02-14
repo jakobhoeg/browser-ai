@@ -27,6 +27,7 @@ export interface WorkerLoadData {
   modelId?: string;
   dtype?: PretrainedModelOptions["dtype"];
   device?: PretrainedModelOptions["device"];
+  use_external_data_format?: boolean;
   isVisionModel?: boolean;
 }
 
