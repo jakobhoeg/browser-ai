@@ -165,7 +165,9 @@ describe("TransformersJSWorkerHandler", () => {
     });
     expect(modelMock.generate.mock.calls[2][0].past_key_values).toBeUndefined();
     expect(
-      postMessageMock.mock.calls.some((call: any[]) => call[0]?.status === "error"),
+      postMessageMock.mock.calls.some(
+        (call: any[]) => call[0]?.status === "error",
+      ),
     ).toBe(false);
   });
 });

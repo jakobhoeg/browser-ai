@@ -208,7 +208,9 @@ export class TransformersJSWorkerHandler {
       });
     }
 
-    const inputTokenIds = isVision ? null : this.extractTokenIds(inputs.input_ids);
+    const inputTokenIds = isVision
+      ? null
+      : this.extractTokenIds(inputs.input_ids);
     if (
       !isVision &&
       this.past_key_values_cache !== null &&
@@ -291,21 +293,17 @@ export class TransformersJSWorkerHandler {
     const baseOptions = Object.assign({}, inputs, generationOptions);
     const withCacheOptions =
       !isVision && this.past_key_values_cache !== null
-      ? Object.assign({}, baseOptions, {
-          past_key_values: this.past_key_values_cache,
-        })
-      : baseOptions;
+        ? Object.assign({}, baseOptions, {
+            past_key_values: this.past_key_values_cache,
+          })
+        : baseOptions;
 
     let generationOutput: unknown;
     try {
       generationOutput = await model.generate(withCacheOptions);
     } catch (error) {
       // If cached prefill is rejected by runtime/model, retry once without cache.
-      if (
-        !isVision &&
-        this.past_key_values_cache !== null &&
-        numTokens === 0
-      ) {
+      if (!isVision && this.past_key_values_cache !== null && numTokens === 0) {
         this.clearGenerationCache();
         generationOutput = await model.generate(baseOptions);
       } else {
@@ -435,7 +433,8 @@ export class TransformersJSWorkerHandler {
       return;
     }
 
-    const sequenceTokenIds = this.extractFirstSequenceTokenIds(generationOutput);
+    const sequenceTokenIds =
+      this.extractFirstSequenceTokenIds(generationOutput);
     if (!sequenceTokenIds) {
       this.clearGenerationCache();
       return;
@@ -445,7 +444,9 @@ export class TransformersJSWorkerHandler {
     this.cachedSequenceTokenIds = sequenceTokenIds;
   }
 
-  private extractFirstSequenceTokenIds(generationOutput: unknown): number[] | null {
+  private extractFirstSequenceTokenIds(
+    generationOutput: unknown,
+  ): number[] | null {
     const output = generationOutput as { sequences?: unknown };
     const sequences = output?.sequences ?? generationOutput;
 
