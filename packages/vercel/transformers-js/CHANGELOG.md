@@ -1,5 +1,11 @@
 # @browser-ai/transformers-js
 
+## 2.1.1
+
+### Patch Changes
+
+- 7486d29: Read num_mel_bins from model config during warmup instead of hardcoding 80. Fixes transcription failures with Whisper large-v3 models (128 mel bins).
+
 ## 2.1.0
 
 ### Minor Changes
