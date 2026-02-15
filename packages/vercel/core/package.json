@@ -1,6 +1,6 @@
 {
   "name": "@browser-ai/core",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Browser AI model provider for Vercel AI SDK (Chrome & Edge)",
   "author": {
     "name": "Jakob Hoeg Mørk",

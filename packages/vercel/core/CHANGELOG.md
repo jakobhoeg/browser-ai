@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.1.1
+
+### Patch Changes
+
+- bbe98df: chore: update dependencies
+
 ## 2.1.0
 
 ### Minor Changes

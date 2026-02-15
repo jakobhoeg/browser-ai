@@ -1,5 +1,11 @@
 # @browser-ai/web-llm
 
+## 2.1.3
+
+### Patch Changes
+
+- bbe98df: chore: update dependencies
+
 ## 2.1.2
 
 ### Patch Changes

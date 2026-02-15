@@ -1,5 +1,12 @@
 # @browser-ai/transformers-js
 
+## 2.1.3
+
+### Patch Changes
+
+- bbe98df: chore: update dependencies
+- 4e434b3: fix: add past_key_values cache reuse for worker chat generation
+
 ## 2.1.2
 
 ### Patch Changes
