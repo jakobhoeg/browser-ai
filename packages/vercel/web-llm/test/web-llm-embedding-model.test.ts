@@ -8,7 +8,7 @@ const mockEngineConstructor = vi.fn();
 const mockInterruptGenerate = vi.fn();
 
 vi.mock("@mlc-ai/web-llm", () => ({
-  MLCEngine: vi.fn().mockImplementation((config) => {
+  MLCEngine: vi.fn().mockImplementation(function (config) {
     mockEngineConstructor(config);
     return {
       embeddings: { create: mockEmbeddingsCreate },
