@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.1.2
+
+### Patch Changes
+
+- 6ee5a61: Added the ability to get input usage and input quota from current session
+
 ## 2.1.1
 
 ### Patch Changes
