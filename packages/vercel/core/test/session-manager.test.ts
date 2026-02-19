@@ -371,6 +371,58 @@ describe("SessionManager", () => {
     });
   });
 
+  describe("getInputQuota", () => {
+    it("should return undefined when no session exists", () => {
+      const manager = new SessionManager({});
+      expect(manager.getInputQuota()).toBeUndefined();
+    });
+
+    it("should return the input quota from the session", async () => {
+      const mockSession = {
+        prompt: vi.fn(),
+        destroy: vi.fn(),
+        addEventListener: vi.fn(),
+        inputQuota: 4096,
+      };
+
+      vi.stubGlobal("LanguageModel", {
+        availability: vi.fn().mockResolvedValue("available"),
+        create: vi.fn().mockResolvedValue(mockSession),
+      });
+
+      const manager = new SessionManager({});
+      await manager.getSession();
+
+      expect(manager.getInputQuota()).toBe(4096);
+    });
+  });
+
+  describe("getInputUsage", () => {
+    it("should return undefined when no session exists", () => {
+      const manager = new SessionManager({});
+      expect(manager.getInputUsage()).toBeUndefined();
+    });
+
+    it("should return the input usage from the session", async () => {
+      const mockSession = {
+        prompt: vi.fn(),
+        destroy: vi.fn(),
+        addEventListener: vi.fn(),
+        inputUsage: 128,
+      };
+
+      vi.stubGlobal("LanguageModel", {
+        availability: vi.fn().mockResolvedValue("available"),
+        create: vi.fn().mockResolvedValue(mockSession),
+      });
+
+      const manager = new SessionManager({});
+      await manager.getSession();
+
+      expect(manager.getInputUsage()).toBe(128);
+    });
+  });
+
   describe("onQuotaOverflow", () => {
     it("should attach custom onQuotaOverflow handler from getSession options", async () => {
       const mockAddEventListener = vi.fn();

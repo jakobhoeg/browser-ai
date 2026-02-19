@@ -196,6 +196,22 @@ export class SessionManager {
   }
 
   /**
+   * Gets the input quota for the current session, if available
+   * @returns The input quota or undefined if not available
+   */
+  getInputQuota(): number | undefined {
+    return this.getCurrentSession()?.inputQuota;
+  }
+
+  /**
+   * Gets the input usage for the current session, if available
+   * @returns The input usage or undefined if not available
+   */
+  getInputUsage(): number | undefined {
+    return this.getCurrentSession()?.inputUsage;
+  }
+
+  /**
    * Prepares merged session options from base config and request options
    *
    * @param options - Optional request-specific options

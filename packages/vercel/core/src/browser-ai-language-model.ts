@@ -375,6 +375,22 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
   }
 
   /**
+   * Gets the input usage for the current session, if available
+   * @returns The input usage or undefined if not available
+   */
+  public getInputUsage(): number | undefined {
+    return this.sessionManager.getInputUsage();
+  }
+
+  /**
+   * Gets the input quota for the current session, if available
+   * @returns The input quota or undefined if not available
+   */
+  public getInputQuota(): number | undefined {
+    return this.sessionManager.getInputQuota();
+  }
+
+  /**
    * Check the availability of the browser AI model
    * @returns Promise resolving to "unavailable", "available", or "available-after-download"
    */
