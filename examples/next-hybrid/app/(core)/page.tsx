@@ -25,6 +25,12 @@ import {
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
 import {
+  Context,
+  ContextContent,
+  ContextContentHeader,
+  ContextTrigger,
+} from "@/components/ai-elements/context";
+import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
@@ -49,7 +55,7 @@ import {
   ToolInput,
   ToolOutput,
 } from "@/components/ai-elements/tool";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { doesBrowserSupportBrowserAI } from "@browser-ai/core";
 import {
@@ -81,6 +87,26 @@ export default function Chat() {
   const [files, setFiles] = useState<FileList | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [quotaOverflow, setQuotaOverflow] = useState(false);
+  const [inputUsage, setInputUsage] = useState<number | undefined>(undefined);
+  const [inputQuota, setInputQuota] = useState<number | undefined>(undefined);
+
+  const clientTransport = useMemo(
+    () =>
+      doesBrowserSupportModel
+        ? new ClientSideChatTransport({
+            onQuotaOverflow: () => setQuotaOverflow(true),
+          })
+        : null,
+    [],
+  );
+  const transport = useMemo(
+    () =>
+      clientTransport ??
+      new DefaultChatTransport<UIMessage>({
+        api: "/api/chat",
+      }),
+    [clientTransport],
+  );
 
   // Check browser support only on client side
   useEffect(() => {
@@ -97,13 +123,7 @@ export default function Chat() {
     stop,
     addToolApprovalResponse,
   } = useChat<BrowserAIUIMessage>({
-    transport: doesBrowserSupportModel
-      ? new ClientSideChatTransport({
-          onQuotaOverflow: () => setQuotaOverflow(true),
-        })
-      : new DefaultChatTransport<UIMessage>({
-          api: "/api/chat",
-        }),
+    transport,
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     onError(error) {
       toast.error(error.message);
@@ -123,6 +143,28 @@ export default function Chat() {
     },
     experimental_throttle: 75,
   });
+
+  const syncInputContext = useCallback(() => {
+    if (!clientTransport) return;
+    setInputUsage(clientTransport.getInputUsage());
+    setInputQuota(clientTransport.getInputQuota());
+  }, [clientTransport]);
+
+  useEffect(() => {
+    syncInputContext();
+  }, [messages, status, syncInputContext]);
+
+  useEffect(() => {
+    if (
+      !clientTransport ||
+      (status !== "submitted" && status !== "streaming")
+    ) {
+      return;
+    }
+
+    const intervalId = window.setInterval(syncInputContext, 250);
+    return () => window.clearInterval(intervalId);
+  }, [clientTransport, status, syncInputContext]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -539,6 +581,14 @@ export default function Chat() {
               </PromptInputButton>
             </PromptInputTools>
             <div className="flex items-center gap-2">
+              {inputQuota !== undefined && inputQuota > 0 && (
+                <Context usedTokens={inputUsage ?? 0} maxTokens={inputQuota}>
+                  <ContextTrigger className="h-8 px-2.5" />
+                  <ContextContent align="end">
+                    <ContextContentHeader />
+                  </ContextContent>
+                </Context>
+              )}
               <Kbd>
                 <KbdKey aria-label="Control">Ctrl</KbdKey>
                 <KbdKey>Enter</KbdKey>

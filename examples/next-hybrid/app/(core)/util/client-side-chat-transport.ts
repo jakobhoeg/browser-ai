@@ -105,6 +105,14 @@ export class ClientSideChatTransport implements ChatTransport<BrowserAIUIMessage
     });
   }
 
+  public getInputUsage(): number | undefined {
+    return this.model.getInputUsage();
+  }
+
+  public getInputQuota(): number | undefined {
+    return this.model.getInputQuota();
+  }
+
   async sendMessages(
     options: {
       chatId: string;
