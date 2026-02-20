@@ -9,7 +9,6 @@
 </a>
 
 <br />
-<br />
   
 <img src="npm-header.gif">
 </div>
