@@ -102,7 +102,7 @@ for await (const chunk of result.textStream) {
 
 ## Sponsors
 
-This project is proudly sponsored by [Chrome for Developers](https://developer.chrome.com/) and is part of the of the [Vercel OSS Program](https://vercel.com/open-source-program).
+This project is proudly sponsored by [Chrome for Developers](https://developer.chrome.com/) and is part of the [Vercel OSS Program](https://vercel.com/open-source-program).
 
 ## Contributing
 
