@@ -1,6 +1,15 @@
 # Browser AI model providers for Vercel AI SDK
 
 <div align="center">
+
+<br />
+
+<a href="https://vercel.com/oss">
+  <img alt="Vercel OSS Program" src="https://vercel.com/oss/program-badge.svg" />
+</a>
+
+<br />
+  
 <img src="npm-header.gif">
 </div>
 
@@ -9,12 +18,6 @@
 [![NPM Downloads](https://img.shields.io/npm/dm/%40browser-ai%2Fcore)](https://www.npmjs.com/package/@browser-ai/core)
 [![NPM Downloads](https://img.shields.io/npm/dm/%40browser-ai%2Fweb-llm)](https://www.npmjs.com/package/@browser-ai/web-llm)
 [![NPM Downloads](https://img.shields.io/npm/dm/%40browser-ai%2Ftransformers-js)](https://www.npmjs.com/package/@browser-ai/transformers-js)
-
-</div>
-
-<div align="center">
-
-> Formerly known as `@built-in-ai`
 
 </div>
 
@@ -93,12 +96,12 @@ for await (const chunk of result.textStream) {
 
 ## Example applications
 
-- Huggingface Transformers.js: [next-vercel-ai-sdk-v5-transformers-js-example](https://github.com/huggingface/transformers.js-examples/tree/main/next-vercel-ai-sdk-v5)
-- Huggingface Transformers.js: [next-vercel-ai-sdk-v6-transformers-js-example](https://github.com/huggingface/transformers.js-examples/blob/main/next-vercel-ai-sdk-v6-tool-calling)
+- Huggingface Transformers.js AI SDK v5: [next-vercel-ai-sdk-v5-transformers-js-example](https://github.com/huggingface/transformers.js-examples/tree/main/next-vercel-ai-sdk-v5)
+- Huggingface Transformers.js AI SDK v6: [next-vercel-ai-sdk-v6-transformers-js-example](https://github.com/huggingface/transformers.js-examples/blob/main/next-vercel-ai-sdk-v6-tool-calling)
 
 ## Sponsors
 
-This project is proudly sponsored by [Chrome for Developers](https://developer.chrome.com/).
+This project is proudly sponsored by [Chrome for Developers](https://developer.chrome.com/) and is part of the [Vercel OSS Program](https://vercel.com/open-source-program).
 
 ## Contributing
 
