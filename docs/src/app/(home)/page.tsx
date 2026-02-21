@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MoveUpRight } from "lucide-react";
 import Link from "next/link";
+import { VercelOSSLogo } from "@/components/logos/vercel-oss-logo";
 
 const tweetIds = [
   "1995030252259774593",
@@ -25,6 +26,11 @@ const sponsors = [
     name: "Chrome for Developers",
     href: "https://developer.chrome.com/",
     logo: ChromeLogo,
+  },
+  {
+    name: "",
+    href: "https://vercel.com/oss",
+    logo: VercelOSSLogo,
   },
 ];
 
@@ -82,7 +88,7 @@ export default function HomePage() {
               </h2>
             </div>
             <div className="relative items-center px-2 font-mono text-xs/6 text-black/40 dark:text-white/40 max-sm:px-4 flex after:absolute after:bottom-0 after:h-px after:w-[200vw] after:bg-gray-950/5 dark:after:bg-white/10 after:-left-[100vw]">
-              <p>
+              <p className="text-balance">
                 This project is proudly sponsored by the creators behind the{" "}
                 <a
                   href="https://developer.chrome.com/docs/ai/built-in"
@@ -92,7 +98,16 @@ export default function HomePage() {
                 >
                   Built-in AI
                 </a>{" "}
-                initiative.
+                initiative, and is part of the{" "}
+                <a
+                  href="https://vercel.com/oss"
+                  target="_blank"
+                  rel="noopener"
+                  className="underline"
+                >
+                  Vercel OSS Program
+                </a>
+                .
               </p>
             </div>
 
