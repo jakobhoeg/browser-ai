@@ -48,11 +48,11 @@ export function BrowserAILogoWithMenu({
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem onClick={copyAsSvg}>
-          <CopyIcon className="mr-2 h-4 w-4" />
+          <CopyIcon className="mr-1 size-4" />
           Copy logo as SVG
         </ContextMenuItem>
         <ContextMenuItem onClick={downloadAsSvg}>
-          <DownloadIcon className="mr-2 h-4 w-4" />
+          <DownloadIcon className="mr-1 size-4" />
           Download logo as SVG
         </ContextMenuItem>
       </ContextMenuContent>
