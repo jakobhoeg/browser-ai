@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.1.3
+
+### Patch Changes
+
+- c309a09: perf: improve stream parsing perf from O(n²) to O(n)
+
 ## 2.1.2
 
 ### Patch Changes
