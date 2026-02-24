@@ -32,6 +32,9 @@ import {
   createUnsupportedToolWarning,
   isFunctionTool,
   ToolCallFenceDetector,
+  createArgumentsStreamState,
+  extractArgumentsDelta,
+  extractToolName,
   type ParsedToolCall,
   type ToolDefinition,
   type DownloadProgressCallback,
@@ -147,83 +150,6 @@ class InterruptableStoppingCriteria extends StoppingCriteria {
   _call(input_ids: number[][], scores: number[][]): boolean[] {
     return new Array(input_ids.length).fill(this.interrupted);
   }
-}
-
-/**
- * Extract tool name from partial fence content for early emission
- * This allows us to emit tool-input-start as soon as we know the tool name
- * Expects JSON format: {"name":"toolName"
- */
-function extractToolName(content: string): string | null {
-  // For JSON mode: {"name":"toolName"
-  const jsonMatch = content.match(/\{\s*"name"\s*:\s*"([^"]+)"/);
-  if (jsonMatch) {
-    return jsonMatch[1];
-  }
-  return null;
-}
-
-/**
- * Extract the argument section from a streaming tool call fence.
- * Returns the substring after `"arguments":` (best-effort for partial JSON).
- */
-function extractArgumentsContent(content: string): string {
-  const match = content.match(/"arguments"\s*:\s*/);
-  if (!match || match.index === undefined) {
-    return "";
-  }
-
-  const startIndex = match.index + match[0].length;
-  let result = "";
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-  let started = false;
-
-  for (let i = startIndex; i < content.length; i++) {
-    const char = content[i];
-    result += char;
-
-    if (!started) {
-      if (!/\s/.test(char)) {
-        started = true;
-        if (char === "{" || char === "[") {
-          depth = 1;
-        }
-      }
-      continue;
-    }
-
-    if (escaped) {
-      escaped = false;
-      continue;
-    }
-
-    if (char === "\\") {
-      escaped = true;
-      continue;
-    }
-
-    if (char === '"') {
-      inString = !inString;
-      continue;
-    }
-
-    if (!inString) {
-      if (char === "{" || char === "[") {
-        depth += 1;
-      } else if (char === "}" || char === "]") {
-        if (depth > 0) {
-          depth -= 1;
-          if (depth === 0) {
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  return result;
 }
 
 export class TransformersJSLanguageModel implements LanguageModelV3 {
@@ -857,7 +783,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
           let currentToolCallId: string | null = null;
           let toolInputStartEmitted = false;
           let accumulatedFenceContent = "";
-          let streamedArgumentsLength = 0;
+          let argumentsStreamState = createArgumentsStreamState();
           let insideFence = false;
           let toolCallDetected = false;
 
@@ -887,7 +813,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
                     .slice(2, 9)}`;
                   toolInputStartEmitted = false;
                   accumulatedFenceContent = "";
-                  streamedArgumentsLength = 0;
+                  argumentsStreamState = createArgumentsStreamState();
                   insideFence = true;
 
                   continue;
@@ -900,19 +826,16 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
                   }
 
                   if (toolInputStartEmitted && currentToolCallId) {
-                    const argsContent = extractArgumentsContent(
+                    const delta = extractArgumentsDelta(
                       accumulatedFenceContent,
+                      argumentsStreamState,
                     );
-                    if (argsContent.length > streamedArgumentsLength) {
-                      const delta = argsContent.slice(streamedArgumentsLength);
-                      streamedArgumentsLength = argsContent.length;
-                      if (delta.length > 0) {
-                        controller.enqueue({
-                          type: "tool-input-delta",
-                          id: currentToolCallId,
-                          delta,
-                        });
-                      }
+                    if (delta.length > 0) {
+                      controller.enqueue({
+                        type: "tool-input-delta",
+                        id: currentToolCallId,
+                        delta,
+                      });
                     }
                   }
 
@@ -929,7 +852,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
                     currentToolCallId = null;
                     toolInputStartEmitted = false;
                     accumulatedFenceContent = "";
-                    streamedArgumentsLength = 0;
+                    argumentsStreamState = createArgumentsStreamState();
                     insideFence = false;
                     continue;
                   }
@@ -956,21 +879,16 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
                         toolInputStartEmitted = true;
                       }
 
-                      const argsContent = extractArgumentsContent(
+                      const delta = extractArgumentsDelta(
                         accumulatedFenceContent,
+                        argumentsStreamState,
                       );
-                      if (argsContent.length > streamedArgumentsLength) {
-                        const delta = argsContent.slice(
-                          streamedArgumentsLength,
-                        );
-                        streamedArgumentsLength = argsContent.length;
-                        if (delta.length > 0) {
-                          controller.enqueue({
-                            type: "tool-input-delta",
-                            id: toolCallId,
-                            delta,
-                          });
-                        }
+                      if (delta.length > 0) {
+                        controller.enqueue({
+                          type: "tool-input-delta",
+                          id: toolCallId,
+                          delta,
+                        });
                       }
                     } else {
                       controller.enqueue({
@@ -1009,7 +927,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
                   currentToolCallId = null;
                   toolInputStartEmitted = false;
                   accumulatedFenceContent = "";
-                  streamedArgumentsLength = 0;
+                  argumentsStreamState = createArgumentsStreamState();
                   insideFence = false;
                   continue;
                 }
@@ -1034,21 +952,16 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
                     }
 
                     if (toolInputStartEmitted && currentToolCallId) {
-                      const argsContent = extractArgumentsContent(
+                      const delta = extractArgumentsDelta(
                         accumulatedFenceContent,
+                        argumentsStreamState,
                       );
-                      if (argsContent.length > streamedArgumentsLength) {
-                        const delta = argsContent.slice(
-                          streamedArgumentsLength,
-                        );
-                        streamedArgumentsLength = argsContent.length;
-                        if (delta.length > 0) {
-                          controller.enqueue({
-                            type: "tool-input-delta",
-                            id: currentToolCallId,
-                            delta,
-                          });
-                        }
+                      if (delta.length > 0) {
+                        controller.enqueue({
+                          type: "tool-input-delta",
+                          id: currentToolCallId,
+                          delta,
+                        });
                       }
                     }
                   }
