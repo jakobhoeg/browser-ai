@@ -9,3 +9,9 @@ export {
   type FencePattern,
   type ToolCallFenceDetectorOptions,
 } from "./tool-call-detector";
+export {
+  createArgumentsStreamState,
+  extractArgumentsDelta,
+  extractToolName,
+  type ArgumentsStreamState,
+} from "./tool-call-stream-utils";

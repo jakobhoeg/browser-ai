@@ -31,10 +31,14 @@ export {
 // Streaming
 export {
   ToolCallFenceDetector,
+  createArgumentsStreamState,
   createBasicDetector,
   createExtendedDetector,
   DEFAULT_FENCE_PATTERNS,
   EXTENDED_FENCE_PATTERNS,
+  extractArgumentsDelta,
+  extractToolName,
+  type ArgumentsStreamState,
   type FenceDetectionResult,
   type StreamingFenceResult,
   type FencePattern,
