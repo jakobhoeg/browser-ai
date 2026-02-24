@@ -10,6 +10,14 @@ import type { DownloadProgressCallback } from "@browser-ai/shared";
  * Custom provider options that extend the standard API
  */
 interface CustomProviderOptions {
+  /**
+   * Callback invoked when the model context window is exceeded.
+   * Replaces the deprecated `onQuotaOverflow`.
+   */
+  onContextOverflow?: (event: Event) => void;
+  /**
+   * @deprecated Use `onContextOverflow` instead.
+   */
   onQuotaOverflow?: (event: Event) => void;
 }
 
@@ -109,18 +117,30 @@ export class SessionManager {
     // Create the session
     this.session = await LanguageModel.create(sessionOptions);
 
-    // Check for onQuotaOverflow in request options first, then fall back to base options
-    const onQuotaOverflow =
-      options?.onQuotaOverflow || this.baseOptions.onQuotaOverflow;
+    // Resolve overflow handler: onContextOverflow takes precedence, onQuotaOverflow is the deprecated alias
+    const onOverflow =
+      options?.onContextOverflow ||
+      this.baseOptions.onContextOverflow ||
+      options?.onQuotaOverflow ||
+      this.baseOptions.onQuotaOverflow;
 
-    if (onQuotaOverflow) {
-      this.session.addEventListener("quotaoverflow", onQuotaOverflow);
-    } else {
-      this.session.addEventListener("quotaoverflow", () => {
+    const overflowHandler =
+      onOverflow ??
+      (() => {
         console.warn(
-          "Model quota exceeded. Consider handling 'quotaoverflow' event.",
+          "Model context window exceeded. Consider handling the 'contextoverflow' event.",
         );
       });
+
+    // Register on the new event name; fall back to the old name for older Chrome builds.
+    // Cast to `object` in the `in` check to prevent TypeScript narrowing `this.session`
+    // to `never` in the else branch (our augmentation declares oncontextoverflow on all
+    // LanguageModel instances, but older builds may not have it at runtime).
+    const session = this.session;
+    if ("oncontextoverflow" in (session as object)) {
+      session.addEventListener("contextoverflow", overflowHandler);
+    } else {
+      session.addEventListener("quotaoverflow", overflowHandler);
     }
     return this.session;
   }
@@ -196,19 +216,39 @@ export class SessionManager {
   }
 
   /**
-   * Gets the input quota for the current session, if available
-   * @returns The input quota or undefined if not available
+   * Gets the context window size (token limit) for the current session, if available.
+   * @returns The context window size or undefined if not available
    */
-  getInputQuota(): number | undefined {
-    return this.getCurrentSession()?.inputQuota;
+  getContextWindow(): number | undefined {
+    const session = this.getCurrentSession();
+    if (!session) return undefined;
+    // contextWindow is the new name; fall back to inputQuota for older Chrome builds
+    return (session as LanguageModel).contextWindow ?? session.inputQuota;
   }
 
   /**
-   * Gets the input usage for the current session, if available
-   * @returns The input usage or undefined if not available
+   * Gets the current context usage (tokens consumed) for the current session, if available.
+   * @returns The context usage or undefined if not available
+   */
+  getContextUsage(): number | undefined {
+    const session = this.getCurrentSession();
+    if (!session) return undefined;
+    // contextUsage is the new name; fall back to inputUsage for older Chrome builds
+    return (session as LanguageModel).contextUsage ?? session.inputUsage;
+  }
+
+  /**
+   * @deprecated Use {@link getContextWindow} instead.
+   */
+  getInputQuota(): number | undefined {
+    return this.getContextWindow();
+  }
+
+  /**
+   * @deprecated Use {@link getContextUsage} instead.
    */
   getInputUsage(): number | undefined {
-    return this.getCurrentSession()?.inputUsage;
+    return this.getContextUsage();
   }
 
   /**
@@ -231,7 +271,8 @@ export class SessionManager {
         systemMessage,
         expectedInputs,
         onDownloadProgress,
-        onQuotaOverflow,
+        onContextOverflow: _onContextOverflow,
+        onQuotaOverflow: _onQuotaOverflow,
         ...createOptions
       } = options;
 
