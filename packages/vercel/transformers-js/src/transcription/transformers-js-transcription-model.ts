@@ -154,7 +154,7 @@ export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
       // Warm up the model (skip in server environment to reduce initialization time)
       if (isBrowserEnvironment()) {
         try {
-          const numMelBins = (model.config as any).num_mel_bins ?? 80;
+          const numMelBins = (model.config as any)?.num_mel_bins ?? 80;
           await model.generate({
             inputs: full([1, numMelBins, 3000], 0.0),
           });
