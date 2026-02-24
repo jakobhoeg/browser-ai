@@ -1,5 +1,11 @@
 # @browser-ai/transformers-js
 
+## 2.1.5
+
+### Patch Changes
+
+- 254330a: fix: guard transcription warmup when model config is missing
+
 ## 2.1.4
 
 ### Patch Changes
