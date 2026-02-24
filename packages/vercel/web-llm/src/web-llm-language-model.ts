@@ -30,6 +30,9 @@ import {
   createUnsupportedToolWarning,
   isFunctionTool,
   ToolCallFenceDetector,
+  createArgumentsStreamState,
+  extractArgumentsDelta,
+  extractToolName,
   type ToolDefinition,
   type DownloadProgressCallback,
 } from "@browser-ai/shared";
@@ -67,74 +70,6 @@ export interface WebLLMSettings {
    * @default undefined
    */
   worker?: Worker;
-}
-
-function extractToolName(content: string): string | null {
-  // For JSON mode: {"name":"toolName"
-  const jsonMatch = content.match(/\{\s*"name"\s*:\s*"([^"]+)"/);
-  if (jsonMatch) {
-    return jsonMatch[1];
-  }
-  return null;
-}
-
-function extractArgumentsContent(content: string): string {
-  const match = content.match(/"arguments"\s*:\s*/);
-  if (!match || match.index === undefined) {
-    return "";
-  }
-
-  const startIndex = match.index + match[0].length;
-  let result = "";
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-  let started = false;
-
-  for (let i = startIndex; i < content.length; i++) {
-    const char = content[i];
-    result += char;
-
-    if (!started) {
-      if (!/\s/.test(char)) {
-        started = true;
-        if (char === "{" || char === "[") {
-          depth = 1;
-        }
-      }
-      continue;
-    }
-
-    if (escaped) {
-      escaped = false;
-      continue;
-    }
-
-    if (char === "\\") {
-      escaped = true;
-      continue;
-    }
-
-    if (char === '"') {
-      inString = !inString;
-      continue;
-    }
-
-    if (!inString) {
-      if (char === "{" || char === "[") {
-        depth += 1;
-      } else if (char === "}" || char === "]") {
-        if (depth > 0) {
-          depth -= 1;
-          if (depth === 0) {
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  return result;
 }
 
 type WebLLMConfig = {
@@ -712,7 +647,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
           let currentToolCallId: string | null = null;
           let toolInputStartEmitted = false;
           let accumulatedFenceContent = "";
-          let streamedArgumentsLength = 0;
+          let argumentsStreamState = createArgumentsStreamState();
           let insideFence = false;
 
           for await (const chunk of response) {
@@ -745,7 +680,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
                     .slice(2, 9)}`;
                   toolInputStartEmitted = false;
                   accumulatedFenceContent = "";
-                  streamedArgumentsLength = 0;
+                  argumentsStreamState = createArgumentsStreamState();
                   insideFence = true;
 
                   continue;
@@ -758,19 +693,16 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
                   }
 
                   if (toolInputStartEmitted && currentToolCallId) {
-                    const argsContent = extractArgumentsContent(
+                    const delta = extractArgumentsDelta(
                       accumulatedFenceContent,
+                      argumentsStreamState,
                     );
-                    if (argsContent.length > streamedArgumentsLength) {
-                      const delta = argsContent.slice(streamedArgumentsLength);
-                      streamedArgumentsLength = argsContent.length;
-                      if (delta.length > 0) {
-                        controller.enqueue({
-                          type: "tool-input-delta",
-                          id: currentToolCallId,
-                          delta,
-                        });
-                      }
+                    if (delta.length > 0) {
+                      controller.enqueue({
+                        type: "tool-input-delta",
+                        id: currentToolCallId,
+                        delta,
+                      });
                     }
                   }
 
@@ -787,7 +719,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
                     currentToolCallId = null;
                     toolInputStartEmitted = false;
                     accumulatedFenceContent = "";
-                    streamedArgumentsLength = 0;
+                    argumentsStreamState = createArgumentsStreamState();
                     insideFence = false;
                     continue;
                   }
@@ -814,21 +746,16 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
                         toolInputStartEmitted = true;
                       }
 
-                      const argsContent = extractArgumentsContent(
+                      const delta = extractArgumentsDelta(
                         accumulatedFenceContent,
+                        argumentsStreamState,
                       );
-                      if (argsContent.length > streamedArgumentsLength) {
-                        const delta = argsContent.slice(
-                          streamedArgumentsLength,
-                        );
-                        streamedArgumentsLength = argsContent.length;
-                        if (delta.length > 0) {
-                          controller.enqueue({
-                            type: "tool-input-delta",
-                            id: toolCallId,
-                            delta,
-                          });
-                        }
+                      if (delta.length > 0) {
+                        controller.enqueue({
+                          type: "tool-input-delta",
+                          id: toolCallId,
+                          delta,
+                        });
                       }
                     } else {
                       controller.enqueue({
@@ -867,7 +794,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
                   currentToolCallId = null;
                   toolInputStartEmitted = false;
                   accumulatedFenceContent = "";
-                  streamedArgumentsLength = 0;
+                  argumentsStreamState = createArgumentsStreamState();
                   insideFence = false;
                   continue;
                 }
@@ -892,21 +819,16 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
                     }
 
                     if (toolInputStartEmitted && currentToolCallId) {
-                      const argsContent = extractArgumentsContent(
+                      const delta = extractArgumentsDelta(
                         accumulatedFenceContent,
+                        argumentsStreamState,
                       );
-                      if (argsContent.length > streamedArgumentsLength) {
-                        const delta = argsContent.slice(
-                          streamedArgumentsLength,
-                        );
-                        streamedArgumentsLength = argsContent.length;
-                        if (delta.length > 0) {
-                          controller.enqueue({
-                            type: "tool-input-delta",
-                            id: currentToolCallId,
-                            delta,
-                          });
-                        }
+                      if (delta.length > 0) {
+                        controller.enqueue({
+                          type: "tool-input-delta",
+                          id: currentToolCallId,
+                          delta,
+                        });
                       }
                     }
                   }
