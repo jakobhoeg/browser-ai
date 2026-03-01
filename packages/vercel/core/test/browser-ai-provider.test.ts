@@ -4,11 +4,11 @@ import { BrowserAIChatLanguageModel } from "../src/chat/browser-ai-language-mode
 import { BrowserAIEmbeddingModel } from "../src/embedding/browser-ai-embedding-model";
 
 // Mock the dependencies
-vi.mock("../src/browser-ai-language-model", () => ({
+vi.mock("../src/chat/browser-ai-language-model", () => ({
   BrowserAIChatLanguageModel: vi.fn(),
 }));
 
-vi.mock("../src/browser-ai-embedding-model", () => ({
+vi.mock("../src/embedding/browser-ai-embedding-model", () => ({
   BrowserAIEmbeddingModel: vi.fn(),
 }));
 
