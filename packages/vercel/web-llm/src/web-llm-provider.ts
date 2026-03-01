@@ -7,12 +7,12 @@ import {
   WebLLMLanguageModel,
   WebLLMModelId,
   WebLLMSettings,
-} from "./web-llm-language-model";
+} from "./chat/web-llm-language-model";
 import {
   WebLLMEmbeddingModel,
   WebLLMEmbeddingModelId,
   WebLLMEmbeddingSettings,
-} from "./web-llm-embedding-model";
+} from "./embedding/web-llm-embedding-model";
 
 export interface WebLLMProvider extends ProviderV3 {
   (modelId: WebLLMModelId, settings?: WebLLMSettings): WebLLMLanguageModel;

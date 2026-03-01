@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { convertToWebLLMMessages } from "../src/convert-to-webllm-messages";
+import { convertToWebLLMMessages } from "../src/utils/convert-to-webllm-messages";
 import {
   LanguageModelV3Prompt,
   UnsupportedFunctionalityError,
