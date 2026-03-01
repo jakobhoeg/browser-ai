@@ -31,10 +31,7 @@ import {
   createUnsupportedSettingWarning,
   createUnsupportedToolWarning,
   isFunctionTool,
-  ToolCallFenceDetector,
-  createArgumentsStreamState,
-  extractArgumentsDelta,
-  extractToolName,
+  processToolCallStream,
   type ParsedToolCall,
   type ToolDefinition,
   type DownloadProgressCallback,
@@ -777,226 +774,31 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
                 abortSignal: options.abortSignal,
               });
 
-          const fenceDetector = new ToolCallFenceDetector();
-          let accumulatedText = "";
-
-          let currentToolCallId: string | null = null;
-          let toolInputStartEmitted = false;
-          let accumulatedFenceContent = "";
-          let argumentsStreamState = createArgumentsStreamState();
-          let insideFence = false;
-          let toolCallDetected = false;
-
           let lastUsage: { inputTokens?: number; outputTokens?: number } = {};
 
-          for await (const event of generationStream) {
-            if (event.type === "delta") {
-              accumulatedText += event.delta;
-              fenceDetector.addChunk(event.delta);
-
-              // Process buffer using streaming detection
-              while (fenceDetector.hasContent() && !toolCallDetected) {
-                const wasInsideFence = insideFence;
-                const result = fenceDetector.detectStreamingFence();
-                insideFence = result.inFence;
-
-                let madeProgress = false;
-
-                if (!wasInsideFence && result.inFence) {
-                  if (result.safeContent) {
-                    emitTextDelta(result.safeContent);
-                    madeProgress = true;
-                  }
-
-                  currentToolCallId = `call_${Date.now()}_${Math.random()
-                    .toString(36)
-                    .slice(2, 9)}`;
-                  toolInputStartEmitted = false;
-                  accumulatedFenceContent = "";
-                  argumentsStreamState = createArgumentsStreamState();
-                  insideFence = true;
-
-                  continue;
-                }
-
-                if (result.completeFence) {
-                  madeProgress = true;
-                  if (result.safeContent) {
-                    accumulatedFenceContent += result.safeContent;
-                  }
-
-                  if (toolInputStartEmitted && currentToolCallId) {
-                    const delta = extractArgumentsDelta(
-                      accumulatedFenceContent,
-                      argumentsStreamState,
-                    );
-                    if (delta.length > 0) {
-                      controller.enqueue({
-                        type: "tool-input-delta",
-                        id: currentToolCallId,
-                        delta,
-                      });
-                    }
-                  }
-
-                  const parsed = parseJsonFunctionCalls(result.completeFence);
-                  const parsedToolCalls = parsed.toolCalls;
-                  const selectedToolCalls = parsedToolCalls.slice(0, 1);
-
-                  if (selectedToolCalls.length === 0) {
-                    emitTextDelta(result.completeFence);
-                    if (result.textAfterFence) {
-                      emitTextDelta(result.textAfterFence);
-                    }
-
-                    currentToolCallId = null;
-                    toolInputStartEmitted = false;
-                    accumulatedFenceContent = "";
-                    argumentsStreamState = createArgumentsStreamState();
-                    insideFence = false;
-                    continue;
-                  }
-
-                  if (selectedToolCalls.length > 0 && currentToolCallId) {
-                    selectedToolCalls[0].toolCallId = currentToolCallId;
-                  }
-
-                  for (const [index, call] of selectedToolCalls.entries()) {
-                    const toolCallId =
-                      index === 0 && currentToolCallId
-                        ? currentToolCallId
-                        : call.toolCallId;
-                    const toolName = call.toolName;
-                    const argsJson = JSON.stringify(call.args ?? {});
-
-                    if (toolCallId === currentToolCallId) {
-                      if (!toolInputStartEmitted) {
-                        controller.enqueue({
-                          type: "tool-input-start",
-                          id: toolCallId,
-                          toolName,
-                        });
-                        toolInputStartEmitted = true;
-                      }
-
-                      const delta = extractArgumentsDelta(
-                        accumulatedFenceContent,
-                        argumentsStreamState,
-                      );
-                      if (delta.length > 0) {
-                        controller.enqueue({
-                          type: "tool-input-delta",
-                          id: toolCallId,
-                          delta,
-                        });
-                      }
-                    } else {
-                      controller.enqueue({
-                        type: "tool-input-start",
-                        id: toolCallId,
-                        toolName,
-                      });
-                      if (argsJson.length > 0) {
-                        controller.enqueue({
-                          type: "tool-input-delta",
-                          id: toolCallId,
-                          delta: argsJson,
-                        });
-                      }
-                    }
-
-                    controller.enqueue({
-                      type: "tool-input-end",
-                      id: toolCallId,
-                    });
-                    controller.enqueue({
-                      type: "tool-call",
-                      toolCallId,
-                      toolName,
-                      input: argsJson,
-                    });
-                  }
-
-                  if (result.textAfterFence) {
-                    emitTextDelta(result.textAfterFence);
-                  }
-
-                  madeProgress = true;
-                  toolCallDetected = true;
-
-                  currentToolCallId = null;
-                  toolInputStartEmitted = false;
-                  accumulatedFenceContent = "";
-                  argumentsStreamState = createArgumentsStreamState();
-                  insideFence = false;
-                  continue;
-                }
-
-                if (insideFence) {
-                  if (result.safeContent) {
-                    accumulatedFenceContent += result.safeContent;
-                    madeProgress = true;
-
-                    const toolName = extractToolName(accumulatedFenceContent);
-                    if (
-                      toolName &&
-                      !toolInputStartEmitted &&
-                      currentToolCallId
-                    ) {
-                      controller.enqueue({
-                        type: "tool-input-start",
-                        id: currentToolCallId,
-                        toolName,
-                      });
-                      toolInputStartEmitted = true;
-                    }
-
-                    if (toolInputStartEmitted && currentToolCallId) {
-                      const delta = extractArgumentsDelta(
-                        accumulatedFenceContent,
-                        argumentsStreamState,
-                      );
-                      if (delta.length > 0) {
-                        controller.enqueue({
-                          type: "tool-input-delta",
-                          id: currentToolCallId,
-                          delta,
-                        });
-                      }
-                    }
-                  }
-
-                  continue;
-                }
-
-                if (!insideFence && result.safeContent) {
-                  emitTextDelta(result.safeContent);
-                  madeProgress = true;
-                }
-
-                if (!madeProgress) {
-                  break;
-                }
-              }
-            } else if (event.type === "complete") {
-              lastUsage = event.usage || {};
+          const chunks = (async function* () {
+            for await (const event of generationStream) {
+              if (event.type === "delta") yield event.delta;
+              else if (event.type === "complete") lastUsage = event.usage || {};
             }
-          }
+          })();
 
-          // Emit any remaining buffer content
-          if (fenceDetector.hasContent()) {
-            emitTextDelta(fenceDetector.getBuffer());
-            fenceDetector.clearBuffer();
+          const result = await processToolCallStream(
+            chunks,
+            emitTextDelta,
+            controller,
+          );
+
+          if (result.trailingText) {
+            emitTextDelta(result.trailingText);
           }
 
           if (textStarted) {
             controller.enqueue({ type: "text-end", id: textId });
           }
 
-          // Determine finish reason
-          const { toolCalls } = parseJsonFunctionCalls(accumulatedText);
           const finishReason: LanguageModelV3FinishReason =
-            toolCalls.length > 0
+            result.toolCallDetected
               ? { unified: "tool-calls", raw: "tool-calls" }
               : { unified: "stop", raw: "stop" };
 

@@ -38,9 +38,12 @@ export {
   EXTENDED_FENCE_PATTERNS,
   extractArgumentsDelta,
   extractToolName,
+  generateToolCallId,
+  processToolCallStream,
   type ArgumentsStreamState,
   type FenceDetectionResult,
   type StreamingFenceResult,
   type FencePattern,
   type ToolCallFenceDetectorOptions,
+  type ToolCallStreamResult,
 } from "./streaming";
