@@ -15,3 +15,8 @@ export {
   extractToolName,
   type ArgumentsStreamState,
 } from "./tool-call-stream-utils";
+export {
+  generateToolCallId,
+  processToolCallStream,
+  type ToolCallStreamResult,
+} from "./stream-processor";
