@@ -2,7 +2,10 @@ export {
   WebLLMLanguageModel,
   doesBrowserSupportWebLLM,
 } from "./chat/web-llm-language-model";
-export type { WebLLMModelId, WebLLMSettings } from "./chat/web-llm-language-model";
+export type {
+  WebLLMModelId,
+  WebLLMSettings,
+} from "./chat/web-llm-language-model";
 
 export { WebLLMEmbeddingModel } from "./embedding/web-llm-embedding-model";
 export type {
