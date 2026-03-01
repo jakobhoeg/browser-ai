@@ -1,5 +1,11 @@
 # @browser-ai/transformers-js
 
+## 2.1.6
+
+### Patch Changes
+
+- a34bcea: refactor: extract shared streaming processor to eliminate duplicated doStream logic
+
 ## 2.1.5
 
 ### Patch Changes
