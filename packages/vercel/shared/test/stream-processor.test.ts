@@ -23,7 +23,10 @@ function makeTextCollector() {
   return { emitTextDelta, getText: () => parts.join("") };
 }
 
-async function run(chunks: string[], options?: { stopEarlyOnToolCall?: boolean }) {
+async function run(
+  chunks: string[],
+  options?: { stopEarlyOnToolCall?: boolean },
+) {
   const { controller, events } = makeController();
   const { emitTextDelta, getText } = makeTextCollector();
   const result = await processToolCallStream(
@@ -51,7 +54,8 @@ describe("processToolCallStream — plain text", () => {
 });
 
 describe("processToolCallStream — valid tool call", () => {
-  const FENCE = '```tool_call\n{"name": "search", "arguments": {"q": "test"}}\n```';
+  const FENCE =
+    '```tool_call\n{"name": "search", "arguments": {"q": "test"}}\n```';
 
   it("detects the tool call and returns the parsed result", async () => {
     const { result } = await run([FENCE]);
@@ -65,8 +69,12 @@ describe("processToolCallStream — valid tool call", () => {
     const { events } = await run([FENCE]);
     const types = events.map((e) => e.type);
     expect(types).toContain("tool-input-start");
-    expect(types.indexOf("tool-input-start")).toBeLessThan(types.indexOf("tool-input-end"));
-    expect(types.indexOf("tool-input-end")).toBeLessThan(types.indexOf("tool-call"));
+    expect(types.indexOf("tool-input-start")).toBeLessThan(
+      types.indexOf("tool-input-end"),
+    );
+    expect(types.indexOf("tool-input-end")).toBeLessThan(
+      types.indexOf("tool-call"),
+    );
   });
 
   it("emits a tool-call event with correct fields", async () => {
@@ -83,8 +91,17 @@ describe("processToolCallStream — valid tool call", () => {
   it("uses the same toolCallId across all events for the same call", async () => {
     const { events } = await run([FENCE]);
     const ids = events
-      .filter((e) => ["tool-input-start", "tool-input-delta", "tool-input-end", "tool-call"].includes(e.type))
-      .map((e) => (e.type === "tool-call" ? e.toolCallId : (e as { id: string }).id));
+      .filter((e) =>
+        [
+          "tool-input-start",
+          "tool-input-delta",
+          "tool-input-end",
+          "tool-call",
+        ].includes(e.type),
+      )
+      .map((e) =>
+        e.type === "tool-call" ? e.toolCallId : (e as { id: string }).id,
+      );
     expect(new Set(ids).size).toBe(1);
     expect(ids[0]).toMatch(/^call_/);
   });
@@ -142,7 +159,9 @@ describe("processToolCallStream — malformed fence", () => {
   });
 
   it("treats a fence with no 'name' field as plain text", async () => {
-    const { result } = await run(['```tool_call\n{"arguments": {"x": 1}}\n```']);
+    const { result } = await run([
+      '```tool_call\n{"arguments": {"x": 1}}\n```',
+    ]);
     expect(result.toolCallDetected).toBe(false);
   });
 });
@@ -169,7 +188,9 @@ describe("processToolCallStream — stopEarlyOnToolCall", () => {
     const { gen, consumed } = makeTrackedChunks(CHUNKS);
     const { controller } = makeController();
     const { emitTextDelta } = makeTextCollector();
-    await processToolCallStream(gen(), emitTextDelta, controller, { stopEarlyOnToolCall: true });
+    await processToolCallStream(gen(), emitTextDelta, controller, {
+      stopEarlyOnToolCall: true,
+    });
     expect(consumed).not.toContain("extra-1");
   });
 

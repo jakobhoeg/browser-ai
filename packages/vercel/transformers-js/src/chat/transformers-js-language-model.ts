@@ -779,8 +779,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
           const chunks = (async function* () {
             for await (const event of generationStream) {
               if (event.type === "delta") yield event.delta;
-              else if (event.type === "complete")
-                lastUsage = event.usage || {};
+              else if (event.type === "complete") lastUsage = event.usage || {};
             }
           })();
 
