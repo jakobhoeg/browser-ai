@@ -20,8 +20,8 @@ import {
   type PretrainedModelOptions,
   type ProgressInfo,
 } from "@huggingface/transformers";
-import { convertToTransformersMessages } from "./convert-to-transformers-message";
-import type { TransformersMessage } from "./convert-to-transformers-message";
+import { convertToTransformersMessages } from "../utils/convert-to-transformers-message";
+import type { TransformersMessage } from "../utils/convert-to-transformers-message";
 import type {
   ModelInstance,
   GenerationOptions,
@@ -42,7 +42,7 @@ import {
 import {
   createMainThreadGenerationStream,
   createWorkerGenerationStream,
-} from "./generation-stream";
+} from "../utils/generation-stream";
 
 declare global {
   interface Navigator {

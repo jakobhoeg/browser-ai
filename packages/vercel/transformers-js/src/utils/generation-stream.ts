@@ -9,7 +9,7 @@ import type { TransformersMessage } from "./convert-to-transformers-message";
 import type {
   ModelInstance,
   GenerationOptions,
-} from "./transformers-js-worker-types";
+} from "../chat/transformers-js-worker-types";
 import type { ToolDefinition, ParsedToolCall } from "@browser-ai/shared";
 import { convertToolsToHuggingFaceFormat } from "./convert-tools";
 
