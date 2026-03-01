@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { browserAI, createBrowserAI } from "../src/browser-ai-provider";
-import { BrowserAIChatLanguageModel } from "../src/browser-ai-language-model";
-import { BrowserAIEmbeddingModel } from "../src/browser-ai-embedding-model";
+import { BrowserAIChatLanguageModel } from "../src/chat/browser-ai-language-model";
+import { BrowserAIEmbeddingModel } from "../src/embedding/browser-ai-embedding-model";
 
 // Mock the dependencies
 vi.mock("../src/browser-ai-language-model", () => ({

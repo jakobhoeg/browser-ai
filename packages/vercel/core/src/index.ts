@@ -2,12 +2,12 @@
 export {
   BrowserAIChatLanguageModel,
   doesBrowserSupportBrowserAI,
-} from "./browser-ai-language-model";
-export type { BrowserAIChatSettings } from "./browser-ai-language-model";
+} from "./chat/browser-ai-language-model";
+export type { BrowserAIChatSettings } from "./chat/browser-ai-language-model";
 
 // Embedding model
-export { BrowserAIEmbeddingModel } from "./browser-ai-embedding-model";
-export type { BrowserAIEmbeddingModelSettings } from "./browser-ai-embedding-model";
+export { BrowserAIEmbeddingModel } from "./embedding/browser-ai-embedding-model";
+export type { BrowserAIEmbeddingModelSettings } from "./embedding/browser-ai-embedding-model";
 
 // Provider
 export { browserAI, createBrowserAI } from "./browser-ai-provider";

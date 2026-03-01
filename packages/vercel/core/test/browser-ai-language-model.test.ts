@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import {
   BrowserAIChatLanguageModel,
   BrowserAIChatSettings,
-} from "../src/browser-ai-language-model";
+} from "../src/chat/browser-ai-language-model";
 
 import { generateText, streamText, generateObject, streamObject } from "ai";
 import { LanguageModelV3StreamPart, LoadSettingError } from "@ai-sdk/provider";

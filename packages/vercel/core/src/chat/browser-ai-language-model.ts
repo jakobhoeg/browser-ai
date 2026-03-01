@@ -23,10 +23,10 @@ import {
   type ParsedToolCall,
   type DownloadProgressCallback,
 } from "@browser-ai/shared";
-import { convertToBrowserAIMessages } from "./convert-to-browser-ai-messages";
-import { gatherUnsupportedSettingWarnings } from "./utils/warnings";
-import { hasMultimodalContent, getExpectedInputs } from "./utils/prompt-utils";
-import { SessionManager } from "./models/session-manager";
+import { convertToBrowserAIMessages } from "../utils/convert-to-browser-ai-messages";
+import { gatherUnsupportedSettingWarnings } from "../utils/warnings";
+import { hasMultimodalContent, getExpectedInputs } from "../utils/prompt-utils";
+import { SessionManager } from "./session-manager";
 
 export type BrowserAIChatModelId = "text";
 
