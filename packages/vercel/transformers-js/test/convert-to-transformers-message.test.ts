@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { convertToTransformersMessages } from "../src/chat/convert-to-transformers-message";
+import { convertToTransformersMessages } from "../src/utils/convert-to-transformers-message";
 import {
   UnsupportedFunctionalityError,
   type LanguageModelV3Prompt,

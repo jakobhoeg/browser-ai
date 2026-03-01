@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { BrowserAIEmbeddingModel } from "../src/browser-ai-embedding-model";
+import { BrowserAIEmbeddingModel } from "../src/embedding/browser-ai-embedding-model";
 import { TextEmbedder } from "@mediapipe/tasks-text";
 
 vi.mock("@mediapipe/tasks-text", () => ({

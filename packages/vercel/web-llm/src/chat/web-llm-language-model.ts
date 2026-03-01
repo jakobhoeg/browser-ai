@@ -11,7 +11,7 @@ import {
   LanguageModelV3GenerateResult,
   LanguageModelV3StreamResult,
 } from "@ai-sdk/provider";
-import { convertToWebLLMMessages } from "./convert-to-webllm-messages";
+import { convertToWebLLMMessages } from "../utils/convert-to-webllm-messages";
 
 import {
   AppConfig,
@@ -22,7 +22,7 @@ import {
   MLCEngineConfig,
   MLCEngineInterface,
 } from "@mlc-ai/web-llm";
-import { Availability } from "./types";
+import { Availability } from "../types";
 import {
   buildJsonToolSystemPrompt,
   parseJsonFunctionCalls,
@@ -39,12 +39,12 @@ import {
 import {
   prependSystemPromptToMessages,
   extractSystemPrompt,
-} from "./utils/prompt-utils";
+} from "../utils/prompt-utils";
 import {
   isMobile,
   checkWebGPU,
   doesBrowserSupportWebLLM,
-} from "./utils/browser";
+} from "../utils/browser";
 
 export { doesBrowserSupportWebLLM };
 

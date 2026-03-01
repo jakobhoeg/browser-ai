@@ -2,9 +2,9 @@ import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import {
   BrowserAIChatLanguageModel,
   BrowserAIChatSettings,
-} from "../src/browser-ai-language-model";
+} from "../src/chat/browser-ai-language-model";
 
-import { generateText, streamText, generateObject, streamObject } from "ai";
+import { generateText, streamText, Output } from "ai";
 import { LanguageModelV3StreamPart, LoadSettingError } from "@ai-sdk/provider";
 import { z } from "zod";
 
@@ -102,7 +102,7 @@ describe("BrowserAIChatLanguageModel", () => {
     expect(result.text).toBe("I am a helpful assistant.");
 
     // Verify system prompt is passed via initialPrompts (Prompt API spec)
-    const createCall = (globalThis.LanguageModel as any).create.mock
+    const createCall = (globalThis as any).LanguageModel.create.mock
       .calls[0][0];
     expect(createCall.initialPrompts).toEqual([
       { role: "system", content: "You are a helpful assistant." },
@@ -195,13 +195,13 @@ describe("BrowserAIChatLanguageModel", () => {
       age: z.number(),
     });
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: new BrowserAIChatLanguageModel("text"),
-      schema,
+      output: Output.object({ schema }),
       prompt: "Create a person",
     });
 
-    expect(object).toEqual({ name: "John", age: 30 });
+    expect(output).toEqual({ name: "John", age: 30 });
     expect(mockPrompt).toHaveBeenCalledWith(
       [
         {
@@ -232,13 +232,13 @@ describe("BrowserAIChatLanguageModel", () => {
       users: z.array(z.string()),
     });
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: new BrowserAIChatLanguageModel("text"),
-      schema,
+      output: Output.object({ schema }),
       prompt: "List some users",
     });
 
-    expect(object).toEqual({ users: ["Alice", "Bob"] });
+    expect(output).toEqual({ users: ["Alice", "Bob"] });
     expect(mockPrompt).toHaveBeenCalledWith(
       [
         {
@@ -285,13 +285,13 @@ describe("BrowserAIChatLanguageModel", () => {
       total: z.number(),
     });
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: new BrowserAIChatLanguageModel("text"),
-      schema,
+      output: Output.object({ schema }),
       prompt: "Create a user list",
     });
 
-    expect(object).toEqual({
+    expect(output).toEqual({
       users: [
         { id: 1, name: "Alice", active: true },
         { id: 2, name: "Bob", active: false },
@@ -510,7 +510,7 @@ Running the tool now.`);
       ]);
 
       // Verify tool instructions are passed via initialPrompts (Prompt API spec)
-      const createCall = (globalThis.LanguageModel as any).create.mock
+      const createCall = (globalThis as any).LanguageModel.create.mock
         .calls[0][0];
       expect(createCall.initialPrompts[0].role).toBe("system");
       expect(createCall.initialPrompts[0].content).toContain("getWeather");
@@ -677,7 +677,7 @@ Running the tool now.`;
       });
 
       // Verify tool instructions are passed via initialPrompts (Prompt API spec)
-      const createCall = (globalThis.LanguageModel as any).create.mock
+      const createCall = (globalThis as any).LanguageModel.create.mock
         .calls[0][0];
       expect(createCall.initialPrompts[0].role).toBe("system");
       expect(createCall.initialPrompts[0].content).toContain("getWeather");

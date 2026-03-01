@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { convertToBrowserAIMessages } from "../src/convert-to-browser-ai-messages";
+import { convertToBrowserAIMessages } from "../src/utils/convert-to-browser-ai-messages";
 import {
   LanguageModelV3Prompt,
   LanguageModelV3Message,

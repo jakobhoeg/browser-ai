@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { SessionManager } from "../src/models/session-manager";
+import { SessionManager } from "../src/chat/session-manager";
 import type { DownloadProgressCallback } from "@browser-ai/shared";
 
 describe("SessionManager", () => {

@@ -7,11 +7,11 @@ import {
   BrowserAIChatLanguageModel,
   BrowserAIChatModelId,
   BrowserAIChatSettings,
-} from "./browser-ai-language-model";
+} from "./chat/browser-ai-language-model";
 import {
   BrowserAIEmbeddingModel,
   BrowserAIEmbeddingModelSettings,
-} from "./browser-ai-embedding-model";
+} from "./embedding/browser-ai-embedding-model";
 
 export interface BrowserAIProvider extends ProviderV3 {
   (

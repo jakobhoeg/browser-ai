@@ -9,14 +9,14 @@ import {
   load_image,
   type ProgressInfo,
 } from "@huggingface/transformers";
-import { decodeGeneratedText } from "./decode-utils";
+import { decodeGeneratedText } from "../utils/decode-utils";
 import {
   parseJsonFunctionCalls,
   ToolCallFenceDetector,
   type ToolDefinition,
   type ParsedToolCall,
 } from "@browser-ai/shared";
-import { convertToolsToHuggingFaceFormat } from "./convert-tools";
+import { convertToolsToHuggingFaceFormat } from "../utils/convert-tools";
 import type {
   WorkerMessage,
   WorkerGlobalScope,

@@ -13,8 +13,8 @@ import {
   MLCEngineConfig,
   MLCEngineInterface,
 } from "@mlc-ai/web-llm";
-import { Availability } from "./types";
-import { isMobile, checkWebGPU } from "./utils/browser";
+import { Availability } from "../types";
+import { isMobile, checkWebGPU } from "../utils/browser";
 
 export type WebLLMEmbeddingModelId = string;
 
