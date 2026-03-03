@@ -18,11 +18,7 @@ export interface ConvertedMessages {
 function convertBase64ToUint8Array(base64: string): Uint8Array {
   try {
     const binaryString = atob(base64);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes;
+    return Uint8Array.from(binaryString, (c) => c.charCodeAt(0));
   } catch (error) {
     throw new Error(`Failed to convert base64 to Uint8Array: ${error}`);
   }

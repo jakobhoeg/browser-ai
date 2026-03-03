@@ -5,43 +5,16 @@
 import type { LanguageModelV3Prompt } from "@ai-sdk/provider";
 
 /**
- * Detect if the prompt contains multimodal content (images, audio)
- *
- * @param prompt - The prompt to check
- * @returns true if the prompt contains any file content
- */
-export function hasMultimodalContent(prompt: LanguageModelV3Prompt): boolean {
-  for (const message of prompt) {
-    if (message.role === "user") {
-      for (const part of message.content) {
-        if (part.type === "file") {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-}
-
-/**
- * Get expected inputs based on prompt content.
- * Analyzes the prompt to determine what types of inputs (text, image, audio) are used.
- * This information is used to configure the Prompt API session with the correct input capabilities.
+ * Detect multimodal content and collect expected input types in a single pass.
  *
  * @param prompt - The prompt to analyze
- * @returns Array of expected input types for session creation (only includes image/audio, text is assumed)
- * @example
- * ```typescript
- * const inputs = getExpectedInputs(prompt);
- * // Returns: [{ type: "image" }] if prompt contains images
- * // Returns: [] if prompt only contains text
- * ```
+ * @returns hasMultiModalInput flag and the expectedInputs array (undefined when text-only)
  */
-export function getExpectedInputs(
-  prompt: LanguageModelV3Prompt,
-): Array<{ type: "text" | "image" | "audio" }> {
-  const inputs = new Set<"text" | "image" | "audio">();
-  // Don't add text by default - it's assumed by the Prompt API
+export function getMultimodalInfo(prompt: LanguageModelV3Prompt): {
+  hasMultiModalInput: boolean;
+  expectedInputs: Array<{ type: "text" | "image" | "audio" }> | undefined;
+} {
+  const inputs = new Set<"image" | "audio">();
 
   for (const message of prompt) {
     if (message.role === "user") {
@@ -57,7 +30,13 @@ export function getExpectedInputs(
     }
   }
 
-  return Array.from(inputs).map((type) => ({ type }));
+  const hasMultiModalInput = inputs.size > 0;
+  return {
+    hasMultiModalInput,
+    expectedInputs: hasMultiModalInput
+      ? Array.from(inputs, (type) => ({ type }))
+      : undefined,
+  };
 }
 
 /**

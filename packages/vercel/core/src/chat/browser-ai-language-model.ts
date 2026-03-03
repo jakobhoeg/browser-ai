@@ -21,7 +21,7 @@ import {
 } from "@browser-ai/shared";
 import { convertToBrowserAIMessages } from "../utils/convert-to-browser-ai-messages";
 import { gatherUnsupportedSettingWarnings } from "../utils/warnings";
-import { hasMultimodalContent, getExpectedInputs } from "../utils/prompt-utils";
+import { getMultimodalInfo } from "../utils/prompt-utils";
 import { SessionManager } from "./session-manager";
 
 export type BrowserAIChatModelId = "text";
@@ -149,8 +149,8 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       );
     }
 
-    // Check if this is a multimodal prompt
-    const hasMultiModalInput = hasMultimodalContent(prompt);
+    // Detect multimodal content and collect expected inputs in one pass
+    const { hasMultiModalInput, expectedInputs } = getMultimodalInfo(prompt);
 
     // Convert messages to the DOM API format
     const { systemMessage, messages } = convertToBrowserAIMessages(prompt);
@@ -180,9 +180,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       warnings,
       promptOptions,
       hasMultiModalInput,
-      expectedInputs: hasMultiModalInput
-        ? getExpectedInputs(prompt)
-        : undefined,
+      expectedInputs,
       functionTools,
     };
   }
