@@ -162,6 +162,35 @@ describe("WebLLMLanguageModel", () => {
         }),
       );
     });
+
+    it("should forward extra_body provider options to the request", async () => {
+      mockChatCompletionsCreate.mockResolvedValue({
+        choices: [{ message: { content: "ok" }, finish_reason: "stop" }],
+        usage: { prompt_tokens: 5, completion_tokens: 2, total_tokens: 7 },
+      });
+
+      const model = new WebLLMLanguageModel("test-model");
+      await model.doGenerate({
+        prompt: [{ role: "user", content: [{ type: "text", text: "hi" }] }],
+        providerOptions: {
+          "web-llm": {
+            extra_body: {
+              enable_thinking: true,
+              enable_latency_breakdown: false,
+            },
+          },
+        },
+      });
+
+      expect(mockChatCompletionsCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          extra_body: {
+            enable_thinking: true,
+            enable_latency_breakdown: false,
+          },
+        }),
+      );
+    });
   });
 
   describe("doStream", () => {

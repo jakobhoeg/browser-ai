@@ -15,6 +15,7 @@ import { convertToWebLLMMessages } from "../utils/convert-to-webllm-messages";
 
 import {
   AppConfig,
+  ChatCompletionRequestNonStreaming,
   ChatCompletionRequestStreaming,
   CreateWebWorkerMLCEngine,
   InitProgressReport,
@@ -266,7 +267,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
     const messages = convertToWebLLMMessages(prompt);
 
     // Build request options
-    const requestOptions: any = {
+    const requestOptions: ChatCompletionRequestNonStreaming = {
       messages,
       temperature,
       max_tokens: maxOutputTokens,
@@ -274,12 +275,17 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       seed,
     };
 
-    if (providerOptions?.extra_body) {
+    const webLLMOptions = providerOptions?.[this.provider];
+    const extraBody = webLLMOptions?.extra_body as
+      | Record<string, unknown>
+      | undefined;
+    if (extraBody) {
       // https://webllm.mlc.ai/docs/user/api_reference.html#generationconfig
       requestOptions.extra_body = {
-        enable_thinking: providerOptions.extra_body.enable_thinking,
-        enable_latency_breakdown:
-          providerOptions.extra_body.enable_latency_breakdown,
+        enable_thinking: extraBody.enable_thinking as boolean | undefined,
+        enable_latency_breakdown: extraBody.enable_latency_breakdown as
+          | boolean
+          | undefined,
       };
     }
 
@@ -400,7 +406,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
               reasoning: undefined,
             },
           },
-          request: { body: { messages: promptMessages, ...requestOptions } },
+          request: { body: { ...requestOptions, messages: promptMessages } },
           warnings,
         };
       }
@@ -439,7 +445,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
             total: response.usage?.total_tokens,
           },
         },
-        request: { body: { messages: promptMessages, ...requestOptions } },
+        request: { body: { ...requestOptions, messages: promptMessages } },
         warnings,
       };
     } catch (error) {
@@ -688,7 +694,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
 
     return {
       stream,
-      request: { body: { messages: promptMessages, ...requestOptions } },
+      request: { body: { ...requestOptions, messages: promptMessages } },
     };
   }
 }
