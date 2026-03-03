@@ -1,133 +1,68 @@
 import { describe, it, expect } from "vitest";
 import {
-  hasMultimodalContent,
-  getExpectedInputs,
+  getMultimodalInfo,
   prependSystemPromptToMessages,
 } from "../src/utils/prompt-utils";
 import type { LanguageModelV3Prompt } from "@ai-sdk/provider";
 
 describe("prompt-utils", () => {
-  describe("hasMultimodalContent", () => {
-    it("returns false for text-only prompt", () => {
+  describe("getMultimodalInfo", () => {
+    it("returns hasMultiModalInput=false and no expectedInputs for text-only prompt", () => {
       const prompt: LanguageModelV3Prompt = [
         { role: "user", content: [{ type: "text", text: "Hello" }] },
       ];
-      expect(hasMultimodalContent(prompt)).toBe(false);
+      expect(getMultimodalInfo(prompt)).toEqual({
+        hasMultiModalInput: false,
+        expectedInputs: undefined,
+      });
     });
 
-    it("returns true when prompt contains image file", () => {
+    it("detects image file", () => {
       const prompt: LanguageModelV3Prompt = [
         {
           role: "user",
           content: [
             { type: "text", text: "What's in this image?" },
-            {
-              type: "file",
-              data: new Uint8Array(),
-              mediaType: "image/png",
-            },
+            { type: "file", data: new Uint8Array(), mediaType: "image/png" },
           ],
         },
       ];
-      expect(hasMultimodalContent(prompt)).toBe(true);
+      expect(getMultimodalInfo(prompt)).toEqual({
+        hasMultiModalInput: true,
+        expectedInputs: [{ type: "image" }],
+      });
     });
 
-    it("returns true when prompt contains audio file", () => {
+    it("detects audio file", () => {
       const prompt: LanguageModelV3Prompt = [
         {
           role: "user",
           content: [
-            {
-              type: "file",
-              data: new Uint8Array(),
-              mediaType: "audio/wav",
-            },
+            { type: "file", data: new Uint8Array(), mediaType: "audio/wav" },
           ],
         },
       ];
-      expect(hasMultimodalContent(prompt)).toBe(true);
+      expect(getMultimodalInfo(prompt)).toEqual({
+        hasMultiModalInput: true,
+        expectedInputs: [{ type: "audio" }],
+      });
     });
 
-    it("returns false when assistant has file (only checks user messages)", () => {
-      const prompt: LanguageModelV3Prompt = [
-        { role: "user", content: [{ type: "text", text: "Hello" }] },
-        {
-          role: "assistant",
-          content: [
-            {
-              type: "file" as any, // This shouldn't happen but testing the logic
-              data: new Uint8Array(),
-              mediaType: "image/png",
-            },
-          ],
-        },
-      ];
-      expect(hasMultimodalContent(prompt)).toBe(false);
-    });
-  });
-
-  describe("getExpectedInputs", () => {
-    it("returns empty array for text-only prompt", () => {
-      const prompt: LanguageModelV3Prompt = [
-        { role: "user", content: [{ type: "text", text: "Hello" }] },
-      ];
-      expect(getExpectedInputs(prompt)).toEqual([]);
-    });
-
-    it("returns image for image file", () => {
+    it("detects both image and audio when both present", () => {
       const prompt: LanguageModelV3Prompt = [
         {
           role: "user",
           content: [
-            {
-              type: "file",
-              data: new Uint8Array(),
-              mediaType: "image/jpeg",
-            },
+            { type: "file", data: new Uint8Array(), mediaType: "image/png" },
+            { type: "file", data: new Uint8Array(), mediaType: "audio/wav" },
           ],
         },
       ];
-      expect(getExpectedInputs(prompt)).toEqual([{ type: "image" }]);
-    });
-
-    it("returns audio for audio file", () => {
-      const prompt: LanguageModelV3Prompt = [
-        {
-          role: "user",
-          content: [
-            {
-              type: "file",
-              data: new Uint8Array(),
-              mediaType: "audio/mp3",
-            },
-          ],
-        },
-      ];
-      expect(getExpectedInputs(prompt)).toEqual([{ type: "audio" }]);
-    });
-
-    it("returns both image and audio when both present", () => {
-      const prompt: LanguageModelV3Prompt = [
-        {
-          role: "user",
-          content: [
-            {
-              type: "file",
-              data: new Uint8Array(),
-              mediaType: "image/png",
-            },
-            {
-              type: "file",
-              data: new Uint8Array(),
-              mediaType: "audio/wav",
-            },
-          ],
-        },
-      ];
-      const result = getExpectedInputs(prompt);
-      expect(result).toHaveLength(2);
-      expect(result).toContainEqual({ type: "image" });
-      expect(result).toContainEqual({ type: "audio" });
+      const { hasMultiModalInput, expectedInputs } = getMultimodalInfo(prompt);
+      expect(hasMultiModalInput).toBe(true);
+      expect(expectedInputs).toHaveLength(2);
+      expect(expectedInputs).toContainEqual({ type: "image" });
+      expect(expectedInputs).toContainEqual({ type: "audio" });
     });
 
     it("deduplicates multiple images", () => {
@@ -135,20 +70,15 @@ describe("prompt-utils", () => {
         {
           role: "user",
           content: [
-            {
-              type: "file",
-              data: new Uint8Array(),
-              mediaType: "image/png",
-            },
-            {
-              type: "file",
-              data: new Uint8Array(),
-              mediaType: "image/jpeg",
-            },
+            { type: "file", data: new Uint8Array(), mediaType: "image/png" },
+            { type: "file", data: new Uint8Array(), mediaType: "image/jpeg" },
           ],
         },
       ];
-      expect(getExpectedInputs(prompt)).toEqual([{ type: "image" }]);
+      expect(getMultimodalInfo(prompt)).toEqual({
+        hasMultiModalInput: true,
+        expectedInputs: [{ type: "image" }],
+      });
     });
 
     it("ignores files with unknown media types", () => {
@@ -164,7 +94,30 @@ describe("prompt-utils", () => {
           ],
         },
       ];
-      expect(getExpectedInputs(prompt)).toEqual([]);
+      expect(getMultimodalInfo(prompt)).toEqual({
+        hasMultiModalInput: false,
+        expectedInputs: undefined,
+      });
+    });
+
+    it("ignores files on assistant messages (only checks user messages)", () => {
+      const prompt: LanguageModelV3Prompt = [
+        { role: "user", content: [{ type: "text", text: "Hello" }] },
+        {
+          role: "assistant",
+          content: [
+            {
+              type: "file" as any,
+              data: new Uint8Array(),
+              mediaType: "image/png",
+            },
+          ],
+        },
+      ];
+      expect(getMultimodalInfo(prompt)).toEqual({
+        hasMultiModalInput: false,
+        expectedInputs: undefined,
+      });
     });
   });
 
