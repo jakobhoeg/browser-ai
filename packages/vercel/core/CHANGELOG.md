@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.1.5
+
+### Patch Changes
+
+- b3f53a8: perf: reduce prompt traversals and optimize base64 conversion
+
 ## 2.1.4
 
 ### Patch Changes

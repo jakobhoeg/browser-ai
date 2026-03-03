@@ -1,5 +1,11 @@
 # @browser-ai/web-llm
 
+## 2.1.6
+
+### Patch Changes
+
+- 72b741c: fix: type requestOptions & fix providerOptions key lookup
+
 ## 2.1.5
 
 ### Patch Changes
