@@ -260,21 +260,6 @@ export class SessionManager {
       }
     }
 
-    // Remove any custom options that aren't part of the standard API
-    this.sanitizeOptions(mergedOptions);
-
     return mergedOptions;
-  }
-
-  /**
-   * Removes custom options that aren't part of LanguageModel.create API
-   *
-   * @param options - Options object to sanitize in-place
-   * @private
-   */
-  private sanitizeOptions(
-    options: LanguageModelCreateOptions & Partial<CustomProviderOptions>,
-  ): void {
-    // Remove our custom options that the Prompt API doesn't understand
   }
 }
