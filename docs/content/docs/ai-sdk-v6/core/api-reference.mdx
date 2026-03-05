@@ -14,7 +14,7 @@ Creates a browser AI model instance for chat.
 - `settings` (optional): Configuration options
   - `temperature?: number` - Controls randomness (0-1)
   - `topK?: number` - Limits vocabulary selection
-  - `onQuotaOverflow?: (event: Event) => void` - Callback for when model quota is exceeded
+  - `onContextOverflow?: (event: Event) => void` - Callback for when the model context window is exceeded
 
 **Returns:** `BrowserAIChatLanguageModel`
 
@@ -70,15 +70,15 @@ Creates a language model session with optional download progress monitoring.
 
 **Returns:** `Promise<BrowserAIChatLanguageModel>` - The configured language model instance
 
-### `BrowserAIChatLanguageModel.getInputUsage()`
+### `BrowserAIChatLanguageModel.getContextUsage()`
 
-Gets the current input usage of the current session. If the session is not available returns undefined.
+Gets the current context usage (tokens consumed) of the current session. If the session is not available returns undefined.
 
 **Returns:** `number | undefined`
 
-### `BrowserAIChatLanguageModel.getInputQuota()`
+### `BrowserAIChatLanguageModel.getContextWindow()`
 
-Gets the current input quota of the current session. If the session is not available returns undefined.
+Gets the context window size (token limit) of the current session. If the session is not available returns undefined.
 
 **Returns:** `number | undefined`
 
