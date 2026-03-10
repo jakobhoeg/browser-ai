@@ -1,3 +1,4 @@
+import * as TransformersModule from "@huggingface/transformers";
 import {
   AutoTokenizer,
   AutoModelForCausalLM,
@@ -56,6 +57,7 @@ class ModelManager {
       device = "auto",
       use_external_data_format,
       isVisionModel = false,
+      modelArchitecture,
     } = config;
 
     const instancePromise = isVisionModel
@@ -64,6 +66,7 @@ class ModelManager {
           device,
           use_external_data_format,
           progressCallback,
+          modelArchitecture,
         })
       : this.createTextModel(modelId, {
           dtype,
@@ -88,7 +91,6 @@ class ModelManager {
     const [tokenizer, model] = await Promise.all([
       AutoTokenizer.from_pretrained(modelId, {
         progress_callback: options.progressCallback,
-        legacy: true,
       }),
       AutoModelForCausalLM.from_pretrained(modelId, {
         dtype: options.dtype,
@@ -109,13 +111,20 @@ class ModelManager {
       device?: PretrainedModelOptions["device"];
       use_external_data_format?: boolean;
       progressCallback?: (progress: ProgressInfo) => void;
+      modelArchitecture?: string;
     },
   ): Promise<ModelInstance> {
+    const ModelClass =
+      options.modelArchitecture &&
+      typeof (TransformersModule as Record<string, unknown>)[options.modelArchitecture] === "function"
+        ? (TransformersModule as unknown as Record<string, { from_pretrained: (id: string, opts?: unknown) => Promise<unknown> }>)[options.modelArchitecture]
+        : AutoModelForVision2Seq;
+
     const [processor, model] = await Promise.all([
       AutoProcessor.from_pretrained(modelId, {
         progress_callback: options.progressCallback,
       }),
-      AutoModelForVision2Seq.from_pretrained(modelId, {
+      ModelClass.from_pretrained(modelId, {
         dtype: options.dtype || "fp32",
         device: options.device || "webgpu",
         ...(options.use_external_data_format !== undefined
@@ -124,7 +133,7 @@ class ModelManager {
         progress_callback: options.progressCallback,
       }),
     ]);
-    return [processor, model];
+    return [processor, model as import("@huggingface/transformers").PreTrainedModel];
   }
 
   static clearCache() {
@@ -138,6 +147,7 @@ export class TransformersJSWorkerHandler {
   private currentModelKey = "default";
   private past_key_values_cache: unknown = null;
   private cachedSequenceTokenIds: number[] | null = null;
+  private chatTemplateOptions: Record<string, unknown> = {};
 
   async generate(
     messages: WorkerGenerateData[],
@@ -169,7 +179,7 @@ export class TransformersJSWorkerHandler {
     const isVision = this.isVisionModel;
 
     const hfTools =
-      tools && tools.length > 0
+      !isVision && tools && tools.length > 0
         ? convertToolsToHuggingFaceFormat(tools)
         : undefined;
 
@@ -180,10 +190,9 @@ export class TransformersJSWorkerHandler {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let inputs: any;
     if (isVision) {
-      // For vision models, use last message and extract images
-      const lastMessages = processedMessages.slice(-1);
+      // For vision models, extract images from all messages
       const images = await Promise.all(
-        lastMessages
+        processedMessages
           .map((x) => x.content)
           .flat(Infinity)
           .filter(
@@ -193,18 +202,22 @@ export class TransformersJSWorkerHandler {
               "image" in msg &&
               msg.image !== undefined,
           )
-          .map((msg) => load_image(msg.image)),
+          .map(async (msg) => {
+            const img = await load_image(msg.image);
+            return img.resize(448, 448);
+          }),
       );
-      const text = processor.apply_chat_template(lastMessages as any, {
+      const text = processor.apply_chat_template(processedMessages as any, {
         add_generation_prompt: true,
-        ...(hfTools ? { tools: hfTools } : {}),
+        ...this.chatTemplateOptions,
       });
-      inputs = await processor(text, images);
+      inputs = images.length > 0 ? await processor(text, images) : await processor(text);
     } else {
       inputs = processor.apply_chat_template(processedMessages as any, {
         add_generation_prompt: true,
         return_dict: true,
         ...(hfTools ? { tools: hfTools } : {}),
+        ...this.chatTemplateOptions,
       });
     }
 
@@ -253,11 +266,19 @@ export class TransformersJSWorkerHandler {
       this.sendUpdate(output, tps, numTokens);
     };
 
+    const enableThinking = !!this.chatTemplateOptions?.enable_thinking;
+
+    // Emit opening <think> tag since the template injects it as a prompt prefix,
+    // not as generated output, so the streamer never sees it.
+    if (enableThinking) {
+      this.sendUpdate("<think>");
+    }
+
     const streamer = new TextStreamer(
       isVision ? (processor as any).tokenizer : processor,
       {
         skip_prompt: true,
-        skip_special_tokens: true,
+        skip_special_tokens: !enableThinking,
         callback_function: output_callback,
         token_callback_function: token_callback,
       },
@@ -348,7 +369,8 @@ export class TransformersJSWorkerHandler {
       ModelManager.clearCache();
       this.clearGenerationCache();
 
-      this.isVisionModel = options?.isVisionModel || false;
+      this.isVisionModel = options?.isVisionModel || !!options?.modelArchitecture;
+      this.chatTemplateOptions = options?.chatTemplateOptions ?? {};
 
       const modelId =
         options?.modelId ||

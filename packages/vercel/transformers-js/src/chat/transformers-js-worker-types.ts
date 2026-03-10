@@ -29,6 +29,17 @@ export interface WorkerLoadData {
   device?: PretrainedModelOptions["device"];
   use_external_data_format?: boolean;
   isVisionModel?: boolean;
+  /**
+   * Name of the model class to use from @huggingface/transformers.
+   * Used for vision models that require a specific class instead of AutoModelForVision2Seq.
+   * @example "Qwen3_5ForConditionalGeneration"
+   */
+  modelArchitecture?: string;
+  /**
+   * Extra options forwarded to processor.apply_chat_template().
+   * @example { tokenizer_kwargs: { enable_thinking: false } }
+   */
+  chatTemplateOptions?: Record<string, unknown>;
 }
 
 export interface WorkerGenerateData {
@@ -90,4 +101,14 @@ export interface WorkerLoadOptions extends Pick<
   modelId?: string;
   use_external_data_format?: boolean;
   isVisionModel?: boolean;
+  /**
+   * Name of the model class to use from @huggingface/transformers.
+   * @example "Qwen3_5ForConditionalGeneration"
+   */
+  modelArchitecture?: string;
+  /**
+   * Extra options forwarded to processor.apply_chat_template().
+   * @example { tokenizer_kwargs: { enable_thinking: false } }
+   */
+  chatTemplateOptions?: Record<string, unknown>;
 }

@@ -30,6 +30,7 @@ interface MainThreadOptions {
   generationOptions: GenerationOptions;
   tools?: ToolDefinition[];
   isVisionModel?: boolean;
+  chatTemplateOptions?: Record<string, unknown>;
   stoppingCriteria: StoppingCriteria & {
     interrupt: () => void;
     reset: () => void;
@@ -57,13 +58,14 @@ export async function* createMainThreadGenerationStream(
     generationOptions: userGenerationOptions,
     tools,
     isVisionModel,
+    chatTemplateOptions,
     stoppingCriteria,
     abortSignal,
   } = options;
 
   const [processor, model] = modelInstance;
 
-  const hfTools = tools?.length
+  const hfTools = !isVisionModel && tools?.length
     ? convertToolsToHuggingFaceFormat(tools)
     : undefined;
 
@@ -74,20 +76,24 @@ export async function* createMainThreadGenerationStream(
   if (isVisionModel) {
     const text = processor.apply_chat_template(messages as any, {
       add_generation_prompt: true,
-      ...(hfTools ? { tools: hfTools } : {}),
+      ...chatTemplateOptions,
     });
     const imageUrls = messages
       .flatMap((msg) => (Array.isArray(msg.content) ? msg.content : []))
       .filter((part) => part.type === "image")
       .map((part) => part.image);
 
-    const images = await Promise.all(imageUrls.map((url) => load_image(url)));
-    inputs = await processor(text, images);
+    const images = await Promise.all(imageUrls.map(async (url) => {
+      const img = await load_image(url);
+      return img.resize(448, 448);
+    }));
+    inputs = images.length > 0 ? await processor(text, images) : await processor(text);
   } else {
     inputs = processor.apply_chat_template(messages as any, {
       add_generation_prompt: true,
       return_dict: true,
       ...(hfTools ? { tools: hfTools } : {}),
+      ...chatTemplateOptions,
     });
     inputLength = inputs.input_ids.data.length;
   }
@@ -124,6 +130,14 @@ export async function* createMainThreadGenerationStream(
 
   abortSignal?.addEventListener("abort", abortHandler);
 
+  const enableThinking = !!chatTemplateOptions?.enable_thinking;
+
+  // Emit opening <think> tag since the template injects it as a prompt prefix,
+  // not as generated output, so the streamer never sees it.
+  if (enableThinking) {
+    pushChunk({ type: "delta", delta: "<think>" });
+  }
+
   // Start generation in background
   const generationPromise = (async () => {
     try {
@@ -133,7 +147,7 @@ export async function* createMainThreadGenerationStream(
           : processor) as PreTrainedTokenizer,
         {
           skip_prompt: true,
-          skip_special_tokens: true,
+          skip_special_tokens: !enableThinking,
           callback_function: (text: string) => {
             if (aborted) return;
             outputTokens++;

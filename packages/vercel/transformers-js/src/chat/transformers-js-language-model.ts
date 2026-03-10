@@ -10,6 +10,7 @@ import {
   LanguageModelV3GenerateResult,
   LanguageModelV3StreamResult,
 } from "@ai-sdk/provider";
+import * as TransformersModule from "@huggingface/transformers";
 import {
   AutoTokenizer,
   AutoModelForCausalLM,
@@ -75,6 +76,26 @@ export interface TransformersJSModelSettings extends Pick<
    * Optional Web Worker to run the model off the main thread
    */
   worker?: Worker;
+  /**
+   * Custom model class to use instead of the default Auto class for vision models.
+   * Use this for models that require a specific class (e.g. Qwen3_5ForConditionalGeneration).
+   * Only applies to main-thread usage. For worker usage, pair with modelArchitecture.
+   * @example
+   * import { Qwen3_5ForConditionalGeneration } from "@huggingface/transformers";
+   * { isVisionModel: true, customModelClass: Qwen3_5ForConditionalGeneration }
+   */
+  customModelClass?: { from_pretrained: (modelId: string, options?: unknown) => Promise<unknown> };
+  /**
+   * Name of the model class to use from @huggingface/transformers when running in a Worker.
+   * Passed as a string so it can be serialized through postMessage.
+   * @example "Qwen3_5ForConditionalGeneration"
+   */
+  modelArchitecture?: string;
+  /**
+   * Extra options forwarded to processor.apply_chat_template() on every generation call.
+   * @example { tokenizer_kwargs: { enable_thinking: false } }
+   */
+  chatTemplateOptions?: Record<string, unknown>;
   /**
    * Optional path to load local models from.
    * Overrides the transformers.js env.localModelPath setting.
@@ -170,8 +191,8 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
       modelId,
       device: "auto",
       dtype: "auto",
-      isVisionModel: false,
       ...options,
+      isVisionModel: options.isVisionModel ?? !!options.modelArchitecture,
     };
   }
 
@@ -216,6 +237,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
         localModelPath,
         cacheDir,
         use_external_data_format,
+        customModelClass,
       } = this.config;
 
       // Configure transformers.js environment settings
@@ -232,15 +254,20 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
       const resolvedDevice = this.resolveDevice(
         device as string,
       ) as PretrainedModelOptions["device"];
-      const resolvedDtype = this.resolveDtype(
-        dtype as string,
-      ) as PretrainedModelOptions["dtype"];
+      const resolvedDtype = this.resolveDtype(dtype);
 
       // Create model instance based on type
       if (isVisionModel) {
+        const { modelArchitecture } = this.config;
+        const resolvedByName =
+          modelArchitecture &&
+          typeof (TransformersModule as Record<string, unknown>)[modelArchitecture] === "function"
+            ? (TransformersModule as unknown as Record<string, { from_pretrained: (id: string, opts?: unknown) => Promise<unknown> }>)[modelArchitecture]
+            : undefined;
+        const VisionModelClass = customModelClass ?? resolvedByName ?? AutoModelForVision2Seq;
         const [processor, model] = await Promise.all([
           AutoProcessor.from_pretrained(this.modelId, { progress_callback }),
-          AutoModelForVision2Seq.from_pretrained(this.modelId, {
+          VisionModelClass.from_pretrained(this.modelId, {
             dtype: resolvedDtype,
             device: resolvedDevice,
             ...(use_external_data_format !== undefined
@@ -249,11 +276,10 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
             progress_callback,
           }),
         ]);
-        this.modelInstance = [processor, model];
+        this.modelInstance = [processor, model] as ModelInstance;
       } else {
         const [tokenizer, model] = await Promise.all([
           AutoTokenizer.from_pretrained(this.modelId, {
-            legacy: true,
             progress_callback,
           }),
           AutoModelForCausalLM.from_pretrained(this.modelId, {
@@ -309,8 +335,8 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
     return "cpu";
   }
 
-  private resolveDtype(dtype?: string): string {
-    if (dtype && dtype !== "auto") {
+  private resolveDtype(dtype?: PretrainedModelOptions["dtype"]): PretrainedModelOptions["dtype"] {
+    if (dtype !== undefined && dtype !== "auto") {
       return dtype;
     }
 
@@ -559,6 +585,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
             generationOptions,
             tools: functionTools,
             isVisionModel: this.config.isVisionModel,
+            chatTemplateOptions: this.config.chatTemplateOptions,
             stoppingCriteria: this.stoppingCriteria,
             abortSignal: options.abortSignal,
           });
@@ -713,6 +740,8 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
           device: this.config.device,
           use_external_data_format: this.config.use_external_data_format,
           isVisionModel: this.config.isVisionModel,
+          modelArchitecture: this.config.modelArchitecture,
+          chatTemplateOptions: this.config.chatTemplateOptions,
         },
       });
     });
@@ -770,6 +799,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
                 generationOptions,
                 tools: functionTools,
                 isVisionModel: self.config.isVisionModel,
+                chatTemplateOptions: self.config.chatTemplateOptions,
                 stoppingCriteria: self.stoppingCriteria,
                 abortSignal: options.abortSignal,
               });

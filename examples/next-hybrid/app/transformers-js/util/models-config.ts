@@ -43,4 +43,17 @@ export const MODELS: ModelConfig[] = [
     isVisionModel: true,
     supportsWorker: true,
   },
+  {
+    id: "onnx-community/Qwen3.5-0.8B-ONNX",
+    name: "Qwen3.5 0.8B (Vision)",
+    device: "webgpu",
+    dtype: {
+      embed_tokens: "q4",
+      vision_encoder: "fp16",
+      decoder_model_merged: "q4",
+    },
+    modelArchitecture: "Qwen3_5ForConditionalGeneration",
+    // chatTemplateOptions: { enable_thinking: false },
+    supportsWorker: true,
+  },
 ];
