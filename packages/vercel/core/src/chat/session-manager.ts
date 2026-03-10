@@ -104,7 +104,9 @@ export class SessionManager {
     }
 
     // Check availability before attempting to create
-    const availability = await LanguageModel.availability();
+    const availability = await LanguageModel.availability(
+      this.prepareAvailabilityOptions(options),
+    );
     if (availability === "unavailable") {
       throw new LoadSettingError({
         message: "Built-in model not available in this browser",
@@ -113,7 +115,6 @@ export class SessionManager {
 
     // Prepare session options
     const sessionOptions = this.prepareSessionOptions(options);
-
     // Create the session
     this.session = await LanguageModel.create(sessionOptions);
 
@@ -186,11 +187,13 @@ export class SessionManager {
    * }
    * ```
    */
-  async checkAvailability(): Promise<Availability> {
+  async checkAvailability(
+    options?: SessionCreateOptions,
+  ): Promise<Availability> {
     if (typeof LanguageModel === "undefined") {
       return "unavailable";
     }
-    return LanguageModel.availability();
+    return LanguageModel.availability(this.prepareAvailabilityOptions(options));
   }
 
   /**
@@ -249,6 +252,42 @@ export class SessionManager {
    */
   getInputUsage(): number | undefined {
     return this.getContextUsage();
+  }
+
+  /**
+   * Prepares merged availability options from base config and request options
+   *
+   * @param options - Optional request-specific options
+   * @returns Merged and sanitized core options ready for LanguageModel.availability()
+   * @private
+   */
+  private prepareAvailabilityOptions(
+    options?: SessionCreateOptions,
+  ): LanguageModelCreateCoreOptions {
+    const mergedOptions = { ...this.baseOptions, ...options };
+    const availabilityOptions: LanguageModelCreateCoreOptions = {};
+
+    if (mergedOptions.topK !== undefined) {
+      availabilityOptions.topK = mergedOptions.topK;
+    }
+
+    if (mergedOptions.temperature !== undefined) {
+      availabilityOptions.temperature = mergedOptions.temperature;
+    }
+
+    if (mergedOptions.expectedInputs !== undefined) {
+      availabilityOptions.expectedInputs = mergedOptions.expectedInputs;
+    }
+
+    if (mergedOptions.expectedOutputs !== undefined) {
+      availabilityOptions.expectedOutputs = mergedOptions.expectedOutputs;
+    }
+
+    if (mergedOptions.tools !== undefined) {
+      availabilityOptions.tools = mergedOptions.tools;
+    }
+
+    return availabilityOptions;
   }
 
   /**

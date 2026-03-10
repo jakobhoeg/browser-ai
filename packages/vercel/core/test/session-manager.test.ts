@@ -57,6 +57,25 @@ describe("SessionManager", () => {
 
       expect(availability).toBe("available");
       expect(mockAvailability).toHaveBeenCalledTimes(1);
+      expect(mockAvailability).toHaveBeenCalledWith({});
+    });
+
+    it("should pass expectedOutputs to LanguageModel.availability", async () => {
+      const mockAvailability = vi.fn().mockResolvedValue("available");
+      vi.stubGlobal("LanguageModel", {
+        availability: mockAvailability,
+        create: vi.fn(),
+      });
+
+      const manager = new SessionManager({
+        expectedOutputs: [{ type: "text", languages: ["en"] }],
+      });
+
+      await manager.checkAvailability();
+
+      expect(mockAvailability).toHaveBeenCalledWith({
+        expectedOutputs: [{ type: "text", languages: ["en"] }],
+      });
     });
 
     it("should return downloadable when model needs download", async () => {
@@ -113,6 +132,32 @@ describe("SessionManager", () => {
 
       expect(session).toBe(mockSession);
       expect(mockCreate).toHaveBeenCalledWith({ temperature: 0.7 });
+    });
+
+    it("should pass merged core options to availability before create", async () => {
+      const mockSession = {
+        prompt: vi.fn(),
+        destroy: vi.fn(),
+        addEventListener: vi.fn(),
+      };
+      const mockAvailability = vi.fn().mockResolvedValue("available");
+
+      vi.stubGlobal("LanguageModel", {
+        availability: mockAvailability,
+        create: vi.fn().mockResolvedValue(mockSession),
+      });
+
+      const manager = new SessionManager({
+        temperature: 0.5,
+        expectedOutputs: [{ type: "text", languages: ["en"] }],
+      });
+
+      await manager.getSession({ temperature: 0.8 });
+
+      expect(mockAvailability).toHaveBeenCalledWith({
+        temperature: 0.8,
+        expectedOutputs: [{ type: "text", languages: ["en"] }],
+      });
     });
 
     it("should reuse existing session", async () => {
