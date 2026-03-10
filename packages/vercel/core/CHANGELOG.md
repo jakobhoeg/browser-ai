@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.1.6
+
+### Patch Changes
+
+- 1eae1e9: renamed input usage
+
 ## 2.1.5
 
 ### Patch Changes
