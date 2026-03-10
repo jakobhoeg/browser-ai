@@ -1,5 +1,11 @@
 # @browser-ai/transformers-js
 
+## 2.1.7
+
+### Patch Changes
+
+- f2ff3ba: feat: allow using @huggingface/transformers.js@4.0.0-next
+
 ## 2.1.6
 
 ### Patch Changes
