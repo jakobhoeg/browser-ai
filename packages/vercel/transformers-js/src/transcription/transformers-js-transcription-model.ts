@@ -289,7 +289,7 @@ export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
               audioData.buffer.slice(
                 audioData.byteOffset,
                 audioData.byteOffset + audioData.byteLength,
-              ),
+              ) as ArrayBuffer,
             )
             .then((audioBuffer) => {
               const channelData = audioBuffer.getChannelData(0);

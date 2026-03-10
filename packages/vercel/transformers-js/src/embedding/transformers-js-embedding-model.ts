@@ -136,7 +136,6 @@ export class TransformersJSEmbeddingModel implements EmbeddingModelV3 {
       // Create tokenizer and pipeline
       const [tokenizer, embeddingPipeline] = await Promise.all([
         AutoTokenizer.from_pretrained(this.modelId, {
-          legacy: true,
           progress_callback,
         }),
         pipeline("feature-extraction", this.modelId, {

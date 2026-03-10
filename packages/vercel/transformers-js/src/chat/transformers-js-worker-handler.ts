@@ -88,7 +88,6 @@ class ModelManager {
     const [tokenizer, model] = await Promise.all([
       AutoTokenizer.from_pretrained(modelId, {
         progress_callback: options.progressCallback,
-        legacy: true,
       }),
       AutoModelForCausalLM.from_pretrained(modelId, {
         dtype: options.dtype,

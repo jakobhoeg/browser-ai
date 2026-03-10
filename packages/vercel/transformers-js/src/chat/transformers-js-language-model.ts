@@ -253,7 +253,6 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
       } else {
         const [tokenizer, model] = await Promise.all([
           AutoTokenizer.from_pretrained(this.modelId, {
-            legacy: true,
             progress_callback,
           }),
           AutoModelForCausalLM.from_pretrained(this.modelId, {
