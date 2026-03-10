@@ -79,8 +79,12 @@ export const createTools = () => ({
  */
 export interface ClientSideChatTransportOptions {
   /**
-   * Callback invoked when the model quota is exceeded.
+   * Callback invoked when the model context window is exceeded.
    * @param event
+   */
+  onContextOverflow?: (event: Event) => void;
+  /**
+   * @deprecated Use `onContextOverflow` instead.
    */
   onQuotaOverflow?: (event: Event) => void;
 }
@@ -93,24 +97,35 @@ export interface ClientSideChatTransportOptions {
  */
 export class ClientSideChatTransport implements ChatTransport<BrowserAIUIMessage> {
   private tools: ReturnType<typeof createTools>;
-  private onQuotaOverflow?: (event: Event) => void;
+  private onContextOverflow?: (event: Event) => void;
   private model: BrowserAIChatLanguageModel;
 
   constructor(options: ClientSideChatTransportOptions = {}) {
     this.tools = createTools();
-    this.onQuotaOverflow = options.onQuotaOverflow;
+    this.onContextOverflow =
+      options.onContextOverflow ?? options.onQuotaOverflow;
     this.model = browserAI("text", {
       expectedInputs: [{ type: "text" }, { type: "image" }, { type: "audio" }],
-      onQuotaOverflow: this.onQuotaOverflow,
+      onContextOverflow: this.onContextOverflow,
     });
   }
 
-  public getInputUsage(): number | undefined {
-    return this.model.getInputUsage();
+  public getContextUsage(): number | undefined {
+    return this.model.getContextUsage();
   }
 
+  public getContextWindow(): number | undefined {
+    return this.model.getContextWindow();
+  }
+
+  /** @deprecated Use {@link getContextUsage} instead. */
+  public getInputUsage(): number | undefined {
+    return this.getContextUsage();
+  }
+
+  /** @deprecated Use {@link getContextWindow} instead. */
   public getInputQuota(): number | undefined {
-    return this.model.getInputQuota();
+    return this.getContextWindow();
   }
 
   async sendMessages(

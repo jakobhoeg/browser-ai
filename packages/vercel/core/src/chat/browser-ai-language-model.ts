@@ -36,7 +36,14 @@ export interface BrowserAIChatSettings extends LanguageModelCreateOptions {
   }>;
 
   /**
-   * Callback invoked when the model quota is exceeded.
+   * Callback invoked when the model context window is exceeded.
+   * Replaces the deprecated `onQuotaOverflow`.
+   * @see [Prompt API Context Overflow](https://github.com/webmachinelearning/prompt-api?tab=readme-ov-file#tokenization-context-window-length-limits-and-overflow)
+   */
+  onContextOverflow?: (event: Event) => void;
+
+  /**
+   * @deprecated Use `onContextOverflow` instead.
    * @see [Prompt API Quota Overflow](https://github.com/webmachinelearning/prompt-api?tab=readme-ov-file#tokenization-context-window-length-limits-and-overflow)
    * @param event
    */
@@ -295,19 +302,33 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
   }
 
   /**
-   * Gets the input usage for the current session, if available
-   * @returns The input usage or undefined if not available
+   * Gets the current context usage (tokens consumed) for the current session, if available
+   * @returns The context usage or undefined if not available
    */
-  public getInputUsage(): number | undefined {
-    return this.sessionManager.getInputUsage();
+  public getContextUsage(): number | undefined {
+    return this.sessionManager.getContextUsage();
   }
 
   /**
-   * Gets the input quota for the current session, if available
-   * @returns The input quota or undefined if not available
+   * Gets the context window size (token limit) for the current session, if available
+   * @returns The context window size or undefined if not available
+   */
+  public getContextWindow(): number | undefined {
+    return this.sessionManager.getContextWindow();
+  }
+
+  /**
+   * @deprecated Use {@link getContextUsage} instead.
+   */
+  public getInputUsage(): number | undefined {
+    return this.getContextUsage();
+  }
+
+  /**
+   * @deprecated Use {@link getContextWindow} instead.
    */
   public getInputQuota(): number | undefined {
-    return this.sessionManager.getInputQuota();
+    return this.getContextWindow();
   }
 
   /**
@@ -434,7 +455,8 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
             finishReason,
             usage: {
               inputTokens: {
-                total: session.inputUsage,
+                total:
+                  (session as LanguageModel).contextUsage ?? session.inputUsage,
                 noCache: undefined,
                 cacheRead: undefined,
                 cacheWrite: undefined,

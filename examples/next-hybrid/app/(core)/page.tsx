@@ -87,14 +87,18 @@ export default function Chat() {
   const [files, setFiles] = useState<FileList | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [quotaOverflow, setQuotaOverflow] = useState(false);
-  const [inputUsage, setInputUsage] = useState<number | undefined>(undefined);
-  const [inputQuota, setInputQuota] = useState<number | undefined>(undefined);
+  const [contextUsage, setContextUsage] = useState<number | undefined>(
+    undefined,
+  );
+  const [contextWindow, setContextWindow] = useState<number | undefined>(
+    undefined,
+  );
 
   const clientTransport = useMemo(
     () =>
       doesBrowserSupportModel
         ? new ClientSideChatTransport({
-            onQuotaOverflow: () => setQuotaOverflow(true),
+            onContextOverflow: () => setQuotaOverflow(true),
           })
         : null,
     [],
@@ -146,8 +150,8 @@ export default function Chat() {
 
   const syncInputContext = useCallback(() => {
     if (!clientTransport) return;
-    setInputUsage(clientTransport.getInputUsage());
-    setInputQuota(clientTransport.getInputQuota());
+    setContextUsage(clientTransport.getContextUsage());
+    setContextWindow(clientTransport.getContextWindow());
   }, [clientTransport]);
 
   useEffect(() => {
@@ -581,8 +585,11 @@ export default function Chat() {
               </PromptInputButton>
             </PromptInputTools>
             <div className="flex items-center gap-2">
-              {inputQuota !== undefined && inputQuota > 0 && (
-                <Context usedTokens={inputUsage ?? 0} maxTokens={inputQuota}>
+              {contextWindow !== undefined && contextWindow > 0 && (
+                <Context
+                  usedTokens={contextUsage ?? 0}
+                  maxTokens={contextWindow}
+                >
                   <ContextTrigger className="h-8 px-2.5" />
                   <ContextContent align="end">
                     <ContextContentHeader />
