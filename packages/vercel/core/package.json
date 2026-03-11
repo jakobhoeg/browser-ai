@@ -58,7 +58,7 @@
   },
   "devDependencies": {
     "@browser-ai/shared": "*",
-    "@types/dom-chromium-ai": "^0.0.14",
+    "@types/dom-chromium-ai": "^0.0.15",
     "@types/node": "^25.2.3",
     "@vitest/coverage-v8": "^4.0.18",
     "jsdom": "^28.1.0",
