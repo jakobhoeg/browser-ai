@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.1.7
+
+### Patch Changes
+
+- a03d4bd: refactor: update `@types/dom-chromium-ai`
+
 ## 2.1.6
 
 ### Patch Changes
