@@ -10,6 +10,7 @@
 
 [![NPM Version](https://img.shields.io/npm/v/%40browser-ai%2Fweb-llm)](https://www.npmjs.com/package/@browser-ai/web-llm)
 [![NPM Downloads](https://img.shields.io/npm/dm/%40browser-ai%2Fweb-llm)](https://www.npmjs.com/package/@browser-ai/web-llm)
+[![jsDelivr hits (npm)](https://img.shields.io/jsdelivr/npm/hm/%40browser-ai%2Fweb-llm)](https://www.jsdelivr.com/package/npm/@browser-ai/web-llm)
 
 </div>
 

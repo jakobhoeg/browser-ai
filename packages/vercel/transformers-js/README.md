@@ -10,6 +10,7 @@
 
 [![NPM Version](https://img.shields.io/npm/v/%40browser-ai%2Ftransformers-js)](https://www.npmjs.com/package/@browser-ai/transformers-js)
 [![NPM Downloads](https://img.shields.io/npm/dm/%40browser-ai%2Ftransformers-js)](https://www.npmjs.com/package/@browser-ai/transformers-js)
+[![jsDelivr hits (npm)](https://img.shields.io/jsdelivr/npm/hm/%40browser-ai%2Ftransformers-js)](https://www.jsdelivr.com/package/npm/@browser-ai/transformers-js)
 
 </div>
 
