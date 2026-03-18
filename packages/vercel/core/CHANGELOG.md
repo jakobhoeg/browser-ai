@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.1.8
+
+### Patch Changes
+
+- 3649282: chore: add jsDelivr to readme
+
 ## 2.1.7
 
 ### Patch Changes
