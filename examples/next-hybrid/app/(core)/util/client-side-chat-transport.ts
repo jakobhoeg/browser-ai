@@ -106,6 +106,7 @@ export class ClientSideChatTransport implements ChatTransport<BrowserAIUIMessage
       options.onContextOverflow ?? options.onQuotaOverflow;
     this.model = browserAI("text", {
       expectedInputs: [{ type: "text" }, { type: "image" }, { type: "audio" }],
+      expectedOutputs: [{ type: "text", languages: ["en"] }],
       onContextOverflow: this.onContextOverflow,
     });
   }
