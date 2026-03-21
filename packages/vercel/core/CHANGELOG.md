@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.1.9
+
+### Patch Changes
+
+- 41d12ea: Set LanguageModelCreateCoreOptions when calling availability
+
 ## 2.1.8
 
 ### Patch Changes
