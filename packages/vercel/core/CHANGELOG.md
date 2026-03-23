@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.1.10
+
+### Patch Changes
+
+- fd16f93: omit initialPrompts from BrowserAIChatSettings
+
 ## 2.1.9
 
 ### Patch Changes
