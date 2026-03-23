@@ -224,12 +224,17 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
     );
 
     const session = await this.getSession(
-      undefined,
+      { signal: options.abortSignal },
       expectedInputs,
       systemPrompt || undefined,
     );
 
-    const rawResponse = await session.prompt(messages, promptOptions);
+    const promptCallOptions = {
+      ...promptOptions,
+      signal: options.abortSignal,
+    };
+
+    const rawResponse = await session.prompt(messages, promptCallOptions);
 
     // Parse JSON tool calls from response
     const { toolCalls, textContent } = parseJsonFunctionCalls(rawResponse);
@@ -395,7 +400,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
     );
 
     const session = await this.getSession(
-      undefined,
+      { signal: options.abortSignal },
       expectedInputs,
       systemPrompt || undefined,
     );

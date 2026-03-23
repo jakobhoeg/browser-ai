@@ -881,6 +881,211 @@ Running the tool now.`;
     });
   });
 
+  describe("abort signal handling", () => {
+    it("should forward abortSignal to LanguageModel.create during doGenerate", async () => {
+      const model = new BrowserAIChatLanguageModel("text");
+      const abortController = new AbortController();
+      abortController.abort();
+
+      mockPrompt.mockResolvedValue("unexpected success");
+
+      LanguageModel.create = vi.fn((options: LanguageModelCreateOptions) => {
+        if (
+          options.signal === abortController.signal &&
+          options.signal.aborted
+        ) {
+          return Promise.reject(new Error("create aborted"));
+        }
+
+        return Promise.resolve(mockSession);
+      });
+
+      await expect(
+        model.doGenerate({
+          prompt: [
+            {
+              role: "user",
+              content: [{ type: "text", text: "Say hello" }],
+            },
+          ],
+          abortSignal: abortController.signal,
+        }),
+      ).rejects.toThrow("create aborted");
+
+      expect(LanguageModel.create).toHaveBeenCalledTimes(1);
+      expect(LanguageModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          signal: abortController.signal,
+        }),
+      );
+      expect(mockPrompt).not.toHaveBeenCalled();
+    });
+
+    it("should forward abortSignal to session.prompt during doGenerate", async () => {
+      const model = new BrowserAIChatLanguageModel("text");
+
+      await model.createSessionWithProgress();
+      expect(LanguageModel.create).toHaveBeenCalledTimes(1);
+
+      mockPrompt.mockClear();
+      vi.mocked(LanguageModel.create).mockClear();
+
+      const abortController = new AbortController();
+      abortController.abort();
+
+      mockPrompt.mockImplementation(
+        (
+          _messages: LanguageModelPrompt,
+          options?: LanguageModelPromptOptions,
+        ) =>
+          options?.signal === abortController.signal && options.signal.aborted
+            ? Promise.reject(new Error("prompt aborted"))
+            : Promise.resolve("unexpected success"),
+      );
+
+      await expect(
+        model.doGenerate({
+          prompt: [
+            {
+              role: "user",
+              content: [{ type: "text", text: "Say hello" }],
+            },
+          ],
+          abortSignal: abortController.signal,
+        }),
+      ).rejects.toThrow("prompt aborted");
+
+      expect(LanguageModel.create).not.toHaveBeenCalled();
+      expect(mockPrompt).toHaveBeenCalledTimes(1);
+      expect(mockPrompt).toHaveBeenCalledWith(
+        [
+          {
+            role: "user",
+            content: [{ type: "text", value: "Say hello" }],
+          },
+        ],
+        expect.objectContaining({
+          signal: abortController.signal,
+        }),
+      );
+    });
+
+    it("should forward abortSignal to LanguageModel.create during doStream", async () => {
+      const model = new BrowserAIChatLanguageModel("text");
+      const abortController = new AbortController();
+      abortController.abort();
+
+      LanguageModel.create = vi.fn((options: LanguageModelCreateOptions) => {
+        if (
+          options.signal === abortController.signal &&
+          options.signal.aborted
+        ) {
+          return Promise.reject(new Error("create aborted"));
+        }
+
+        return Promise.resolve(mockSession);
+      });
+
+      await expect(
+        model.doStream({
+          prompt: [
+            {
+              role: "user",
+              content: [{ type: "text", text: "Say hello" }],
+            },
+          ],
+          abortSignal: abortController.signal,
+        }),
+      ).rejects.toThrow("create aborted");
+
+      expect(LanguageModel.create).toHaveBeenCalledTimes(1);
+      expect(LanguageModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          signal: abortController.signal,
+        }),
+      );
+      expect(mockPromptStreaming).not.toHaveBeenCalled();
+    });
+
+    it("should forward abortSignal to session.promptStreaming during doStream", async () => {
+      const model = new BrowserAIChatLanguageModel("text");
+
+      await model.createSessionWithProgress();
+      expect(LanguageModel.create).toHaveBeenCalledTimes(1);
+
+      mockPromptStreaming.mockClear();
+      vi.mocked(LanguageModel.create).mockClear();
+
+      const abortController = new AbortController();
+      abortController.abort();
+
+      mockPromptStreaming.mockImplementation(
+        (
+          _messages: LanguageModelPrompt,
+          options?: LanguageModelPromptOptions,
+        ) => {
+          if (
+            options?.signal === abortController.signal &&
+            options.signal.aborted
+          ) {
+            return new ReadableStream<string>({
+              start(controller) {
+                controller.error(new Error("promptStreaming aborted"));
+              },
+            });
+          }
+          return new ReadableStream<string>({
+            start(controller) {
+              controller.enqueue("unexpected success");
+              controller.close();
+            },
+          });
+        },
+      );
+
+      const { stream } = await model.doStream({
+        prompt: [
+          {
+            role: "user",
+            content: [{ type: "text", text: "Say hello" }],
+          },
+        ],
+        abortSignal: abortController.signal,
+      });
+
+      const events: LanguageModelV3StreamPart[] = [];
+      const reader = stream.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        events.push(value);
+      }
+
+      const errorEvent = events.find((e) => e.type === "error") as Extract<
+        LanguageModelV3StreamPart,
+        { type: "error" }
+      >;
+      expect(errorEvent).toBeDefined();
+      expect((errorEvent.error as Error).message).toBe(
+        "promptStreaming aborted",
+      );
+
+      expect(LanguageModel.create).not.toHaveBeenCalled();
+      expect(mockPromptStreaming).toHaveBeenCalledTimes(1);
+      expect(mockPromptStreaming).toHaveBeenCalledWith(
+        [
+          {
+            role: "user",
+            content: [{ type: "text", value: "Say hello" }],
+          },
+        ],
+        expect.objectContaining({
+          signal: abortController.signal,
+        }),
+      );
+    });
+  });
+
   describe("createSessionWithProgress", () => {
     let mockEventTarget: {
       addEventListener: ReturnType<typeof vi.fn>;
