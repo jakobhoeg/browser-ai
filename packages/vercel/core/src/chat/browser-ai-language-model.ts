@@ -26,7 +26,10 @@ import { SessionManager } from "./session-manager";
 
 export type BrowserAIChatModelId = "text";
 
-export interface BrowserAIChatSettings extends LanguageModelCreateOptions {
+export interface BrowserAIChatSettings extends Omit<
+  LanguageModelCreateOptions,
+  "initialPrompts"
+> {
   /**
    * Expected input types for the session, for multimodal inputs.
    */
