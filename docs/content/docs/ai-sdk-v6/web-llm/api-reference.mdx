@@ -105,6 +105,56 @@ self.onmessage = (msg: MessageEvent) => handler.onmessage(msg);
 
 ---
 
+## Provider Options
+
+Pass provider-specific options via the AI SDK `providerOptions` call option under the `"web-llm"` key.
+
+### `beforeToolSchemasPrompt`
+
+| Property | Type | Required | Description |
+|---|---|---|---|
+| `beforeToolSchemasPrompt` | `string` | No | Custom prompt text inserted before the generated tool schemas JSON. Must be non-empty to take effect; an empty string is treated as absent. |
+
+### `afterToolSchemasPrompt`
+
+| Property | Type | Required | Description |
+|---|---|---|---|
+| `afterToolSchemasPrompt` | `string` | No | Custom prompt text inserted after the generated tool schemas JSON. Must be non-empty to take effect; an empty string is treated as absent. |
+
+If either property is set, the default tool-use prompt text is not emitted. The generated tool schemas JSON still appears between the two optional sections, so callers should include any tool-call formatting guidance they still want the model to follow.
+
+### `extra_body`
+
+Forwards low-level generation options directly to the WebLLM engine (see [WebLLM's GenerationConfig](https://webllm.mlc.ai/docs/user/api_reference.html#generationconfig)).
+
+| Property | Type | Required | Description |
+|---|---|---|---|
+| `enable_thinking` | `boolean` | No | Enable chain-of-thought reasoning (Qwen3 thinking models). |
+| `enable_latency_breakdown` | `boolean` | No | Log per-stage latency breakdown. |
+
+```typescript
+import { generateText } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+import type { WebLLMCallProviderOptions } from "@browser-ai/web-llm";
+
+const result = await generateText({
+  model: webLLM("Qwen3-0.6B-q0f16-MLC"),
+  prompt: "...",
+  tools: { /* ... */ },
+  providerOptions: {
+    "web-llm": {
+      beforeToolSchemasPrompt:
+        "Review the following tool schemas before using a tool.",
+      afterToolSchemasPrompt:
+        "If you need a tool, emit a tool_call fence and wait for the result.",
+      extra_body: { enable_thinking: true },
+    } satisfies WebLLMCallProviderOptions,
+  },
+});
+```
+
+---
+
 ## Types
 
 ### `WebLLMUIMessage`
@@ -155,4 +205,34 @@ interface WebLLMSettings {
   engineConfig?: MLCEngineConfig;
   worker?: Worker;
 }
+```
+
+### `WebLLMCallProviderOptions`
+
+Typed interface for per-call provider options passed via `providerOptions["web-llm"]`. Import this type to get full autocompletion and type safety when passing call-time options.
+
+```typescript
+import type { WebLLMCallProviderOptions } from "@browser-ai/web-llm";
+
+interface WebLLMCallProviderOptions {
+  beforeToolSchemasPrompt?: string;
+  afterToolSchemasPrompt?: string;
+  extra_body?: {
+    enable_thinking?: boolean;
+    enable_latency_breakdown?: boolean;
+  };
+}
+
+const options: WebLLMCallProviderOptions = {
+  beforeToolSchemasPrompt: "Review the following tool schemas before using a tool.",
+  afterToolSchemasPrompt:
+    "If you need a tool, emit a tool_call fence and wait for the result.",
+  extra_body: { enable_thinking: true },
+};
+
+const result = await generateText({
+  model: webLLM("Qwen3-0.6B-q0f16-MLC"),
+  prompt: "...",
+  providerOptions: { "web-llm": options },
+});
 ```

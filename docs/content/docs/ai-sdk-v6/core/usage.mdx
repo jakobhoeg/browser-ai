@@ -145,6 +145,31 @@ const result = await streamText({
 
 It also supports [tool execution approval (`needsApproval`)](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#tool-execution-approval).
 
+## Custom Tool-Use Instructions
+
+By default the library appends its own tool-calling instruction block around the generated tool schemas JSON. For advanced use-cases you can replace that default wrapper by passing `beforeToolSchemasPrompt` and/or `afterToolSchemasPrompt` inside the `providerOptions` call option:
+
+```typescript
+import { generateText } from "ai";
+import { browserAI } from "@browser-ai/core";
+
+const result = await generateText({
+  model: browserAI(),
+  prompt: "What is the weather in Paris?",
+  tools: { getWeather: { /* ... */ } },
+  providerOptions: {
+    "browser-ai": {
+      beforeToolSchemasPrompt:
+        "You can use the following tools. Review the JSON carefully before selecting one.",
+      afterToolSchemasPrompt:
+        "If you need a tool, respond with a tool_call fence. Only call one tool at a time and wait for the result before continuing.",
+    },
+  },
+});
+```
+
+When either property is present and non-empty it **replaces** the default tool-use prompt text from the shared prompt builder while still keeping the generated tool schemas JSON in the middle. If you set either property, you are responsible for including any tool-call formatting guidance you still want the model to follow.
+
 ## Tool Calling with Structured Output
 
 ```ts
