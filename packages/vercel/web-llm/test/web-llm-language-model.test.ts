@@ -191,6 +191,53 @@ describe("WebLLMLanguageModel", () => {
         }),
       );
     });
+
+    it("should replace the default tool prompt while preserving tool schemas when beforeToolSchemasPrompt and afterToolSchemasPrompt are provided", async () => {
+      mockChatCompletionsCreate.mockResolvedValue({
+        choices: [{ message: { content: "ok" }, finish_reason: "stop" }],
+        usage: { prompt_tokens: 5, completion_tokens: 2, total_tokens: 7 },
+      });
+
+      const model = new WebLLMLanguageModel("test-model");
+      const beforeToolSchemasPrompt =
+        "TOOLS AVAILABLE BELOW. Inspect the JSON before choosing one.";
+      const afterToolSchemasPrompt =
+        "Reply with a tool_call fence and wait for the result.";
+
+      await model.doGenerate({
+        prompt: [{ role: "user", content: [{ type: "text", text: "hi" }] }],
+        tools: [
+          {
+            type: "function",
+            name: "search",
+            description: "Search",
+            inputSchema: { type: "object", properties: {} },
+          },
+        ],
+        providerOptions: {
+          "web-llm": {
+            beforeToolSchemasPrompt,
+            afterToolSchemasPrompt,
+          },
+        },
+      });
+
+      const request = mockChatCompletionsCreate.mock.calls[0]?.[0];
+      const systemMessage = request?.messages.find(
+        (message: { role: string; content: string }) =>
+          message.role === "system",
+      );
+
+      expect(systemMessage?.content).toContain(beforeToolSchemasPrompt);
+      expect(systemMessage?.content).toContain('"name": "search"');
+      expect(systemMessage?.content).toContain(afterToolSchemasPrompt);
+      expect(systemMessage?.content).not.toContain(
+        "# Tool Calling Instructions",
+      );
+      expect(systemMessage?.content).not.toContain(
+        "Only request one tool call at a time",
+      );
+    });
   });
 
   describe("doStream", () => {
@@ -496,6 +543,77 @@ describe("WebLLMLanguageModel", () => {
     });
 
     describe("doStream with tools", () => {
+      it("should replace the default tool prompt while preserving tool schemas when beforeToolSchemasPrompt and afterToolSchemasPrompt are provided", async () => {
+        async function* createTextStream(): AsyncGenerator<any, void, unknown> {
+          yield { choices: [{ delta: { content: "ok" } }] };
+          yield {
+            choices: [{ delta: {}, finish_reason: "stop" }],
+            usage: {
+              prompt_tokens: 12,
+              completion_tokens: 4,
+              total_tokens: 16,
+            },
+          };
+        }
+
+        mockChatCompletionsCreate.mockResolvedValue(createTextStream());
+
+        const model = new WebLLMLanguageModel("test-model");
+        const beforeToolSchemasPrompt =
+          "READ THE TOOL JSON BEFORE YOU PICK A TOOL.";
+        const afterToolSchemasPrompt =
+          "Emit a tool_call fence if you need one.";
+
+        const result = await model.doStream({
+          prompt: [
+            {
+              role: "user",
+              content: [{ type: "text", text: "What's the weather in SF?" }],
+            },
+          ],
+          tools: [
+            {
+              type: "function",
+              name: "get_weather",
+              description: "Get weather",
+              inputSchema: {
+                type: "object",
+                properties: { city: { type: "string" } },
+              },
+            },
+          ],
+          providerOptions: {
+            "web-llm": {
+              beforeToolSchemasPrompt,
+              afterToolSchemasPrompt,
+            },
+          },
+        });
+
+        const reader = result.stream.getReader();
+        try {
+          await reader.read();
+        } finally {
+          reader.releaseLock();
+        }
+
+        const request = mockChatCompletionsCreate.mock.calls[0]?.[0];
+        const systemMessage = request?.messages.find(
+          (message: { role: string; content: string }) =>
+            message.role === "system",
+        );
+
+        expect(systemMessage?.content).toContain(beforeToolSchemasPrompt);
+        expect(systemMessage?.content).toContain('"name": "get_weather"');
+        expect(systemMessage?.content).toContain(afterToolSchemasPrompt);
+        expect(systemMessage?.content).not.toContain(
+          "# Tool Calling Instructions",
+        );
+        expect(systemMessage?.content).not.toContain(
+          "Only request one tool call at a time",
+        );
+      });
+
       it("should stream tool calls in real-time", async () => {
         async function* createToolCallStream(): AsyncGenerator<
           any,
