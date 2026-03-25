@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.1.11
+
+### Patch Changes
+
+- 7b899ab: forward doGenerate abort signals to browser AI
+
 ## 2.1.10
 
 ### Patch Changes
