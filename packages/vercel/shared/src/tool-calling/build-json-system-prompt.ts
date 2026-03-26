@@ -16,7 +16,11 @@ import type { ToolDefinition } from "../types";
 export function buildJsonToolSystemPrompt(
   originalSystemPrompt: string | undefined,
   tools: Array<ToolDefinition | LanguageModelV3FunctionTool>,
-  options?: { allowParallelToolCalls?: boolean },
+  options?: {
+    allowParallelToolCalls?: boolean;
+    beforeToolSchemasPrompt?: string;
+    afterToolSchemasPrompt?: string;
+  },
 ): string {
   if (!tools || tools.length === 0) {
     return originalSystemPrompt || "";
@@ -35,8 +39,20 @@ export function buildJsonToolSystemPrompt(
   });
 
   const toolsJson = JSON.stringify(toolSchemas, null, 2);
+  const beforeToolSchemasPrompt = normalizePromptSection(
+    options?.beforeToolSchemasPrompt,
+  );
+  const afterToolSchemasPrompt = normalizePromptSection(
+    options?.afterToolSchemasPrompt,
+  );
+  const hasReplacementPrompt =
+    beforeToolSchemasPrompt != null || afterToolSchemasPrompt != null;
 
-  const instructionBody = `You are a helpful AI assistant with access to tools.
+  const instructionBody = hasReplacementPrompt
+    ? [beforeToolSchemasPrompt, toolsJson, afterToolSchemasPrompt]
+        .filter((section): section is string => section != null)
+        .join("\n")
+    : `You are a helpful AI assistant with access to tools.
 
 # Available Tools
 ${toolsJson}
@@ -84,4 +100,8 @@ function getParameters(
   }
 
   return tool.inputSchema as JSONSchema7 | undefined;
+}
+
+function normalizePromptSection(value: string | undefined): string | undefined {
+  return typeof value === "string" ? value || undefined : undefined;
 }

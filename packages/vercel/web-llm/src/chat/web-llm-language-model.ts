@@ -12,6 +12,7 @@ import {
   LanguageModelV3StreamResult,
 } from "@ai-sdk/provider";
 import { convertToWebLLMMessages } from "../utils/convert-to-webllm-messages";
+import type { WebLLMCallProviderOptions } from "../web-llm-provider";
 
 import {
   AppConfig,
@@ -275,17 +276,23 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       seed,
     };
 
-    const webLLMOptions = providerOptions?.[this.provider];
-    const extraBody = webLLMOptions?.extra_body as
-      | Record<string, unknown>
+    const callProviderOptions = providerOptions?.[this.provider] as
+      | WebLLMCallProviderOptions
       | undefined;
+    const extraBody = callProviderOptions?.extra_body;
+    const beforeToolSchemasPrompt =
+      typeof callProviderOptions?.beforeToolSchemasPrompt === "string"
+        ? callProviderOptions.beforeToolSchemasPrompt || undefined
+        : undefined;
+    const afterToolSchemasPrompt =
+      typeof callProviderOptions?.afterToolSchemasPrompt === "string"
+        ? callProviderOptions.afterToolSchemasPrompt || undefined
+        : undefined;
     if (extraBody) {
       // https://webllm.mlc.ai/docs/user/api_reference.html#generationconfig
       requestOptions.extra_body = {
-        enable_thinking: extraBody.enable_thinking as boolean | undefined,
-        enable_latency_breakdown: extraBody.enable_latency_breakdown as
-          | boolean
-          | undefined,
+        enable_thinking: extraBody.enable_thinking,
+        enable_latency_breakdown: extraBody.enable_latency_breakdown,
       };
     }
 
@@ -304,6 +311,8 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       warnings,
       requestOptions,
       functionTools,
+      beforeToolSchemasPrompt,
+      afterToolSchemasPrompt,
     };
   }
 
@@ -318,7 +327,14 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
     options: LanguageModelV3CallOptions,
   ): Promise<LanguageModelV3GenerateResult> {
     const converted = this.getArgs(options);
-    const { messages, warnings, requestOptions, functionTools } = converted;
+    const {
+      messages,
+      warnings,
+      requestOptions,
+      functionTools,
+      beforeToolSchemasPrompt,
+      afterToolSchemasPrompt,
+    } = converted;
 
     // Extract system prompt and build tool calling prompt
     const {
@@ -331,6 +347,8 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       functionTools,
       {
         allowParallelToolCalls: false,
+        beforeToolSchemasPrompt,
+        afterToolSchemasPrompt,
       },
     );
 
@@ -521,7 +539,14 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
     options: LanguageModelV3CallOptions,
   ): Promise<LanguageModelV3StreamResult> {
     const converted = this.getArgs(options);
-    const { messages, warnings, requestOptions, functionTools } = converted;
+    const {
+      messages,
+      warnings,
+      requestOptions,
+      functionTools,
+      beforeToolSchemasPrompt,
+      afterToolSchemasPrompt,
+    } = converted;
 
     // Extract system prompt and build tool calling prompt
     const {
@@ -534,6 +559,8 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       functionTools,
       {
         allowParallelToolCalls: false,
+        beforeToolSchemasPrompt,
+        afterToolSchemasPrompt,
       },
     );
 

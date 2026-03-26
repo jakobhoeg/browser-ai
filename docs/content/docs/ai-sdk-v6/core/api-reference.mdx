@@ -84,7 +84,60 @@ Gets the context window size (token limit) of the current session. If the sessio
 
 ---
 
+## Provider Options
+
+Pass provider-specific options via the AI SDK `providerOptions` call option under the `"browser-ai"` key. The full options shape is exported as [`BrowserAICallProviderOptions`](#browseraicallprovideroptions).
+
+### `beforeToolSchemasPrompt`
+
+| Property | Type | Required | Description |
+|---|---|---|---|
+| `beforeToolSchemasPrompt` | `string` | No | Custom prompt text inserted before the generated tool schemas JSON. Must be non-empty to take effect; an empty string is treated as absent. |
+
+### `afterToolSchemasPrompt`
+
+| Property | Type | Required | Description |
+|---|---|---|---|
+| `afterToolSchemasPrompt` | `string` | No | Custom prompt text inserted after the generated tool schemas JSON. Must be non-empty to take effect; an empty string is treated as absent. |
+
+If either property is set, the default tool-use prompt text is not emitted. The generated tool schemas JSON still appears between the two optional sections, so callers should include any tool-call formatting guidance they still want the model to follow.
+
+```typescript
+import { generateText } from "ai";
+import { browserAI, type BrowserAICallProviderOptions } from "@browser-ai/core";
+
+const callOptions: BrowserAICallProviderOptions = {
+  beforeToolSchemasPrompt: "Review the following tool schemas before using a tool.",
+  afterToolSchemasPrompt:
+    "If you need a tool, emit a tool_call fence and wait for the result.",
+};
+
+const result = await generateText({
+  model: browserAI(),
+  prompt: "...",
+  tools: { /* ... */ },
+  providerOptions: {
+    "browser-ai": callOptions,
+  },
+});
+```
+
+---
+
 ## Types
+
+### `BrowserAICallProviderOptions`
+
+Per-call options passed via the `providerOptions` call option under the `"browser-ai"` key. Export this type to get autocomplete and type safety on your `providerOptions` objects.
+
+```typescript
+import { type BrowserAICallProviderOptions } from "@browser-ai/core";
+
+interface BrowserAICallProviderOptions {
+  beforeToolSchemasPrompt?: string;
+  afterToolSchemasPrompt?: string;
+}
+```
 
 ### `BrowserAIUIMessage`
 
@@ -106,4 +159,3 @@ type BrowserAIUIMessage = UIMessage<
   }
 >;
 ```
-

@@ -14,6 +14,39 @@ import {
   WebLLMEmbeddingSettings,
 } from "./embedding/web-llm-embedding-model";
 
+/**
+ * Per-call provider options for WebLLM, passed via `providerOptions["web-llm"]`
+ * in each `generateText` / `streamText` call.
+ *
+ * Distinct from {@link WebLLMSettings}, which are set once at model-creation time.
+ */
+export interface WebLLMCallProviderOptions {
+  /**
+   * Replaces the default tool-calling prompt text that appears before the
+   * generated tool schemas JSON block.
+   *
+   * If this or `afterToolSchemasPrompt` is provided, the default tool-use
+   * prompt is not emitted. An empty string is treated as absent.
+   */
+  beforeToolSchemasPrompt?: string;
+  /**
+   * Replaces the default tool-calling prompt text that appears after the
+   * generated tool schemas JSON block.
+   *
+   * If this or `beforeToolSchemasPrompt` is provided, the default tool-use
+   * prompt is not emitted. An empty string is treated as absent.
+   */
+  afterToolSchemasPrompt?: string;
+  /**
+   * Additional generation config passed directly to the WebLLM engine.
+   * @see https://webllm.mlc.ai/docs/user/api_reference.html#generationconfig
+   */
+  extra_body?: {
+    enable_thinking?: boolean;
+    enable_latency_breakdown?: boolean;
+  };
+}
+
 export interface WebLLMProvider extends ProviderV3 {
   (modelId: WebLLMModelId, settings?: WebLLMSettings): WebLLMLanguageModel;
 

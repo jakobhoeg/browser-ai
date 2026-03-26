@@ -879,6 +879,110 @@ Running the tool now.`;
 
       expect(allToolCallIds.size).toBe(1); // All IDs should be identical
     });
+
+    it("should replace the default tool prompt while preserving tool schemas when beforeToolSchemasPrompt and afterToolSchemasPrompt are provided in doGenerate", async () => {
+      const beforeToolSchemasPrompt = "CUSTOM BEFORE TOOL SCHEMAS";
+      const afterToolSchemasPrompt =
+        "CUSTOM AFTER TOOL SCHEMAS WITH tool_call GUIDANCE";
+      mockPrompt.mockResolvedValue("No tool needed");
+
+      const model = new BrowserAIChatLanguageModel("text");
+      await model.doGenerate({
+        prompt: [{ role: "user", content: [{ type: "text", text: "hi" }] }],
+        tools: [
+          {
+            type: "function",
+            name: "myTool",
+            description: "A test tool",
+            inputSchema: {
+              type: "object",
+              properties: { arg: { type: "string" } },
+            },
+          },
+        ],
+        providerOptions: {
+          "browser-ai": {
+            beforeToolSchemasPrompt,
+            afterToolSchemasPrompt,
+          },
+        },
+      });
+
+      // SessionManager converts systemMessage into initialPrompts[0].
+      const createCall = (globalThis as any).LanguageModel.create.mock
+        .calls[0][0];
+      expect(createCall.initialPrompts[0].role).toBe("system");
+      expect(createCall.initialPrompts[0].content).toContain(
+        beforeToolSchemasPrompt,
+      );
+      expect(createCall.initialPrompts[0].content).toContain("myTool");
+      expect(createCall.initialPrompts[0].content).toContain(
+        afterToolSchemasPrompt,
+      );
+      expect(createCall.initialPrompts[0].content).not.toContain(
+        "You are a helpful AI assistant with access to tools.",
+      );
+      expect(createCall.initialPrompts[0].content).not.toContain(
+        "# Tool Calling Instructions",
+      );
+      expect(createCall.initialPrompts[0].content).not.toContain(
+        "Only request one tool call at a time",
+      );
+    });
+
+    it("should replace the default tool prompt while preserving tool schemas when beforeToolSchemasPrompt and afterToolSchemasPrompt are provided in doStream", async () => {
+      const beforeToolSchemasPrompt = "STREAM BEFORE TOOL SCHEMAS";
+      const afterToolSchemasPrompt = "STREAM AFTER TOOL SCHEMAS";
+      mockPromptStreaming.mockReturnValue(
+        new ReadableStream<string>({
+          start(controller) {
+            controller.close();
+          },
+        }),
+      );
+
+      const model = new BrowserAIChatLanguageModel("text");
+      await model.doStream({
+        prompt: [{ role: "user", content: [{ type: "text", text: "hi" }] }],
+        tools: [
+          {
+            type: "function",
+            name: "myTool",
+            description: "A test tool",
+            inputSchema: {
+              type: "object",
+              properties: { arg: { type: "string" } },
+            },
+          },
+        ],
+        providerOptions: {
+          "browser-ai": {
+            beforeToolSchemasPrompt,
+            afterToolSchemasPrompt,
+          },
+        },
+      });
+
+      const createCall = (globalThis as any).LanguageModel.create.mock
+        .calls[0][0];
+      expect(createCall.initialPrompts[0].role).toBe("system");
+      expect(createCall.initialPrompts[0].content).toContain(
+        beforeToolSchemasPrompt,
+      );
+      expect(createCall.initialPrompts[0].content).toContain("myTool");
+      expect(createCall.initialPrompts[0].content).toContain(
+        afterToolSchemasPrompt,
+      );
+      expect(createCall.initialPrompts[0].content).not.toContain(
+        "You are a helpful AI assistant with access to tools.",
+      );
+      expect(createCall.initialPrompts[0].content).not.toContain(
+        "# Tool Calling Instructions",
+      );
+      expect(createCall.initialPrompts[0].content).not.toContain(
+        "Only request one tool call at a time",
+      );
+    });
   });
 
   describe("abort signal handling", () => {

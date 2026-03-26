@@ -57,6 +57,29 @@ export interface BrowserAIProviderSettings {
 }
 
 /**
+ * Per-call options passed via the AI SDK `providerOptions` call option
+ * under the `"browser-ai"` key.
+ */
+export interface BrowserAICallProviderOptions {
+  /**
+   * Replaces the default prompt text that appears before the generated tool
+   * schemas block when tools are registered. If either this or
+   * `afterToolSchemasPrompt` is non-empty, the shared prompt builder stops
+   * emitting its default tool-use prompt text and uses the provided
+   * before/after sections around the generated schemas instead.
+   */
+  beforeToolSchemasPrompt?: string;
+  /**
+   * Replaces the default prompt text that appears after the generated tool
+   * schemas block when tools are registered. If either this or
+   * `beforeToolSchemasPrompt` is non-empty, the shared prompt builder stops
+   * emitting its default tool-use prompt text and uses the provided
+   * before/after sections around the generated schemas instead.
+   */
+  afterToolSchemasPrompt?: string;
+}
+
+/**
  * Create a BrowserAI provider instance.
  */
 export function createBrowserAI(

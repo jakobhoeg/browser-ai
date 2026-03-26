@@ -14,6 +14,7 @@ export { browserAI, createBrowserAI } from "./browser-ai-provider";
 export type {
   BrowserAIProvider,
   BrowserAIProviderSettings,
+  BrowserAICallProviderOptions,
 } from "./browser-ai-provider";
 
 // UI types
