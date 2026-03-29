@@ -46,6 +46,7 @@ export type WorkerMessage =
       data: WorkerGenerateData[];
       generationOptions?: GenerationOptions;
       tools?: ToolDefinition[];
+      enableThinking?: boolean;
     }
   | { type: "interrupt" }
   | { type: "reset" };

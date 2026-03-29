@@ -30,6 +30,7 @@ interface MainThreadOptions {
   generationOptions: GenerationOptions;
   tools?: ToolDefinition[];
   isVisionModel?: boolean;
+  enableThinking?: boolean;
   stoppingCriteria: StoppingCriteria & {
     interrupt: () => void;
     reset: () => void;
@@ -42,6 +43,7 @@ interface WorkerOptions {
   messages: TransformersMessage[];
   generationOptions: GenerationOptions;
   tools?: ToolDefinition[];
+  enableThinking?: boolean;
   abortSignal?: AbortSignal;
 }
 
@@ -57,6 +59,7 @@ export async function* createMainThreadGenerationStream(
     generationOptions: userGenerationOptions,
     tools,
     isVisionModel,
+    enableThinking = false,
     stoppingCriteria,
     abortSignal,
   } = options;
@@ -67,27 +70,35 @@ export async function* createMainThreadGenerationStream(
     ? convertToolsToHuggingFaceFormat(tools)
     : undefined;
 
+  // Build shared apply_chat_template options
+  const templateOptions: Record<string, any> = {
+    add_generation_prompt: true,
+    ...(hfTools ? { tools: hfTools } : {}),
+    // Pass enable_thinking to models that support it (e.g. Qwen 3.5).
+    // When false the template omits the <think> generation prompt,
+    // so the model responds directly without an internal reasoning phase.
+    enable_thinking: enableThinking,
+  };
+
   // Prepare inputs
   let inputs: any;
   let inputLength = 0;
 
   if (isVisionModel) {
-    const text = processor.apply_chat_template(messages as any, {
-      add_generation_prompt: true,
-      ...(hfTools ? { tools: hfTools } : {}),
-    });
+    const text = processor.apply_chat_template(messages as any, templateOptions);
     const imageUrls = messages
       .flatMap((msg) => (Array.isArray(msg.content) ? msg.content : []))
       .filter((part) => part.type === "image")
       .map((part) => part.image);
 
     const images = await Promise.all(imageUrls.map((url) => load_image(url)));
-    inputs = await processor(text, images);
+    inputs = images.length > 0
+      ? await processor(text, images)
+      : await processor(text);
   } else {
     inputs = processor.apply_chat_template(messages as any, {
-      add_generation_prompt: true,
+      ...templateOptions,
       return_dict: true,
-      ...(hfTools ? { tools: hfTools } : {}),
     });
     inputLength = inputs.input_ids.data.length;
   }
@@ -124,6 +135,14 @@ export async function* createMainThreadGenerationStream(
 
   abortSignal?.addEventListener("abort", abortHandler);
 
+  // When thinking is enabled, the chat template adds <think> as part of the
+  // generation prompt (e.g. "<|im_start|>assistant\n<think>\n"), so skip_prompt
+  // swallows it. Emit the opening tag manually so downstream middleware
+  // (extractReasoningMiddleware) can detect the full <think>...</think> block.
+  if (enableThinking) {
+    pushChunk({ type: "delta", delta: "<think>" });
+  }
+
   // Start generation in background
   const generationPromise = (async () => {
     try {
@@ -133,9 +152,15 @@ export async function* createMainThreadGenerationStream(
           : processor) as PreTrainedTokenizer,
         {
           skip_prompt: true,
-          skip_special_tokens: true,
+          // When thinking is enabled, we need to see <think></think> tags
+          // so the consumer can separate reasoning from the response.
+          skip_special_tokens: !enableThinking,
           callback_function: (text: string) => {
             if (aborted) return;
+            // When thinking is enabled, skip_special_tokens is false so
+            // <think> tags pass through. Filter out chat control tokens
+            // (e.g. <|im_end|>, <|endoftext|>) that also leak through.
+            if (enableThinking && /^<\|[^|]*\|>$/.test(text.trim())) return;
             outputTokens++;
             pushChunk({ type: "delta", delta: text });
           },
@@ -151,6 +176,7 @@ export async function* createMainThreadGenerationStream(
         ...userGenerationOptions,
         streamer,
         stopping_criteria: stoppingCriteriaList,
+        return_dict_in_generate: true,
       });
 
       pushChunk({
@@ -197,7 +223,7 @@ export async function* createMainThreadGenerationStream(
 export async function* createWorkerGenerationStream(
   options: WorkerOptions,
 ): AsyncGenerator<GenerationEvent> {
-  const { worker, messages, generationOptions, tools, abortSignal } = options;
+  const { worker, messages, generationOptions, tools, enableThinking, abortSignal } = options;
 
   const chunks: Array<GenerationEvent | { type: "error"; error: Error }> = [];
   let resolve: (() => void) | null = null;
@@ -259,6 +285,7 @@ export async function* createWorkerGenerationStream(
     data: messages,
     generationOptions,
     tools: tools?.length ? tools : undefined,
+    enableThinking,
   });
 
   // Yield chunks as they arrive

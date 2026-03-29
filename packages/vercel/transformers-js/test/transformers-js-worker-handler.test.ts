@@ -43,7 +43,7 @@ vi.mock("@huggingface/transformers", () => {
     AutoTokenizer: { from_pretrained: vi.fn().mockResolvedValue(tokenizer) },
     AutoModelForCausalLM: { from_pretrained: vi.fn().mockResolvedValue(model) },
     AutoProcessor: { from_pretrained: vi.fn() },
-    AutoModelForVision2Seq: { from_pretrained: vi.fn() },
+    AutoModelForImageTextToText: { from_pretrained: vi.fn() },
     TextStreamer,
     InterruptableStoppingCriteria,
     StoppingCriteriaList,
