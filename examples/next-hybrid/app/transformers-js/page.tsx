@@ -16,6 +16,7 @@ import {
   PromptInputModelSelectValue,
   PromptInputSubmit,
   PromptInputTextarea,
+  PromptInputThinkingToggle,
   PromptInputToolbar,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
@@ -82,11 +83,20 @@ function TransformersJSChat({
 }) {
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<FileList | undefined>(undefined);
+  const [enableThinking, setEnableThinking] = useState(
+    () => modelConfig.enableThinking ?? false,
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const chatTransport = useMemo(() => {
     if (useClientSideInference) {
-      const { id, name, supportsWorker, ...modelOptions } = modelConfig;
+      const {
+        id,
+        name,
+        supportsWorker,
+        enableThinking: _defaultThinking,
+        ...modelOptions
+      } = modelConfig;
 
       const model = transformersJS(modelConfig.id, {
         ...modelOptions,
@@ -96,13 +106,17 @@ function TransformersJSChat({
             })
           : undefined,
       });
-      return new TransformersChatTransport(model); // Client side chat transport
+      return new TransformersChatTransport(model);
     }
     return new DefaultChatTransport<UIMessage>({
-      // server side (api route)
       api: "/api/transformers-chat",
     });
   }, [modelConfig, useClientSideInference]);
+
+  // Sync thinking toggle to transport
+  if (chatTransport instanceof TransformersChatTransport) {
+    chatTransport.enableThinking = enableThinking;
+  }
 
   const {
     error,
@@ -532,7 +546,10 @@ function TransformersJSChat({
                 disabled={!useClientSideInference}
                 onValueChange={(modelId) => {
                   const selectedModel = MODELS.find((m) => m.id === modelId);
-                  if (selectedModel) setModelConfig(selectedModel);
+                  if (selectedModel) {
+                    setModelConfig(selectedModel);
+                    setEnableThinking(selectedModel.enableThinking ?? false);
+                  }
                 }}
                 value={modelConfig.id}
               >
@@ -547,6 +564,13 @@ function TransformersJSChat({
                   ))}
                 </PromptInputModelSelectContent>
               </PromptInputModelSelect>
+              {modelConfig.enableThinking && (
+                <PromptInputThinkingToggle
+                  enabled={enableThinking}
+                  onToggle={setEnableThinking}
+                  disabled={!useClientSideInference}
+                />
+              )}
             </PromptInputTools>
             <PromptInputSubmit
               disabled={
