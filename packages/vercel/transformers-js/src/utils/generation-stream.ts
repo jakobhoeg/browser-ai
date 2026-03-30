@@ -74,7 +74,7 @@ export async function* createMainThreadGenerationStream(
   const templateOptions: Record<string, any> = {
     add_generation_prompt: true,
     ...(hfTools ? { tools: hfTools } : {}),
-    enable_thinking: enableThinking,
+    ...(enableThinking ? { enable_thinking: true } : {}),
   };
 
   // Prepare inputs

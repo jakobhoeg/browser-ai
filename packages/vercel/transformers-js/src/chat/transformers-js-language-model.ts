@@ -251,14 +251,20 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
         ]);
         this.modelInstance = [processor, model];
 
-        // Warm up vision models to trigger WebGPU shader compilation
+        // Warm up vision models to trigger WebGPU shader compilation.
+        // Wrapped in try-catch: some vision models require image inputs,
+        // in which case shaders will compile on the first real inference.
         if (isBrowserEnvironment()) {
-          const dummyText = processor.apply_chat_template(
-            [{ role: "user", content: "hi" }],
-            { add_generation_prompt: true },
-          );
-          const dummyInputs = await processor(dummyText);
-          await model.generate({ ...dummyInputs, max_new_tokens: 1 });
+          try {
+            const dummyText = processor.apply_chat_template(
+              [{ role: "user", content: [{ type: "text", text: "hi" }] }],
+              { add_generation_prompt: true },
+            );
+            const dummyInputs = await processor(dummyText);
+            await model.generate({ ...dummyInputs, max_new_tokens: 1 });
+          } catch {
+            // Warmup failed — model will still work, first inference will be slower
+          }
         }
       } else {
         const [tokenizer, model] = await Promise.all([

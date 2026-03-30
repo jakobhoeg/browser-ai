@@ -181,7 +181,7 @@ export class TransformersJSWorkerHandler {
     const templateOptions: Record<string, any> = {
       add_generation_prompt: true,
       ...(hfTools ? { tools: hfTools } : {}),
-      enable_thinking: enableThinking,
+      ...(enableThinking ? { enable_thinking: true } : {}),
     };
 
     // Prepare inputs based on model type
@@ -385,23 +385,29 @@ export class TransformersJSWorkerHandler {
         throttledProgress,
       );
 
-      // Warm up model to trigger WebGPU shader compilation
+      // Warm up model to trigger WebGPU shader compilation.
+      // Wrapped in its own try-catch so a warmup failure (e.g. vision models
+      // that require image inputs) doesn't prevent the model from loading.
       this.sendMessage({
         status: "loading",
         data: "Compiling shaders and warming up model...",
       });
-      if (!this.isVisionModel) {
-        const [tokenizer, model] = modelInstance;
-        const inputs = tokenizer("a");
-        await model.generate({ ...inputs, max_new_tokens: 1 });
-      } else {
-        const [processor, model] = modelInstance;
-        const dummyText = processor.apply_chat_template(
-          [{ role: "user", content: "hi" }],
-          { add_generation_prompt: true },
-        );
-        const dummyInputs = await processor(dummyText);
-        await model.generate({ ...dummyInputs, max_new_tokens: 1 });
+      try {
+        if (!this.isVisionModel) {
+          const [tokenizer, model] = modelInstance;
+          const inputs = tokenizer("a");
+          await model.generate({ ...inputs, max_new_tokens: 1 });
+        } else {
+          const [processor, model] = modelInstance;
+          const dummyText = processor.apply_chat_template(
+            [{ role: "user", content: [{ type: "text", text: "hi" }] }],
+            { add_generation_prompt: true },
+          );
+          const dummyInputs = await processor(dummyText);
+          await model.generate({ ...dummyInputs, max_new_tokens: 1 });
+        }
+      } catch {
+        // Some vision models require image inputs — shaders will compile on first real inference
       }
 
       this.sendMessage({ status: "ready" });

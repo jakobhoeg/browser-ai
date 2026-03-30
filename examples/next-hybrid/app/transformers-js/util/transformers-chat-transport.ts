@@ -155,7 +155,7 @@ export class TransformersChatTransport implements ChatTransport<TransformersUIMe
               tagName: "think",
             }),
           }),
-          // tools: this.tools,
+          tools: this.tools,
           stopWhen: stepCountIs(5),
           messages: prompt,
           abortSignal,
