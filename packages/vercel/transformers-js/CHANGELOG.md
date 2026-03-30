@@ -1,5 +1,11 @@
 # @browser-ai/transformers-js
 
+## 2.2.0
+
+### Minor Changes
+
+- 14d5289: feat(@browser-ai/transformers-js): vision model support, thinking mode, and generation fixes
+
 ## 2.1.8
 
 ### Patch Changes
