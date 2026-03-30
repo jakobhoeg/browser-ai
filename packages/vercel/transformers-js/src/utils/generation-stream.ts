@@ -74,9 +74,6 @@ export async function* createMainThreadGenerationStream(
   const templateOptions: Record<string, any> = {
     add_generation_prompt: true,
     ...(hfTools ? { tools: hfTools } : {}),
-    // Pass enable_thinking to models that support it (e.g. Qwen 3.5).
-    // When false the template omits the <think> generation prompt,
-    // so the model responds directly without an internal reasoning phase.
     enable_thinking: enableThinking,
   };
 
@@ -134,14 +131,6 @@ export async function* createMainThreadGenerationStream(
   };
 
   abortSignal?.addEventListener("abort", abortHandler);
-
-  // When thinking is enabled, the chat template adds <think> as part of the
-  // generation prompt (e.g. "<|im_start|>assistant\n<think>\n"), so skip_prompt
-  // swallows it. Emit the opening tag manually so downstream middleware
-  // (extractReasoningMiddleware) can detect the full <think>...</think> block.
-  if (enableThinking) {
-    pushChunk({ type: "delta", delta: "<think>" });
-  }
 
   // Start generation in background
   const generationPromise = (async () => {

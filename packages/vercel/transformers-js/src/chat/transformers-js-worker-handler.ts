@@ -301,15 +301,6 @@ export class TransformersJSWorkerHandler {
     };
 
     this.sendMessage({ status: "start" });
-
-    // When thinking is enabled, the chat template adds <think> as part of the
-    // generation prompt, so skip_prompt swallows it. Emit the opening tag
-    // manually so downstream middleware can detect the full block.
-    if (enableThinking) {
-      accumulatedText += "<think>";
-      this.sendUpdate("<think>");
-    }
-
     const baseOptions = Object.assign({}, inputs, generationOptions);
     const withCacheOptions =
       !isVision && this.past_key_values_cache !== null
