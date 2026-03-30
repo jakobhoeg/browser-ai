@@ -14,7 +14,7 @@ import {
   AutoTokenizer,
   AutoModelForCausalLM,
   AutoProcessor,
-  AutoModelForVision2Seq,
+  AutoModelForImageTextToText,
   StoppingCriteria,
   env,
   type PretrainedModelOptions,
@@ -240,7 +240,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
       if (isVisionModel) {
         const [processor, model] = await Promise.all([
           AutoProcessor.from_pretrained(this.modelId, { progress_callback }),
-          AutoModelForVision2Seq.from_pretrained(this.modelId, {
+          AutoModelForImageTextToText.from_pretrained(this.modelId, {
             dtype: resolvedDtype,
             device: resolvedDevice,
             ...(use_external_data_format !== undefined
@@ -376,11 +376,13 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
     seed,
     tools,
     toolChoice,
+    providerOptions,
   }: Parameters<LanguageModelV3["doGenerate"]>[0]): {
     messages: TransformersMessage[];
     warnings: SharedV3Warning[];
     generationOptions: GenerationOptions;
     functionTools: ToolDefinition[];
+    enableThinking: boolean;
   } {
     const warnings: SharedV3Warning[] = [];
     // Filter and warn about unsupported tools
@@ -466,12 +468,18 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
       this.config.isVisionModel,
     );
 
+    const transformersJsOptions = providerOptions?.["transformers-js"] as
+      | Record<string, unknown>
+      | undefined;
+    const enableThinking =
+      (transformersJsOptions?.enableThinking as boolean) ?? false;
+
     const generationOptions: GenerationOptions = {
-      max_new_tokens: maxOutputTokens || 32768,
-      temperature: temperature || 0.7,
+      max_new_tokens: maxOutputTokens || (enableThinking ? 2048 : 512),
+      temperature: temperature ?? 0.7,
       top_p: topP,
       top_k: topK,
-      do_sample: temperature !== undefined && temperature > 0,
+      do_sample: temperature === undefined || temperature > 0,
     };
 
     return {
@@ -479,6 +487,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
       warnings,
       generationOptions,
       functionTools,
+      enableThinking,
     };
   }
 
@@ -530,8 +539,13 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
   public async doGenerate(
     options: LanguageModelV3CallOptions,
   ): Promise<LanguageModelV3GenerateResult> {
-    const { messages, warnings, generationOptions, functionTools } =
-      this.getArgs(options);
+    const {
+      messages,
+      warnings,
+      generationOptions,
+      functionTools,
+      enableThinking,
+    } = this.getArgs(options);
 
     const useWorker = this.config.worker && isBrowserEnvironment();
 
@@ -548,6 +562,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
             messages,
             generationOptions,
             tools: functionTools,
+            enableThinking,
             abortSignal: options.abortSignal,
           })
         : createMainThreadGenerationStream({
@@ -558,6 +573,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
             generationOptions,
             tools: functionTools,
             isVisionModel: this.config.isVisionModel,
+            enableThinking,
             stoppingCriteria: this.stoppingCriteria,
             abortSignal: options.abortSignal,
           });
@@ -723,8 +739,13 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
   public async doStream(
     options: LanguageModelV3CallOptions,
   ): Promise<LanguageModelV3StreamResult> {
-    const { messages, warnings, generationOptions, functionTools } =
-      this.getArgs(options);
+    const {
+      messages,
+      warnings,
+      generationOptions,
+      functionTools,
+      enableThinking,
+    } = this.getArgs(options);
 
     const useWorker = this.config.worker && isBrowserEnvironment();
 
@@ -759,6 +780,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
                 messages,
                 generationOptions,
                 tools: functionTools,
+                enableThinking,
                 abortSignal: options.abortSignal,
               })
             : createMainThreadGenerationStream({
@@ -769,6 +791,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
                 generationOptions,
                 tools: functionTools,
                 isVisionModel: self.config.isVisionModel,
+                enableThinking,
                 stoppingCriteria: self.stoppingCriteria,
                 abortSignal: options.abortSignal,
               });

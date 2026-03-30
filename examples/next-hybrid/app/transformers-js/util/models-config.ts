@@ -4,6 +4,7 @@ export interface ModelConfig extends Omit<WorkerLoadOptions, "modelId"> {
   id: string;
   name: string;
   supportsWorker: boolean;
+  enableThinking?: boolean;
 }
 
 export const MODELS: ModelConfig[] = [
@@ -19,6 +20,7 @@ export const MODELS: ModelConfig[] = [
     name: "Qwen3 0.6B",
     device: "webgpu",
     dtype: "q4f16",
+    enableThinking: true,
     supportsWorker: true,
   },
   {

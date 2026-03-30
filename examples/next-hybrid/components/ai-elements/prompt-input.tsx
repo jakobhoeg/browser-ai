@@ -1,6 +1,12 @@
 "use client";
 
-import { Loader2Icon, SendIcon, SquareIcon, XIcon } from "lucide-react";
+import {
+  Loader2Icon,
+  SendIcon,
+  BrainIcon,
+  SquareIcon,
+  XIcon,
+} from "lucide-react";
 import type {
   ComponentProps,
   HTMLAttributes,
@@ -222,4 +228,38 @@ export const PromptInputModelSelectValue = ({
   ...props
 }: PromptInputModelSelectValueProps) => (
   <SelectValue className={cn(className)} {...props} />
+);
+
+export type PromptInputThinkingToggleProps = Omit<
+  ComponentProps<typeof Button>,
+  "onClick" | "onToggle"
+> & {
+  enabled: boolean;
+  onToggle: (enabled: boolean) => void;
+};
+
+export const PromptInputThinkingToggle = ({
+  enabled,
+  onToggle,
+  className,
+  ...props
+}: PromptInputThinkingToggleProps) => (
+  <Button
+    type="button"
+    variant="ghost"
+    size="icon"
+    className={cn(
+      "shrink-0 rounded-lg",
+      enabled
+        ? "text-primary bg-primary/10 hover:bg-primary/20"
+        : "text-muted-foreground",
+      className,
+    )}
+    onClick={() => onToggle(!enabled)}
+    aria-label={enabled ? "Disable thinking" : "Enable thinking"}
+    aria-pressed={enabled}
+    {...props}
+  >
+    <BrainIcon className="size-4" />
+  </Button>
 );

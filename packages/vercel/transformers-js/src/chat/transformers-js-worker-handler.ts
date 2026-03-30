@@ -2,7 +2,7 @@ import {
   AutoTokenizer,
   AutoModelForCausalLM,
   AutoProcessor,
-  AutoModelForVision2Seq,
+  AutoModelForImageTextToText,
   TextStreamer,
   InterruptableStoppingCriteria,
   StoppingCriteriaList,
@@ -114,7 +114,7 @@ class ModelManager {
       AutoProcessor.from_pretrained(modelId, {
         progress_callback: options.progressCallback,
       }),
-      AutoModelForVision2Seq.from_pretrained(modelId, {
+      AutoModelForImageTextToText.from_pretrained(modelId, {
         dtype: options.dtype || "fp32",
         device: options.device || "webgpu",
         ...(options.use_external_data_format !== undefined
@@ -142,6 +142,7 @@ export class TransformersJSWorkerHandler {
     messages: WorkerGenerateData[],
     generationOptions?: GenerationOptions,
     tools?: ToolDefinition[],
+    enableThinking?: boolean,
   ) {
     try {
       const modelInstance = await ModelManager.getInstance(
@@ -152,6 +153,7 @@ export class TransformersJSWorkerHandler {
         messages,
         generationOptions,
         tools,
+        enableThinking,
       );
     } catch (error) {
       this.sendError(error instanceof Error ? error.message : String(error));
@@ -163,6 +165,7 @@ export class TransformersJSWorkerHandler {
     messages: WorkerGenerateData[],
     userGenerationOptions?: GenerationOptions,
     tools?: ToolDefinition[],
+    enableThinking: boolean = false,
   ) {
     const [processor, model] = modelInstance;
     const isVision = this.isVisionModel;
@@ -173,6 +176,13 @@ export class TransformersJSWorkerHandler {
         : undefined;
 
     const processedMessages = messages;
+
+    // Build shared apply_chat_template options
+    const templateOptions: Record<string, any> = {
+      add_generation_prompt: true,
+      ...(hfTools ? { tools: hfTools } : {}),
+      ...(enableThinking ? { enable_thinking: true } : {}),
+    };
 
     // Prepare inputs based on model type
     // Using 'any' here as transformers.js returns various formats depending on model type
@@ -194,16 +204,18 @@ export class TransformersJSWorkerHandler {
           )
           .map((msg) => load_image(msg.image)),
       );
-      const text = processor.apply_chat_template(lastMessages as any, {
-        add_generation_prompt: true,
-        ...(hfTools ? { tools: hfTools } : {}),
-      });
-      inputs = await processor(text, images);
+      const text = processor.apply_chat_template(
+        lastMessages as any,
+        templateOptions,
+      );
+      inputs =
+        images.length > 0
+          ? await processor(text, images)
+          : await processor(text);
     } else {
       inputs = processor.apply_chat_template(processedMessages as any, {
-        add_generation_prompt: true,
+        ...templateOptions,
         return_dict: true,
-        ...(hfTools ? { tools: hfTools } : {}),
       });
     }
 
@@ -230,6 +242,11 @@ export class TransformersJSWorkerHandler {
       numTokens++;
     };
     const output_callback = (output: string) => {
+      // When thinking is enabled, skip_special_tokens is false so
+      // <think> tags pass through. Filter out chat control tokens
+      // (e.g. <|im_end|>, <|endoftext|>) that also leak through.
+      if (enableThinking && /^<\|[^|]*\|>$/.test(output.trim())) return;
+
       accumulatedText += output;
 
       if (tools && tools.length > 0 && !toolCallDetected) {
@@ -256,7 +273,7 @@ export class TransformersJSWorkerHandler {
       isVision ? (processor as any).tokenizer : processor,
       {
         skip_prompt: true,
-        skip_special_tokens: true,
+        skip_special_tokens: !enableThinking,
         callback_function: output_callback,
         token_callback_function: token_callback,
       },
@@ -288,7 +305,6 @@ export class TransformersJSWorkerHandler {
     };
 
     this.sendMessage({ status: "start" });
-
     const baseOptions = Object.assign({}, inputs, generationOptions);
     const withCacheOptions =
       !isVision && this.past_key_values_cache !== null
@@ -369,7 +385,7 @@ export class TransformersJSWorkerHandler {
         throttledProgress,
       );
 
-      // Warm up model (text models only)
+      // Warm up text models to trigger WebGPU shader compilation
       if (!this.isVisionModel) {
         this.sendMessage({
           status: "loading",
@@ -378,11 +394,6 @@ export class TransformersJSWorkerHandler {
         const [tokenizer, model] = modelInstance;
         const inputs = tokenizer("a");
         await model.generate({ ...inputs, max_new_tokens: 1 });
-      } else {
-        this.sendMessage({
-          status: "loading",
-          data: "Model loaded and ready...",
-        });
       }
 
       this.sendMessage({ status: "ready" });
@@ -527,7 +538,12 @@ export class TransformersJSWorkerHandler {
           break;
         case "generate":
           this.stopping_criteria.reset();
-          this.generate(msg.data, msg.generationOptions, msg.tools);
+          this.generate(
+            msg.data,
+            msg.generationOptions,
+            msg.tools,
+            msg.enableThinking,
+          );
           break;
         case "interrupt":
           this.interrupt();

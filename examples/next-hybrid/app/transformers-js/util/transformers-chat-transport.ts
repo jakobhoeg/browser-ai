@@ -83,6 +83,7 @@ export const createTools = () => ({
  */
 export class TransformersChatTransport implements ChatTransport<TransformersUIMessage> {
   private readonly model: TransformersJSLanguageModel;
+  public enableThinking = false;
   private tools: ReturnType<typeof createTools>;
 
   constructor(model: TransformersJSLanguageModel) {
@@ -158,6 +159,11 @@ export class TransformersChatTransport implements ChatTransport<TransformersUIMe
           stopWhen: stepCountIs(5),
           messages: prompt,
           abortSignal,
+          providerOptions: {
+            "transformers-js": {
+              enableThinking: this.enableThinking,
+            },
+          },
           onChunk: (event) => {
             if (event.chunk.type === "text-delta" && downloadProgressId) {
               writer.write({
