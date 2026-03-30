@@ -22,21 +22,17 @@ import {
  */
 export interface WebLLMCallProviderOptions {
   /**
-   * Replaces the default tool-calling prompt text that appears before the
-   * generated tool schemas JSON block.
-   *
-   * If this or `afterToolSchemasPrompt` is provided, the default tool-use
-   * prompt is not emitted. An empty string is treated as absent.
+   * Inserts custom text before the built-in tool-calling scaffold.
+   * The scaffold still includes the generated tool schemas JSON and the
+   * standard tool_call/tool_result instructions.
    */
-  beforeToolSchemasPrompt?: string;
+  toolCallingInstructionsBefore?: string;
   /**
-   * Replaces the default tool-calling prompt text that appears after the
-   * generated tool schemas JSON block.
-   *
-   * If this or `beforeToolSchemasPrompt` is provided, the default tool-use
-   * prompt is not emitted. An empty string is treated as absent.
+   * Inserts custom text after the built-in tool-calling scaffold.
+   * The scaffold still includes the generated tool schemas JSON and the
+   * standard tool_call/tool_result instructions.
    */
-  afterToolSchemasPrompt?: string;
+  toolCallingInstructionsAfter?: string;
   /**
    * Additional generation config passed directly to the WebLLM engine.
    * @see https://webllm.mlc.ai/docs/user/api_reference.html#generationconfig

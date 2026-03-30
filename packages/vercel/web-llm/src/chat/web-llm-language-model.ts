@@ -280,13 +280,13 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       | WebLLMCallProviderOptions
       | undefined;
     const extraBody = callProviderOptions?.extra_body;
-    const beforeToolSchemasPrompt =
-      typeof callProviderOptions?.beforeToolSchemasPrompt === "string"
-        ? callProviderOptions.beforeToolSchemasPrompt || undefined
+    const toolCallingInstructionsBefore =
+      typeof callProviderOptions?.toolCallingInstructionsBefore === "string"
+        ? callProviderOptions.toolCallingInstructionsBefore || undefined
         : undefined;
-    const afterToolSchemasPrompt =
-      typeof callProviderOptions?.afterToolSchemasPrompt === "string"
-        ? callProviderOptions.afterToolSchemasPrompt || undefined
+    const toolCallingInstructionsAfter =
+      typeof callProviderOptions?.toolCallingInstructionsAfter === "string"
+        ? callProviderOptions.toolCallingInstructionsAfter || undefined
         : undefined;
     if (extraBody) {
       // https://webllm.mlc.ai/docs/user/api_reference.html#generationconfig
@@ -311,8 +311,8 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       warnings,
       requestOptions,
       functionTools,
-      beforeToolSchemasPrompt,
-      afterToolSchemasPrompt,
+      toolCallingInstructionsBefore,
+      toolCallingInstructionsAfter,
     };
   }
 
@@ -332,8 +332,8 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       warnings,
       requestOptions,
       functionTools,
-      beforeToolSchemasPrompt,
-      afterToolSchemasPrompt,
+      toolCallingInstructionsBefore,
+      toolCallingInstructionsAfter,
     } = converted;
 
     // Extract system prompt and build tool calling prompt
@@ -347,8 +347,8 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       functionTools,
       {
         allowParallelToolCalls: false,
-        beforeToolSchemasPrompt,
-        afterToolSchemasPrompt,
+        toolCallingInstructionsBefore,
+        toolCallingInstructionsAfter,
       },
     );
 
@@ -544,8 +544,8 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       warnings,
       requestOptions,
       functionTools,
-      beforeToolSchemasPrompt,
-      afterToolSchemasPrompt,
+      toolCallingInstructionsBefore,
+      toolCallingInstructionsAfter,
     } = converted;
 
     // Extract system prompt and build tool calling prompt
@@ -559,8 +559,8 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       functionTools,
       {
         allowParallelToolCalls: false,
-        beforeToolSchemasPrompt,
-        afterToolSchemasPrompt,
+        toolCallingInstructionsBefore,
+        toolCallingInstructionsAfter,
       },
     );
 

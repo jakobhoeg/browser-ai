@@ -192,17 +192,17 @@ describe("WebLLMLanguageModel", () => {
       );
     });
 
-    it("should replace the default tool prompt while preserving tool schemas when beforeToolSchemasPrompt and afterToolSchemasPrompt are provided", async () => {
+    it("should wrap the built-in tool scaffold when toolCallingInstructionsBefore and toolCallingInstructionsAfter are provided", async () => {
       mockChatCompletionsCreate.mockResolvedValue({
         choices: [{ message: { content: "ok" }, finish_reason: "stop" }],
         usage: { prompt_tokens: 5, completion_tokens: 2, total_tokens: 7 },
       });
 
       const model = new WebLLMLanguageModel("test-model");
-      const beforeToolSchemasPrompt =
+      const toolCallingInstructionsBefore =
         "TOOLS AVAILABLE BELOW. Inspect the JSON before choosing one.";
-      const afterToolSchemasPrompt =
-        "Reply with a tool_call fence and wait for the result.";
+      const toolCallingInstructionsAfter =
+        "Summarize clearly after you have the necessary tool results.";
 
       await model.doGenerate({
         prompt: [{ role: "user", content: [{ type: "text", text: "hi" }] }],
@@ -216,8 +216,8 @@ describe("WebLLMLanguageModel", () => {
         ],
         providerOptions: {
           "web-llm": {
-            beforeToolSchemasPrompt,
-            afterToolSchemasPrompt,
+            toolCallingInstructionsBefore,
+            toolCallingInstructionsAfter,
           },
         },
       });
@@ -228,14 +228,20 @@ describe("WebLLMLanguageModel", () => {
           message.role === "system",
       );
 
-      expect(systemMessage?.content).toContain(beforeToolSchemasPrompt);
+      expect(systemMessage?.content).toContain(toolCallingInstructionsBefore);
       expect(systemMessage?.content).toContain('"name": "search"');
-      expect(systemMessage?.content).toContain(afterToolSchemasPrompt);
-      expect(systemMessage?.content).not.toContain(
-        "# Tool Calling Instructions",
-      );
-      expect(systemMessage?.content).not.toContain(
+      expect(systemMessage?.content).toContain("# Tool Calling Instructions");
+      expect(systemMessage?.content).toContain(
         "Only request one tool call at a time",
+      );
+      expect(systemMessage?.content).toContain("```tool_result");
+      expect(systemMessage?.content).toContain(toolCallingInstructionsAfter);
+      expect(systemMessage?.content).not.toContain(
+        "You are a helpful AI assistant with access to tools.",
+      );
+      expect(systemMessage?.content).not.toContain("Important:");
+      expect(systemMessage?.content).not.toContain(
+        "Use exact tool and parameter names",
       );
     });
   });
@@ -543,7 +549,7 @@ describe("WebLLMLanguageModel", () => {
     });
 
     describe("doStream with tools", () => {
-      it("should replace the default tool prompt while preserving tool schemas when beforeToolSchemasPrompt and afterToolSchemasPrompt are provided", async () => {
+      it("should wrap the built-in tool scaffold when toolCallingInstructionsBefore and toolCallingInstructionsAfter are provided", async () => {
         async function* createTextStream(): AsyncGenerator<any, void, unknown> {
           yield { choices: [{ delta: { content: "ok" } }] };
           yield {
@@ -559,10 +565,10 @@ describe("WebLLMLanguageModel", () => {
         mockChatCompletionsCreate.mockResolvedValue(createTextStream());
 
         const model = new WebLLMLanguageModel("test-model");
-        const beforeToolSchemasPrompt =
+        const toolCallingInstructionsBefore =
           "READ THE TOOL JSON BEFORE YOU PICK A TOOL.";
-        const afterToolSchemasPrompt =
-          "Emit a tool_call fence if you need one.";
+        const toolCallingInstructionsAfter =
+          "Once tool results arrive, respond with a concise answer.";
 
         const result = await model.doStream({
           prompt: [
@@ -584,8 +590,8 @@ describe("WebLLMLanguageModel", () => {
           ],
           providerOptions: {
             "web-llm": {
-              beforeToolSchemasPrompt,
-              afterToolSchemasPrompt,
+              toolCallingInstructionsBefore,
+              toolCallingInstructionsAfter,
             },
           },
         });
@@ -603,14 +609,20 @@ describe("WebLLMLanguageModel", () => {
             message.role === "system",
         );
 
-        expect(systemMessage?.content).toContain(beforeToolSchemasPrompt);
+        expect(systemMessage?.content).toContain(toolCallingInstructionsBefore);
         expect(systemMessage?.content).toContain('"name": "get_weather"');
-        expect(systemMessage?.content).toContain(afterToolSchemasPrompt);
-        expect(systemMessage?.content).not.toContain(
-          "# Tool Calling Instructions",
-        );
-        expect(systemMessage?.content).not.toContain(
+        expect(systemMessage?.content).toContain("# Tool Calling Instructions");
+        expect(systemMessage?.content).toContain(
           "Only request one tool call at a time",
+        );
+        expect(systemMessage?.content).toContain("```tool_result");
+        expect(systemMessage?.content).toContain(toolCallingInstructionsAfter);
+        expect(systemMessage?.content).not.toContain(
+          "You are a helpful AI assistant with access to tools.",
+        );
+        expect(systemMessage?.content).not.toContain("Important:");
+        expect(systemMessage?.content).not.toContain(
+          "Use exact tool and parameter names",
         );
       });
 
