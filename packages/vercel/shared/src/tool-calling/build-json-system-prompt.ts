@@ -10,7 +10,7 @@ import type { ToolDefinition } from "../types";
  *
  * @param originalSystemPrompt - The original system prompt (if any)
  * @param tools - Array of available tool definitions
- * @param options - Configuration options for tool calling behavior (unused, kept for backwards compatibility)
+ * @param options - Configuration options for tool calling behavior
  * @returns Enhanced system prompt with JSON tool calling instructions
  */
 export function buildJsonToolSystemPrompt(
@@ -18,8 +18,8 @@ export function buildJsonToolSystemPrompt(
   tools: Array<ToolDefinition | LanguageModelV3FunctionTool>,
   options?: {
     allowParallelToolCalls?: boolean;
-    beforeToolSchemasPrompt?: string;
-    afterToolSchemasPrompt?: string;
+    toolCallingInstructionsBefore?: string;
+    toolCallingInstructionsAfter?: string;
   },
 ): string {
   if (!tools || tools.length === 0) {
@@ -39,22 +39,17 @@ export function buildJsonToolSystemPrompt(
   });
 
   const toolsJson = JSON.stringify(toolSchemas, null, 2);
-  const beforeToolSchemasPrompt = normalizePromptSection(
-    options?.beforeToolSchemasPrompt,
+  const toolCallingInstructionsBefore = normalizePromptSection(
+    options?.toolCallingInstructionsBefore,
   );
-  const afterToolSchemasPrompt = normalizePromptSection(
-    options?.afterToolSchemasPrompt,
+  const toolCallingInstructionsAfter = normalizePromptSection(
+    options?.toolCallingInstructionsAfter,
   );
-  const hasReplacementPrompt =
-    beforeToolSchemasPrompt != null || afterToolSchemasPrompt != null;
+  const hasCustomToolCallingInstructions =
+    toolCallingInstructionsBefore != null ||
+    toolCallingInstructionsAfter != null;
 
-  const instructionBody = hasReplacementPrompt
-    ? [beforeToolSchemasPrompt, toolsJson, afterToolSchemasPrompt]
-        .filter((section): section is string => section != null)
-        .join("\n")
-    : `You are a helpful AI assistant with access to tools.
-
-# Available Tools
+  const builtInToolCallingScaffold = `# Available Tools
 ${toolsJson}
 
 # Tool Calling Instructions
@@ -70,7 +65,19 @@ Tool responses will be provided in \`\`\`tool_result fences. Each line contains 
 \`\`\`tool_result
 {"id": "call_123", "name": "tool_name", "result": {...}, "error": false}
 \`\`\`
-Use the \`result\` payload (and treat \`error\` as a boolean flag) when continuing the conversation.
+Use the \`result\` payload (and treat \`error\` as a boolean flag) when continuing the conversation.`;
+
+  const instructionBody = hasCustomToolCallingInstructions
+    ? [
+        toolCallingInstructionsBefore,
+        builtInToolCallingScaffold,
+        toolCallingInstructionsAfter,
+      ]
+        .filter((section): section is string => section != null)
+        .join("\n\n")
+    : `You are a helpful AI assistant with access to tools.
+
+${builtInToolCallingScaffold}
 
 Important:
 - Use exact tool and parameter names from the schema above

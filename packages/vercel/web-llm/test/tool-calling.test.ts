@@ -245,7 +245,7 @@ describe("buildJsonToolSystemPrompt", () => {
     expect(result).toContain("Use exact tool and parameter names");
   });
 
-  it("uses only beforeToolSchemasPrompt plus tool JSON when only beforeToolSchemasPrompt is provided", () => {
+  it("uses only toolCallingInstructionsBefore plus the built-in scaffold when only toolCallingInstructionsBefore is provided", () => {
     const tools: ToolDefinition[] = [
       {
         name: "search",
@@ -254,23 +254,25 @@ describe("buildJsonToolSystemPrompt", () => {
       },
     ];
 
-    const beforeToolSchemasPrompt =
+    const toolCallingInstructionsBefore =
       "Inspect the tool JSON below before calling anything.";
 
     const result = buildJsonToolSystemPrompt(undefined, tools, {
-      beforeToolSchemasPrompt,
+      toolCallingInstructionsBefore,
     });
 
-    expect(result).toContain(beforeToolSchemasPrompt);
+    expect(result).toContain(toolCallingInstructionsBefore);
+    expect(result).toContain("# Available Tools");
     expect(result).toContain('"name": "search"');
-    expect(result.indexOf(beforeToolSchemasPrompt)).toBeLessThan(
-      result.indexOf('"name": "search"'),
+    expect(result.indexOf(toolCallingInstructionsBefore)).toBeLessThan(
+      result.indexOf("# Available Tools"),
     );
-    expect(result).not.toContain("# Tool Calling Instructions");
-    expect(result).not.toContain("Only request one tool call at a time");
+    expect(result).toContain("# Tool Calling Instructions");
+    expect(result).toContain("Only request one tool call at a time");
+    expect(result).toContain("```tool_result");
   });
 
-  it("uses only tool JSON plus afterToolSchemasPrompt when only afterToolSchemasPrompt is provided", () => {
+  it("uses only the built-in scaffold plus toolCallingInstructionsAfter when only toolCallingInstructionsAfter is provided", () => {
     const tools: ToolDefinition[] = [
       {
         name: "search",
@@ -279,23 +281,25 @@ describe("buildJsonToolSystemPrompt", () => {
       },
     ];
 
-    const afterToolSchemasPrompt =
+    const toolCallingInstructionsAfter =
       "If you need a tool, respond with a tool_call fence.";
 
     const result = buildJsonToolSystemPrompt(undefined, tools, {
-      afterToolSchemasPrompt,
+      toolCallingInstructionsAfter,
     });
 
-    expect(result).toContain(afterToolSchemasPrompt);
+    expect(result).toContain(toolCallingInstructionsAfter);
+    expect(result).toContain("# Available Tools");
     expect(result).toContain('"name": "search"');
-    expect(result.indexOf('"name": "search"')).toBeLessThan(
-      result.indexOf(afterToolSchemasPrompt),
+    expect(result).toContain("# Tool Calling Instructions");
+    expect(result).toContain("Only request one tool call at a time");
+    expect(result).toContain("```tool_result");
+    expect(result.indexOf("```tool_result")).toBeLessThan(
+      result.indexOf(toolCallingInstructionsAfter),
     );
-    expect(result).not.toContain("# Tool Calling Instructions");
-    expect(result).not.toContain("Only request one tool call at a time");
   });
 
-  it("uses beforeToolSchemasPrompt and afterToolSchemasPrompt around the serialized tool JSON when both are provided", () => {
+  it("uses toolCallingInstructionsBefore and toolCallingInstructionsAfter around the built-in scaffold when both are provided", () => {
     const tools: ToolDefinition[] = [
       {
         name: "search",
@@ -304,25 +308,27 @@ describe("buildJsonToolSystemPrompt", () => {
       },
     ];
 
-    const beforeToolSchemasPrompt = "Before schemas";
-    const afterToolSchemasPrompt = "After schemas";
+    const toolCallingInstructionsBefore = "Before schemas";
+    const toolCallingInstructionsAfter = "After schemas";
 
     const result = buildJsonToolSystemPrompt(undefined, tools, {
-      beforeToolSchemasPrompt,
-      afterToolSchemasPrompt,
+      toolCallingInstructionsBefore,
+      toolCallingInstructionsAfter,
     });
 
-    expect(result.indexOf(beforeToolSchemasPrompt)).toBeLessThan(
-      result.indexOf('"name": "search"'),
+    expect(result.indexOf(toolCallingInstructionsBefore)).toBeLessThan(
+      result.indexOf("# Available Tools"),
     );
-    expect(result.indexOf('"name": "search"')).toBeLessThan(
-      result.indexOf(afterToolSchemasPrompt),
+    expect(result).toContain('"name": "search"');
+    expect(result).toContain("# Tool Calling Instructions");
+    expect(result).toContain("Only request one tool call at a time");
+    expect(result).toContain("```tool_result");
+    expect(result.indexOf("```tool_result")).toBeLessThan(
+      result.indexOf(toolCallingInstructionsAfter),
     );
     expect(result).not.toContain(
       "You are a helpful AI assistant with access to tools.",
     );
-    expect(result).not.toContain("# Tool Calling Instructions");
-    expect(result).not.toContain("Only request one tool call at a time");
   });
 
   it("treats empty replacement prompt sections as absent", () => {
@@ -335,8 +341,8 @@ describe("buildJsonToolSystemPrompt", () => {
     ];
 
     const result = buildJsonToolSystemPrompt(undefined, tools, {
-      beforeToolSchemasPrompt: "",
-      afterToolSchemasPrompt: "",
+      toolCallingInstructionsBefore: "",
+      toolCallingInstructionsAfter: "",
     });
 
     expect(result).toContain("# Tool Calling Instructions");

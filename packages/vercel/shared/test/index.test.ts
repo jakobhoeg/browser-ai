@@ -92,7 +92,7 @@ describe("@browser-ai/shared exports", () => {
       expect(result).toContain("test");
     });
 
-    it("uses only beforeToolSchemasPrompt plus tool JSON when only beforeToolSchemasPrompt is provided", () => {
+    it("uses only toolCallingInstructionsBefore plus the built-in scaffold when only toolCallingInstructionsBefore is provided", () => {
       const tools = [
         {
           name: "search",
@@ -102,21 +102,23 @@ describe("@browser-ai/shared exports", () => {
       ];
       const custom = "CUSTOM INTRO TEXT";
       const result = buildJsonToolSystemPrompt(undefined, tools, {
-        beforeToolSchemasPrompt: custom,
+        toolCallingInstructionsBefore: custom,
       });
       expect(result).toContain(custom);
+      expect(result).toContain("# Available Tools");
       expect(result).toContain('"name": "search"');
       expect(result.indexOf(custom)).toBeLessThan(
-        result.indexOf('"name": "search"'),
+        result.indexOf("# Available Tools"),
       );
+      expect(result).toContain("# Tool Calling Instructions");
+      expect(result).toContain("Only request one tool call at a time");
+      expect(result).toContain("```tool_result");
       expect(result).not.toContain(
         "You are a helpful AI assistant with access to tools.",
       );
-      expect(result).not.toContain("# Tool Calling Instructions");
-      expect(result).not.toContain("Only request one tool call at a time");
     });
 
-    it("prepends originalSystemPrompt before replacement-mode prompt", () => {
+    it("prepends originalSystemPrompt before custom tool-calling scaffold", () => {
       const tools = [
         {
           name: "t",
@@ -128,16 +130,17 @@ describe("@browser-ai/shared exports", () => {
       const before = "BEFORE";
       const after = "AFTER";
       const result = buildJsonToolSystemPrompt(sys, tools, {
-        beforeToolSchemasPrompt: before,
-        afterToolSchemasPrompt: after,
+        toolCallingInstructionsBefore: before,
+        toolCallingInstructionsAfter: after,
       });
       expect(result.startsWith(`${sys}\n\n`)).toBe(true);
       expect(result).toContain(before);
+      expect(result).toContain("# Tool Calling Instructions");
       expect(result).toContain('"name": "t"');
       expect(result).toContain(after);
     });
 
-    it("uses only tool JSON plus afterToolSchemasPrompt when only afterToolSchemasPrompt is provided", () => {
+    it("uses only the built-in scaffold plus toolCallingInstructionsAfter when only toolCallingInstructionsAfter is provided", () => {
       const tools = [
         {
           name: "t",
@@ -146,21 +149,26 @@ describe("@browser-ai/shared exports", () => {
         },
       ];
       const result = buildJsonToolSystemPrompt(undefined, tools, {
-        afterToolSchemasPrompt: "AFTER",
+        toolCallingInstructionsAfter: "AFTER",
       });
+      expect(result).toContain("# Available Tools");
       expect(result).toContain('"name": "t"');
+      expect(result).toContain("# Tool Calling Instructions");
+      expect(result).toContain("Only request one tool call at a time");
+      expect(result).toContain("```tool_result");
+      expect(result.indexOf("```tool_result")).toBeLessThan(
+        result.indexOf("AFTER"),
+      );
       expect(result).toContain("AFTER");
-      expect(result.indexOf('"name": "t"')).toBeLessThan(
+      expect(result.indexOf("# Available Tools")).toBeLessThan(
         result.indexOf("AFTER"),
       );
       expect(result).not.toContain(
         "You are a helpful AI assistant with access to tools.",
       );
-      expect(result).not.toContain("# Tool Calling Instructions");
-      expect(result).not.toContain("Only request one tool call at a time");
     });
 
-    it("uses beforeToolSchemasPrompt and afterToolSchemasPrompt around the serialized tool JSON when both are provided", () => {
+    it("uses toolCallingInstructionsBefore and toolCallingInstructionsAfter around the built-in scaffold when both are provided", () => {
       const tools = [
         {
           name: "t",
@@ -169,20 +177,22 @@ describe("@browser-ai/shared exports", () => {
         },
       ];
       const result = buildJsonToolSystemPrompt(undefined, tools, {
-        beforeToolSchemasPrompt: "BEFORE",
-        afterToolSchemasPrompt: "AFTER",
+        toolCallingInstructionsBefore: "BEFORE",
+        toolCallingInstructionsAfter: "AFTER",
       });
       expect(result.indexOf("BEFORE")).toBeLessThan(
-        result.indexOf('"name": "t"'),
+        result.indexOf("# Available Tools"),
       );
-      expect(result.indexOf('"name": "t"')).toBeLessThan(
+      expect(result).toContain('"name": "t"');
+      expect(result).toContain("# Tool Calling Instructions");
+      expect(result).toContain("Only request one tool call at a time");
+      expect(result).toContain("```tool_result");
+      expect(result.indexOf("```tool_result")).toBeLessThan(
         result.indexOf("AFTER"),
       );
       expect(result).not.toContain(
         "You are a helpful AI assistant with access to tools.",
       );
-      expect(result).not.toContain("# Tool Calling Instructions");
-      expect(result).not.toContain("Only request one tool call at a time");
     });
 
     it("falls back to default prompt only when neither replacement property is provided", () => {
@@ -207,8 +217,8 @@ describe("@browser-ai/shared exports", () => {
         },
       ];
       const result = buildJsonToolSystemPrompt(undefined, tools, {
-        beforeToolSchemasPrompt: "",
-        afterToolSchemasPrompt: "",
+        toolCallingInstructionsBefore: "",
+        toolCallingInstructionsAfter: "",
       });
       expect(result).toContain("Available Tools");
       expect(result).toContain("Only request one tool call at a time");
