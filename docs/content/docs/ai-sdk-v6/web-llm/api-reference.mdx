@@ -109,19 +109,19 @@ self.onmessage = (msg: MessageEvent) => handler.onmessage(msg);
 
 Pass provider-specific options via the AI SDK `providerOptions` call option under the `"web-llm"` key.
 
-### `beforeToolSchemasPrompt`
+### `toolCallingInstructionsBefore`
 
 | Property | Type | Required | Description |
 |---|---|---|---|
-| `beforeToolSchemasPrompt` | `string` | No | Custom prompt text inserted before the generated tool schemas JSON. Must be non-empty to take effect; an empty string is treated as absent. |
+| `toolCallingInstructionsBefore` | `string` | No | Custom prompt text inserted before the built-in tool-calling scaffold. The scaffold still includes the generated tool schemas JSON and the standard `tool_call` / `tool_result` instructions. Empty strings are treated as absent. |
 
-### `afterToolSchemasPrompt`
+### `toolCallingInstructionsAfter`
 
 | Property | Type | Required | Description |
 |---|---|---|---|
-| `afterToolSchemasPrompt` | `string` | No | Custom prompt text inserted after the generated tool schemas JSON. Must be non-empty to take effect; an empty string is treated as absent. |
+| `toolCallingInstructionsAfter` | `string` | No | Custom prompt text inserted after the built-in tool-calling scaffold. The scaffold still includes the generated tool schemas JSON and the standard `tool_call` / `tool_result` instructions. Empty strings are treated as absent. |
 
-If either property is set, the default tool-use prompt text is not emitted. The generated tool schemas JSON still appears between the two optional sections, so callers should include any tool-call formatting guidance they still want the model to follow.
+If either property is set, the shared prompt builder still emits the generated tool schemas JSON and the standard tool-calling instructions. Your custom text is inserted before and/or after that scaffold.
 
 ### `extra_body`
 
@@ -143,10 +143,10 @@ const result = await generateText({
   tools: { /* ... */ },
   providerOptions: {
     "web-llm": {
-      beforeToolSchemasPrompt:
+      toolCallingInstructionsBefore:
         "Review the following tool schemas before using a tool.",
-      afterToolSchemasPrompt:
-        "If you need a tool, emit a tool_call fence and wait for the result.",
+      toolCallingInstructionsAfter:
+        "Prefer concise answers once the tool results contain enough information.",
       extra_body: { enable_thinking: true },
     } satisfies WebLLMCallProviderOptions,
   },
@@ -215,8 +215,8 @@ Typed interface for per-call provider options passed via `providerOptions["web-l
 import type { WebLLMCallProviderOptions } from "@browser-ai/web-llm";
 
 interface WebLLMCallProviderOptions {
-  beforeToolSchemasPrompt?: string;
-  afterToolSchemasPrompt?: string;
+  toolCallingInstructionsBefore?: string;
+  toolCallingInstructionsAfter?: string;
   extra_body?: {
     enable_thinking?: boolean;
     enable_latency_breakdown?: boolean;
@@ -224,9 +224,10 @@ interface WebLLMCallProviderOptions {
 }
 
 const options: WebLLMCallProviderOptions = {
-  beforeToolSchemasPrompt: "Review the following tool schemas before using a tool.",
-  afterToolSchemasPrompt:
-    "If you need a tool, emit a tool_call fence and wait for the result.",
+  toolCallingInstructionsBefore:
+    "Review the following tool schemas before using a tool.",
+  toolCallingInstructionsAfter:
+    "Prefer concise answers once the tool results contain enough information.",
   extra_body: { enable_thinking: true },
 };
 

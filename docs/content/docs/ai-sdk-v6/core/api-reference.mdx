@@ -88,28 +88,29 @@ Gets the context window size (token limit) of the current session. If the sessio
 
 Pass provider-specific options via the AI SDK `providerOptions` call option under the `"browser-ai"` key. The full options shape is exported as [`BrowserAICallProviderOptions`](#browseraicallprovideroptions).
 
-### `beforeToolSchemasPrompt`
+### `toolCallingInstructionsBefore`
 
 | Property | Type | Required | Description |
 |---|---|---|---|
-| `beforeToolSchemasPrompt` | `string` | No | Custom prompt text inserted before the generated tool schemas JSON. Must be non-empty to take effect; an empty string is treated as absent. |
+| `toolCallingInstructionsBefore` | `string` | No | Custom prompt text inserted before the built-in tool-calling scaffold. The scaffold still includes the generated tool schemas JSON and the standard `tool_call` / `tool_result` instructions. Empty strings are treated as absent. |
 
-### `afterToolSchemasPrompt`
+### `toolCallingInstructionsAfter`
 
 | Property | Type | Required | Description |
 |---|---|---|---|
-| `afterToolSchemasPrompt` | `string` | No | Custom prompt text inserted after the generated tool schemas JSON. Must be non-empty to take effect; an empty string is treated as absent. |
+| `toolCallingInstructionsAfter` | `string` | No | Custom prompt text inserted after the built-in tool-calling scaffold. The scaffold still includes the generated tool schemas JSON and the standard `tool_call` / `tool_result` instructions. Empty strings are treated as absent. |
 
-If either property is set, the default tool-use prompt text is not emitted. The generated tool schemas JSON still appears between the two optional sections, so callers should include any tool-call formatting guidance they still want the model to follow.
+If either property is set, the shared prompt builder still emits the generated tool schemas JSON and the standard tool-calling instructions. Your custom text is inserted before and/or after that scaffold.
 
 ```typescript
 import { generateText } from "ai";
 import { browserAI, type BrowserAICallProviderOptions } from "@browser-ai/core";
 
 const callOptions: BrowserAICallProviderOptions = {
-  beforeToolSchemasPrompt: "Review the following tool schemas before using a tool.",
-  afterToolSchemasPrompt:
-    "If you need a tool, emit a tool_call fence and wait for the result.",
+  toolCallingInstructionsBefore:
+    "Review the following tool schemas before using a tool.",
+  toolCallingInstructionsAfter:
+    "Prefer concise answers once the tool results contain enough information.",
 };
 
 const result = await generateText({
@@ -134,8 +135,8 @@ Per-call options passed via the `providerOptions` call option under the `"browse
 import { type BrowserAICallProviderOptions } from "@browser-ai/core";
 
 interface BrowserAICallProviderOptions {
-  beforeToolSchemasPrompt?: string;
-  afterToolSchemasPrompt?: string;
+  toolCallingInstructionsBefore?: string;
+  toolCallingInstructionsAfter?: string;
 }
 ```
 
