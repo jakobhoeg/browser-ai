@@ -204,10 +204,14 @@ export class TransformersJSWorkerHandler {
           )
           .map((msg) => load_image(msg.image)),
       );
-      const text = processor.apply_chat_template(lastMessages as any, templateOptions);
-      inputs = images.length > 0
-        ? await processor(text, images)
-        : await processor(text);
+      const text = processor.apply_chat_template(
+        lastMessages as any,
+        templateOptions,
+      );
+      inputs =
+        images.length > 0
+          ? await processor(text, images)
+          : await processor(text);
     } else {
       inputs = processor.apply_chat_template(processedMessages as any, {
         ...templateOptions,
@@ -542,7 +546,12 @@ export class TransformersJSWorkerHandler {
           break;
         case "generate":
           this.stopping_criteria.reset();
-          this.generate(msg.data, msg.generationOptions, msg.tools, msg.enableThinking);
+          this.generate(
+            msg.data,
+            msg.generationOptions,
+            msg.tools,
+            msg.enableThinking,
+          );
           break;
         case "interrupt":
           this.interrupt();

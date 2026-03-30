@@ -82,16 +82,18 @@ export async function* createMainThreadGenerationStream(
   let inputLength = 0;
 
   if (isVisionModel) {
-    const text = processor.apply_chat_template(messages as any, templateOptions);
+    const text = processor.apply_chat_template(
+      messages as any,
+      templateOptions,
+    );
     const imageUrls = messages
       .flatMap((msg) => (Array.isArray(msg.content) ? msg.content : []))
       .filter((part) => part.type === "image")
       .map((part) => part.image);
 
     const images = await Promise.all(imageUrls.map((url) => load_image(url)));
-    inputs = images.length > 0
-      ? await processor(text, images)
-      : await processor(text);
+    inputs =
+      images.length > 0 ? await processor(text, images) : await processor(text);
   } else {
     inputs = processor.apply_chat_template(messages as any, {
       ...templateOptions,
@@ -212,7 +214,14 @@ export async function* createMainThreadGenerationStream(
 export async function* createWorkerGenerationStream(
   options: WorkerOptions,
 ): AsyncGenerator<GenerationEvent> {
-  const { worker, messages, generationOptions, tools, enableThinking, abortSignal } = options;
+  const {
+    worker,
+    messages,
+    generationOptions,
+    tools,
+    enableThinking,
+    abortSignal,
+  } = options;
 
   const chunks: Array<GenerationEvent | { type: "error"; error: Error }> = [];
   let resolve: (() => void) | null = null;

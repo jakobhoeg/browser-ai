@@ -549,8 +549,13 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
   public async doGenerate(
     options: LanguageModelV3CallOptions,
   ): Promise<LanguageModelV3GenerateResult> {
-    const { messages, warnings, generationOptions, functionTools, enableThinking } =
-      this.getArgs(options);
+    const {
+      messages,
+      warnings,
+      generationOptions,
+      functionTools,
+      enableThinking,
+    } = this.getArgs(options);
 
     const useWorker = this.config.worker && isBrowserEnvironment();
 
@@ -744,8 +749,13 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
   public async doStream(
     options: LanguageModelV3CallOptions,
   ): Promise<LanguageModelV3StreamResult> {
-    const { messages, warnings, generationOptions, functionTools, enableThinking } =
-      this.getArgs(options);
+    const {
+      messages,
+      warnings,
+      generationOptions,
+      functionTools,
+      enableThinking,
+    } = this.getArgs(options);
 
     const useWorker = this.config.worker && isBrowserEnvironment();
 
