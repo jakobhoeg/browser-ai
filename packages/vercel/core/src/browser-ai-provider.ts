@@ -62,21 +62,17 @@ export interface BrowserAIProviderSettings {
  */
 export interface BrowserAICallProviderOptions {
   /**
-   * Replaces the default prompt text that appears before the generated tool
-   * schemas block when tools are registered. If either this or
-   * `afterToolSchemasPrompt` is non-empty, the shared prompt builder stops
-   * emitting its default tool-use prompt text and uses the provided
-   * before/after sections around the generated schemas instead.
+   * Inserts custom text before the built-in tool-calling scaffold.
+   * The scaffold still includes the generated tool schemas JSON and the
+   * standard tool_call/tool_result instructions.
    */
-  beforeToolSchemasPrompt?: string;
+  toolCallingInstructionsBefore?: string;
   /**
-   * Replaces the default prompt text that appears after the generated tool
-   * schemas block when tools are registered. If either this or
-   * `beforeToolSchemasPrompt` is non-empty, the shared prompt builder stops
-   * emitting its default tool-use prompt text and uses the provided
-   * before/after sections around the generated schemas instead.
+   * Inserts custom text after the built-in tool-calling scaffold.
+   * The scaffold still includes the generated tool schemas JSON and the
+   * standard tool_call/tool_result instructions.
    */
-  afterToolSchemasPrompt?: string;
+  toolCallingInstructionsAfter?: string;
 }
 
 /**

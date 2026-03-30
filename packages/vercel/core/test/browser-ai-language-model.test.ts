@@ -880,10 +880,10 @@ Running the tool now.`;
       expect(allToolCallIds.size).toBe(1); // All IDs should be identical
     });
 
-    it("should replace the default tool prompt while preserving tool schemas when beforeToolSchemasPrompt and afterToolSchemasPrompt are provided in doGenerate", async () => {
-      const beforeToolSchemasPrompt = "CUSTOM BEFORE TOOL SCHEMAS";
-      const afterToolSchemasPrompt =
-        "CUSTOM AFTER TOOL SCHEMAS WITH tool_call GUIDANCE";
+    it("should wrap the built-in tool scaffold when toolCallingInstructionsBefore and toolCallingInstructionsAfter are provided in doGenerate", async () => {
+      const toolCallingInstructionsBefore = "CUSTOM BEFORE TOOL SCHEMAS";
+      const toolCallingInstructionsAfter =
+        "CUSTOM AFTER TOOL SCHEMAS WITH EXTRA GUIDANCE";
       mockPrompt.mockResolvedValue("No tool needed");
 
       const model = new BrowserAIChatLanguageModel("text");
@@ -902,8 +902,8 @@ Running the tool now.`;
         ],
         providerOptions: {
           "browser-ai": {
-            beforeToolSchemasPrompt,
-            afterToolSchemasPrompt,
+            toolCallingInstructionsBefore,
+            toolCallingInstructionsAfter,
           },
         },
       });
@@ -913,26 +913,27 @@ Running the tool now.`;
         .calls[0][0];
       expect(createCall.initialPrompts[0].role).toBe("system");
       expect(createCall.initialPrompts[0].content).toContain(
-        beforeToolSchemasPrompt,
+        toolCallingInstructionsBefore,
       );
       expect(createCall.initialPrompts[0].content).toContain("myTool");
       expect(createCall.initialPrompts[0].content).toContain(
-        afterToolSchemasPrompt,
+        "# Tool Calling Instructions",
+      );
+      expect(createCall.initialPrompts[0].content).toContain(
+        "Only request one tool call at a time",
+      );
+      expect(createCall.initialPrompts[0].content).toContain("```tool_result");
+      expect(createCall.initialPrompts[0].content).toContain(
+        toolCallingInstructionsAfter,
       );
       expect(createCall.initialPrompts[0].content).not.toContain(
         "You are a helpful AI assistant with access to tools.",
       );
-      expect(createCall.initialPrompts[0].content).not.toContain(
-        "# Tool Calling Instructions",
-      );
-      expect(createCall.initialPrompts[0].content).not.toContain(
-        "Only request one tool call at a time",
-      );
     });
 
-    it("should replace the default tool prompt while preserving tool schemas when beforeToolSchemasPrompt and afterToolSchemasPrompt are provided in doStream", async () => {
-      const beforeToolSchemasPrompt = "STREAM BEFORE TOOL SCHEMAS";
-      const afterToolSchemasPrompt = "STREAM AFTER TOOL SCHEMAS";
+    it("should wrap the built-in tool scaffold when toolCallingInstructionsBefore and toolCallingInstructionsAfter are provided in doStream", async () => {
+      const toolCallingInstructionsBefore = "STREAM BEFORE TOOL SCHEMAS";
+      const toolCallingInstructionsAfter = "STREAM AFTER TOOL SCHEMAS";
       mockPromptStreaming.mockReturnValue(
         new ReadableStream<string>({
           start(controller) {
@@ -957,8 +958,8 @@ Running the tool now.`;
         ],
         providerOptions: {
           "browser-ai": {
-            beforeToolSchemasPrompt,
-            afterToolSchemasPrompt,
+            toolCallingInstructionsBefore,
+            toolCallingInstructionsAfter,
           },
         },
       });
@@ -967,20 +968,21 @@ Running the tool now.`;
         .calls[0][0];
       expect(createCall.initialPrompts[0].role).toBe("system");
       expect(createCall.initialPrompts[0].content).toContain(
-        beforeToolSchemasPrompt,
+        toolCallingInstructionsBefore,
       );
       expect(createCall.initialPrompts[0].content).toContain("myTool");
       expect(createCall.initialPrompts[0].content).toContain(
-        afterToolSchemasPrompt,
+        "# Tool Calling Instructions",
+      );
+      expect(createCall.initialPrompts[0].content).toContain(
+        "Only request one tool call at a time",
+      );
+      expect(createCall.initialPrompts[0].content).toContain("```tool_result");
+      expect(createCall.initialPrompts[0].content).toContain(
+        toolCallingInstructionsAfter,
       );
       expect(createCall.initialPrompts[0].content).not.toContain(
         "You are a helpful AI assistant with access to tools.",
-      );
-      expect(createCall.initialPrompts[0].content).not.toContain(
-        "# Tool Calling Instructions",
-      );
-      expect(createCall.initialPrompts[0].content).not.toContain(
-        "Only request one tool call at a time",
       );
     });
   });
