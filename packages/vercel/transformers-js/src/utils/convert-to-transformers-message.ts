@@ -173,7 +173,7 @@ export function convertToTransformersMessages(
 
             return {
               role: "assistant",
-              content: textParts.length > 0 ? textParts.join("\n") : null,
+              content: textParts.length > 0 ? textParts.join("\n") : "",
               tool_calls,
             };
           }
