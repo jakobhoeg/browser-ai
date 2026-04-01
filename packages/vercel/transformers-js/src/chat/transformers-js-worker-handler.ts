@@ -287,13 +287,13 @@ export class TransformersJSWorkerHandler {
       ? {
           do_sample: false,
           repetition_penalty: 1.1,
-          max_new_tokens: 1024,
+          max_new_tokens: 4096,
         }
       : {
           do_sample: true,
           top_k: 3,
           temperature: 0.7,
-          max_new_tokens: 512,
+          max_new_tokens: 4096,
         };
 
     const generationOptions = {

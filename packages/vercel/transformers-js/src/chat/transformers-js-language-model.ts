@@ -475,7 +475,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
       (transformersJsOptions?.enableThinking as boolean) ?? false;
 
     const generationOptions: GenerationOptions = {
-      max_new_tokens: maxOutputTokens || (enableThinking ? 2048 : 512),
+      max_new_tokens: maxOutputTokens || (enableThinking ? 8192 : 4096),
       temperature: temperature ?? 0.7,
       top_p: topP,
       top_k: topK,
