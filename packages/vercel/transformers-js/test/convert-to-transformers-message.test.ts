@@ -115,7 +115,7 @@ describe("convertToTransformersMessages", () => {
     const result = convertToTransformersMessages(prompt);
     expect(result).toHaveLength(1);
     expect(result[0].role).toBe("assistant");
-    expect(result[0].content).toBe(null);
+    expect(result[0].content).toBe("");
     expect(result[0]).toHaveProperty("tool_calls");
     expect(result[0].tool_calls).toHaveLength(1);
     expect(result[0].tool_calls![0]).toEqual({
