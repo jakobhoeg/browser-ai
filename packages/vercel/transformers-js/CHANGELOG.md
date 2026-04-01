@@ -1,5 +1,11 @@
 # @browser-ai/transformers-js
 
+## 2.2.1
+
+### Patch Changes
+
+- 2d5cda1: fix: use empty string instead of null for assistant content with tool calls
+
 ## 2.2.0
 
 ### Minor Changes
