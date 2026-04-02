@@ -9,6 +9,14 @@ export interface ModelConfig extends Omit<WorkerLoadOptions, "modelId"> {
 
 export const MODELS: ModelConfig[] = [
   {
+    id: "onnx-community/gemma-4-E2B-it-ONNX",
+    name: "Gemma4 E2B",
+    device: "webgpu",
+    dtype: "q4",
+    enableThinking: true,
+    supportsWorker: true,
+  },
+  {
     id: "HuggingFaceTB/SmolLM2-360M-Instruct",
     name: "SmolLM2 360M",
     device: "webgpu",
