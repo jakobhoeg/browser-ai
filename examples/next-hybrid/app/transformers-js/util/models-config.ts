@@ -31,7 +31,6 @@ export const MODELS: ModelConfig[] = [
     device: "webgpu",
     dtype: "q4",
     supportsWorker: true,
-    supportsTools: true,
   },
   {
     id: "onnx-community/granite-4.0-350m-ONNX-web",
