@@ -250,6 +250,7 @@ export class TransformersJSWorkerHandler {
         /^<\|[^>]+>$/.test(trimmed) || /^<[^|>]+\|>$/.test(trimmed);
       const isToolCallToken =
         trimmed === "<|tool_call|>" ||
+        trimmed === "<|tool_call>" ||
         trimmed === "<tool_call|>" ||
         /^<\/?tool_call>$/.test(trimmed);
 
