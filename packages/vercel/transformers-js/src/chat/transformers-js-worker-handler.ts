@@ -242,10 +242,29 @@ export class TransformersJSWorkerHandler {
       numTokens++;
     };
     const output_callback = (output: string) => {
-      // When thinking is enabled, skip_special_tokens is false so
-      // <think> tags pass through. Filter out chat control tokens
-      // (e.g. <|im_end|>, <|endoftext|>) that also leak through.
-      if (enableThinking && /^<\|[^|]*\|>$/.test(output.trim())) return;
+      // Filter out chat control tokens (e.g. <|im_end|>, <|endoftext|>,
+      // <|start_of_turn>, <end_of_turn|>) etc., but preserve tool call and
+      // thinking tags.
+      const trimmed = output.trim();
+      const isSpecialToken =
+        /^<\|[^>]+>$/.test(trimmed) || /^<[^|>]+\|>$/.test(trimmed);
+      const isToolCallToken =
+        trimmed === "<|tool_call|>" ||
+        trimmed === "<tool_call|>" ||
+        /^<\/?tool_call>$/.test(trimmed);
+
+      if (
+        isSpecialToken &&
+        !isToolCallToken &&
+        !trimmed.includes("channel") // Gemma4 specific
+      ) {
+        return;
+      }
+
+      // Normalize alternative thinking tags to <think>/</ think> so
+      // extractReasoningMiddleware({ tagName: "think" }) works for all models.
+      if (trimmed === "<|channel>") output = "<think>";
+      else if (trimmed === "<channel|>") output = "</think>";
 
       accumulatedText += output;
 
@@ -273,7 +292,7 @@ export class TransformersJSWorkerHandler {
       isVision ? (processor as any).tokenizer : processor,
       {
         skip_prompt: true,
-        skip_special_tokens: !enableThinking,
+        skip_special_tokens: false,
         callback_function: output_callback,
         token_callback_function: token_callback,
       },

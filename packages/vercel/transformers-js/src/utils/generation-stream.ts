@@ -143,15 +143,32 @@ export async function* createMainThreadGenerationStream(
           : processor) as PreTrainedTokenizer,
         {
           skip_prompt: true,
-          // When thinking is enabled, we need to see <think></think> tags
-          // so the consumer can separate reasoning from the response.
-          skip_special_tokens: !enableThinking,
+          skip_special_tokens: false,
           callback_function: (text: string) => {
             if (aborted) return;
-            // When thinking is enabled, skip_special_tokens is false so
-            // <think> tags pass through. Filter out chat control tokens
-            // (e.g. <|im_end|>, <|endoftext|>) that also leak through.
-            if (enableThinking && /^<\|[^|]*\|>$/.test(text.trim())) return;
+            // Filter out chat control tokens (e.g. <|im_end|>, <|endoftext|>,
+            // <|start_of_turn>, <end_of_turn|>) etc., but preserve tool call and
+            // thinking tags.
+            const trimmed = text.trim();
+            const isSpecialToken =
+              /^<\|[^>]+>$/.test(trimmed) || /^<[^|>]+\|>$/.test(trimmed);
+            const isToolCallToken =
+              trimmed === "<|tool_call|>" ||
+              trimmed === "<tool_call|>" ||
+              /^<\/?tool_call>$/.test(trimmed);
+
+            if (
+              isSpecialToken &&
+              !isToolCallToken &&
+              !trimmed.includes("channel") // Gemma4 specific
+            ) {
+              return;
+            }
+
+            // Normalize alternative thinking tags to <think></think> so
+            // extractReasoningMiddleware({ tagName: "think" }) works for all models.
+            if (trimmed === "<|channel>") text = "<think>";
+            else if (trimmed === "<channel|>") text = "</think>";
             outputTokens++;
             pushChunk({ type: "delta", delta: text });
           },
