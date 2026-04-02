@@ -9,10 +9,12 @@ export interface ModelConfig extends Omit<WorkerLoadOptions, "modelId"> {
 
 export const MODELS: ModelConfig[] = [
   {
-    id: "HuggingFaceTB/SmolLM2-360M-Instruct",
-    name: "SmolLM2 360M",
+    id: "onnx-community/gemma-4-E2B-it-ONNX",
+    name: "Gemma4 E2B",
     device: "webgpu",
     dtype: "q4",
+    enableThinking: true,
+    isVisionModel: true,
     supportsWorker: true,
   },
   {
@@ -21,6 +23,13 @@ export const MODELS: ModelConfig[] = [
     device: "webgpu",
     dtype: "q4f16",
     enableThinking: true,
+    supportsWorker: true,
+  },
+  {
+    id: "onnx-community/LFM2.5-350M-ONNX",
+    name: "LFM2.5 350M",
+    device: "webgpu",
+    dtype: "q4",
     supportsWorker: true,
   },
   {
@@ -35,6 +44,13 @@ export const MODELS: ModelConfig[] = [
     name: "LFM2 1.2B-Tool",
     device: "webgpu",
     dtype: "fp16",
+    supportsWorker: true,
+  },
+  {
+    id: "HuggingFaceTB/SmolLM2-360M-Instruct",
+    name: "SmolLM2 360M",
+    device: "webgpu",
+    dtype: "q4",
     supportsWorker: true,
   },
   {

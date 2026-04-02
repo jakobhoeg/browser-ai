@@ -121,6 +121,24 @@ describe("@browser-ai/shared exports", () => {
       expect(result.toolCalls[0].args).toEqual({ query: "hello" });
     });
 
+    it("should parse call:name{} style without parameters", () => {
+      const result = parseJsonFunctionCalls(
+        "<|tool_call>call:getLocation{}<tool_call|>",
+      );
+      expect(result.toolCalls).toHaveLength(1);
+      expect(result.toolCalls[0].toolName).toBe("getLocation");
+      expect(result.toolCalls[0].args).toEqual({});
+    });
+
+    it("should parse call:name{params} style with parameters", () => {
+      const result = parseJsonFunctionCalls(
+        "<|tool_call>call:randomNumber{max:6,min:1}<tool_call|>",
+      );
+      expect(result.toolCalls).toHaveLength(1);
+      expect(result.toolCalls[0].toolName).toBe("randomNumber");
+      expect(result.toolCalls[0].args).toEqual({ max: 6, min: 1 });
+    });
+
     it("should parse array of tool calls", () => {
       const input = '```tool_call\n[{"name": "a"}, {"name": "b"}]\n```';
       const result = parseJsonFunctionCalls(input);
@@ -146,6 +164,9 @@ describe("@browser-ai/shared exports", () => {
     it("should return true when tool calls present", () => {
       expect(hasJsonFunctionCalls("```tool_call\n{}\n```")).toBe(true);
       expect(hasJsonFunctionCalls("<tool_call>{}</tool_call>")).toBe(true);
+      expect(hasJsonFunctionCalls("<|tool_call>call:func{}<tool_call|>")).toBe(
+        true,
+      );
     });
 
     it("should return false when no tool calls", () => {
@@ -273,6 +294,14 @@ describe("@browser-ai/shared exports", () => {
       detector.addChunk('<tool_call>{"name": "t"}</tool_call>');
       expect(detector.detectFence().fence).not.toBeNull();
     });
+
+    it("should detect pipe-delimited tool_call fence", () => {
+      const detector = createExtendedDetector();
+      detector.addChunk(
+        "<|tool_call>call:randomNumber{max:6,min:1}<tool_call|>",
+      );
+      expect(detector.detectFence().fence).not.toBeNull();
+    });
   });
 
   describe("fence patterns", () => {
@@ -289,6 +318,12 @@ describe("@browser-ai/shared exports", () => {
       );
       expect(
         EXTENDED_FENCE_PATTERNS.some((p) => p.start.includes("<tool_call>")),
+      ).toBe(true);
+    });
+
+    it("EXTENDED_FENCE_PATTERNS should include pipe-delimited tool_call tags", () => {
+      expect(
+        EXTENDED_FENCE_PATTERNS.some((p) => p.start === "<|tool_call>"),
       ).toBe(true);
     });
   });

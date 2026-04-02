@@ -16,7 +16,10 @@ import {
   type ToolDefinition,
   type ParsedToolCall,
 } from "@browser-ai/shared";
-import { convertToolsToHuggingFaceFormat } from "../utils/convert-tools";
+import {
+  buildApplyChatTemplateOptions,
+  normalizeStreamedTextChunk,
+} from "../utils/generation-helpers";
 import type {
   WorkerMessage,
   WorkerGlobalScope,
@@ -170,19 +173,11 @@ export class TransformersJSWorkerHandler {
     const [processor, model] = modelInstance;
     const isVision = this.isVisionModel;
 
-    const hfTools =
-      tools && tools.length > 0
-        ? convertToolsToHuggingFaceFormat(tools)
-        : undefined;
-
     const processedMessages = messages;
-
-    // Build shared apply_chat_template options
-    const templateOptions: Record<string, any> = {
-      add_generation_prompt: true,
-      ...(hfTools ? { tools: hfTools } : {}),
-      ...(enableThinking ? { enable_thinking: true } : {}),
-    };
+    const templateOptions = buildApplyChatTemplateOptions({
+      tools,
+      enableThinking,
+    });
 
     // Prepare inputs based on model type
     // Using 'any' here as transformers.js returns various formats depending on model type
@@ -242,15 +237,15 @@ export class TransformersJSWorkerHandler {
       numTokens++;
     };
     const output_callback = (output: string) => {
-      // When thinking is enabled, skip_special_tokens is false so
-      // <think> tags pass through. Filter out chat control tokens
-      // (e.g. <|im_end|>, <|endoftext|>) that also leak through.
-      if (enableThinking && /^<\|[^|]*\|>$/.test(output.trim())) return;
+      const normalizedOutput = normalizeStreamedTextChunk(output);
+      if (normalizedOutput === null) {
+        return;
+      }
 
-      accumulatedText += output;
+      accumulatedText += normalizedOutput;
 
       if (tools && tools.length > 0 && !toolCallDetected) {
-        fenceDetector.addChunk(output);
+        fenceDetector.addChunk(normalizedOutput);
         const result = fenceDetector.detectStreamingFence();
 
         // If we detect a complete fence, check if it's a valid tool call
@@ -266,14 +261,14 @@ export class TransformersJSWorkerHandler {
       const tps = startTime
         ? (numTokens / (performance.now() - startTime)) * 1000
         : undefined;
-      this.sendUpdate(output, tps, numTokens);
+      this.sendUpdate(normalizedOutput, tps, numTokens);
     };
 
     const streamer = new TextStreamer(
       isVision ? (processor as any).tokenizer : processor,
       {
         skip_prompt: true,
-        skip_special_tokens: !enableThinking,
+        skip_special_tokens: false,
         callback_function: output_callback,
         token_callback_function: token_callback,
       },

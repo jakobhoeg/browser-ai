@@ -14,8 +14,9 @@ vi.mock("@huggingface/transformers", () => {
   };
 
   class TextStreamer {
-    constructor(_tokenizer: unknown, _options?: unknown) {
-      // no-op
+    options: any;
+    constructor(_tokenizer: unknown, options?: unknown) {
+      this.options = options;
     }
   }
 
@@ -169,5 +170,40 @@ describe("TransformersJSWorkerHandler", () => {
         (call: any[]) => call[0]?.status === "error",
       ),
     ).toBe(false);
+  });
+
+  it("normalizes streamed text updates before posting them", async () => {
+    const handler = new TransformersJSWorkerHandler();
+
+    modelMock.generate.mockResolvedValueOnce({
+      sequences: [{ data: Int32Array.from([101, 102]) }],
+    });
+    await handler.load({ modelId: "test-model" });
+
+    modelMock.generate.mockReset();
+    tokenizerMock.apply_chat_template.mockReturnValueOnce({
+      input_ids: { data: Int32Array.from([1, 2, 3]) },
+    });
+
+    modelMock.generate.mockImplementationOnce(async (args: any) => {
+      const callback = args.streamer.options.callback_function;
+      callback("<|im_end|>");
+      callback("<|channel>");
+      callback("<|tool_call>");
+      callback("hello");
+
+      return {
+        sequences: [{ data: Int32Array.from([1, 2, 3, 4]) }],
+      };
+    });
+
+    await handler.generate([{ role: "user", content: "hi" }]);
+
+    const updateOutputs = postMessageMock.mock.calls
+      .map((call: any[]) => call[0])
+      .filter((message: any) => message?.status === "update")
+      .map((message: any) => message.output);
+
+    expect(updateOutputs).toEqual(["<think>", "<|tool_call>", "hello"]);
   });
 });

@@ -48,6 +48,54 @@ describe("parseJsonFunctionCalls", () => {
     expect(withoutId.toolCalls[0].toolCallId).toMatch(/^call_\d+_[a-z0-9]{7}$/);
   });
 
+  it("parses <|tool_call>call:name{}<tool_call|> without parameters", () => {
+    const result = parseJsonFunctionCalls(
+      "<|tool_call>call:getLocation{}<tool_call|>",
+    );
+    expect(result.toolCalls).toHaveLength(1);
+    expect(result.toolCalls[0].toolName).toBe("getLocation");
+    expect(result.toolCalls[0].args).toEqual({});
+  });
+
+  it("parses <|tool_call>call:name{params}<tool_call|> with parameters", () => {
+    const result = parseJsonFunctionCalls(
+      "<|tool_call>call:randomNumber{max:6,min:1}<tool_call|>",
+    );
+    expect(result.toolCalls).toHaveLength(1);
+    expect(result.toolCalls[0].toolName).toBe("randomNumber");
+    expect(result.toolCalls[0].args).toEqual({ max: 6, min: 1 });
+    expect(result.toolCalls[0].toolCallId).toMatch(/^call_/);
+  });
+
+  it("parses call:name{} with string values", () => {
+    const result = parseJsonFunctionCalls(
+      "<|tool_call>call:search{query:hello world}<tool_call|>",
+    );
+    expect(result.toolCalls).toHaveLength(1);
+    expect(result.toolCalls[0].toolName).toBe("search");
+    expect(result.toolCalls[0].args).toEqual({ query: "hello world" });
+  });
+
+  it("parses call:name{} with boolean and null values", () => {
+    const result = parseJsonFunctionCalls(
+      "<|tool_call>call:config{verbose:true,debug:false,extra:null}<tool_call|>",
+    );
+    expect(result.toolCalls[0].args).toEqual({
+      verbose: true,
+      debug: false,
+      extra: null,
+    });
+  });
+
+  it("preserves text around call:name{} tool calls", () => {
+    const result = parseJsonFunctionCalls(
+      "Let me check. <|tool_call>call:getLocation{}<tool_call|> Done!",
+    );
+    expect(result.toolCalls).toHaveLength(1);
+    expect(result.textContent).toContain("Let me check.");
+    expect(result.textContent).toContain("Done!");
+  });
+
   it("handles missing or empty arguments", () => {
     const noArgs = parseJsonFunctionCalls(
       '```tool_call\n{"name": "test"}\n```',

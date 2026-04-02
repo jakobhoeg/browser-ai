@@ -11,7 +11,10 @@ import type {
   GenerationOptions,
 } from "../chat/transformers-js-worker-types";
 import type { ToolDefinition, ParsedToolCall } from "@browser-ai/shared";
-import { convertToolsToHuggingFaceFormat } from "./convert-tools";
+import {
+  buildApplyChatTemplateOptions,
+  normalizeStreamedTextChunk,
+} from "./generation-helpers";
 
 /**
  * Events emitted by the generation stream
@@ -66,16 +69,10 @@ export async function* createMainThreadGenerationStream(
 
   const [processor, model] = modelInstance;
 
-  const hfTools = tools?.length
-    ? convertToolsToHuggingFaceFormat(tools)
-    : undefined;
-
-  // Build shared apply_chat_template options
-  const templateOptions: Record<string, any> = {
-    add_generation_prompt: true,
-    ...(hfTools ? { tools: hfTools } : {}),
-    ...(enableThinking ? { enable_thinking: true } : {}),
-  };
+  const templateOptions = buildApplyChatTemplateOptions({
+    tools,
+    enableThinking,
+  });
 
   // Prepare inputs
   let inputs: any;
@@ -143,17 +140,17 @@ export async function* createMainThreadGenerationStream(
           : processor) as PreTrainedTokenizer,
         {
           skip_prompt: true,
-          // When thinking is enabled, we need to see <think></think> tags
-          // so the consumer can separate reasoning from the response.
-          skip_special_tokens: !enableThinking,
+          skip_special_tokens: false,
           callback_function: (text: string) => {
             if (aborted) return;
-            // When thinking is enabled, skip_special_tokens is false so
-            // <think> tags pass through. Filter out chat control tokens
-            // (e.g. <|im_end|>, <|endoftext|>) that also leak through.
-            if (enableThinking && /^<\|[^|]*\|>$/.test(text.trim())) return;
+
+            const normalizedText = normalizeStreamedTextChunk(text);
+            if (normalizedText === null) {
+              return;
+            }
+
             outputTokens++;
-            pushChunk({ type: "delta", delta: text });
+            pushChunk({ type: "delta", delta: normalizedText });
           },
         },
       );
