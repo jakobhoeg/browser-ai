@@ -14,13 +14,7 @@ export const MODELS: ModelConfig[] = [
     device: "webgpu",
     dtype: "q4",
     enableThinking: true,
-    supportsWorker: true,
-  },
-  {
-    id: "HuggingFaceTB/SmolLM2-360M-Instruct",
-    name: "SmolLM2 360M",
-    device: "webgpu",
-    dtype: "q4",
+    isVisionModel: true,
     supportsWorker: true,
   },
   {
@@ -30,6 +24,14 @@ export const MODELS: ModelConfig[] = [
     dtype: "q4f16",
     enableThinking: true,
     supportsWorker: true,
+  },
+  {
+    id: "onnx-community/LFM2.5-350M-ONNX",
+    name: "LFM2.5 350M",
+    device: "webgpu",
+    dtype: "q4",
+    supportsWorker: true,
+    supportsTools: true,
   },
   {
     id: "onnx-community/granite-4.0-350m-ONNX-web",
@@ -43,6 +45,13 @@ export const MODELS: ModelConfig[] = [
     name: "LFM2 1.2B-Tool",
     device: "webgpu",
     dtype: "fp16",
+    supportsWorker: true,
+  },
+  {
+    id: "HuggingFaceTB/SmolLM2-360M-Instruct",
+    name: "SmolLM2 360M",
+    device: "webgpu",
+    dtype: "q4",
     supportsWorker: true,
   },
   {
