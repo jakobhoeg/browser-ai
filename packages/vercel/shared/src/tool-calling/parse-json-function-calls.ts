@@ -10,16 +10,48 @@ export interface ParseJsonFunctionCallsOptions {
   supportPythonStyle?: boolean;
   /** Support "parameters" as alias for "arguments" (Llama format) */
   supportParametersField?: boolean;
+  /** Support call:name{key:value} style delimited with <|tool_call>...<tool_call|> */
+  supportCallColonStyle?: boolean;
 }
 
 const DEFAULT_OPTIONS: ParseJsonFunctionCallsOptions = {
   supportXmlTags: true,
   supportPythonStyle: true,
   supportParametersField: true,
+  supportCallColonStyle: true,
 };
 
 function generateToolCallId(): string {
   return `call_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/**
+ * Parses key:value parameter pairs from the call:name{key:value,...} format.
+ * Values are coerced to numbers/booleans/null when possible.
+ */
+function parseCallColonParams(params: string): Record<string, unknown> {
+  const args: Record<string, unknown> = {};
+  if (!params || !params.trim()) return args;
+
+  const pairs = params.split(",").map((s) => s.trim());
+  for (const pair of pairs) {
+    const colonIndex = pair.indexOf(":");
+    if (colonIndex > 0) {
+      const key = pair.substring(0, colonIndex).trim();
+      const rawValue = pair.substring(colonIndex + 1).trim();
+      if (rawValue === "true") {
+        args[key] = true;
+      } else if (rawValue === "false") {
+        args[key] = false;
+      } else if (rawValue === "null") {
+        args[key] = null;
+      } else {
+        const numValue = Number(rawValue);
+        args[key] = !isNaN(numValue) && rawValue !== "" ? numValue : rawValue;
+      }
+    }
+  }
+  return args;
 }
 
 function buildRegex(options: ParseJsonFunctionCallsOptions): RegExp {
@@ -34,6 +66,10 @@ function buildRegex(options: ParseJsonFunctionCallsOptions): RegExp {
 
   if (options.supportPythonStyle) {
     patterns.push("\\[(\\w+)\\(([^)]*)\\)\\]");
+  }
+
+  if (options.supportCallColonStyle) {
+    patterns.push("<\\|tool_call>\\s*([\\s\\S]*?)\\s*<tool_call\\|>");
   }
 
   return new RegExp(patterns.join("|"), "gi");
@@ -111,8 +147,23 @@ export function parseJsonFunctionCalls(
         }
       }
 
+      // Check for call:name{params} style (inside <|tool_call> delimiters)
+      if (mergedOptions.supportCallColonStyle) {
+        const callMatch = fullMatch.match(/call:(\w+)\{([^}]*)\}/);
+        if (callMatch) {
+          const [, funcName, params] = callMatch;
+          toolCalls.push({
+            type: "tool-call",
+            toolCallId: generateToolCallId(),
+            toolName: funcName,
+            args: parseCallColonParams(params),
+          });
+          continue;
+        }
+      }
+
       // Get the captured content from the first capturing group
-      const innerContent = match[1] || match[2] || "";
+      const innerContent = match.slice(1).find((g) => g !== undefined) || "";
       const trimmed = innerContent.trim();
 
       if (!trimmed) continue;

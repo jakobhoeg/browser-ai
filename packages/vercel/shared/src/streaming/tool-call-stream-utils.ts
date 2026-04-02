@@ -7,6 +7,10 @@ export function extractToolName(content: string): string | null {
   if (jsonMatch) {
     return jsonMatch[1];
   }
+  const callColonMatch = content.match(/call:(\w+)\{/);
+  if (callColonMatch) {
+    return callColonMatch[1];
+  }
   return null;
 }
 

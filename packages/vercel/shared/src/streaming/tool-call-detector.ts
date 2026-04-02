@@ -67,6 +67,11 @@ export const EXTENDED_FENCE_PATTERNS: FencePattern[] = [
     end: "</tool_call>",
     reconstructStart: "<tool_call>",
   },
+  {
+    start: "<|tool_call>",
+    end: "<tool_call|>",
+    reconstructStart: "<|tool_call>",
+  },
 ];
 
 /**

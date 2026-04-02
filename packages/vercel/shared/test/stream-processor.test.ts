@@ -204,6 +204,43 @@ describe("processToolCallStream — stopEarlyOnToolCall", () => {
   });
 });
 
+describe("processToolCallStream — call:name{params} style", () => {
+  const FENCE = "<|tool_call>call:randomNumber{max:6,min:1}<tool_call|>";
+
+  it("detects the tool call and parses parameters", async () => {
+    const { result } = await run([FENCE]);
+    expect(result.toolCallDetected).toBe(true);
+    expect(result.toolCalls).toHaveLength(1);
+    expect(result.toolCalls[0].toolName).toBe("randomNumber");
+    expect(result.toolCalls[0].args).toEqual({ max: 6, min: 1 });
+  });
+
+  it("handles call:name{} without parameters", async () => {
+    const { result } = await run([
+      "<|tool_call>call:getLocation{}<tool_call|>",
+    ]);
+    expect(result.toolCallDetected).toBe(true);
+    expect(result.toolCalls[0].toolName).toBe("getLocation");
+    expect(result.toolCalls[0].args).toEqual({});
+  });
+
+  it("emits text before the fence", async () => {
+    const { text } = await run([
+      "Sure! <|tool_call>call:getLocation{}<tool_call|>",
+    ]);
+    expect(text).toContain("Sure!");
+  });
+
+  it("assembles from multiple chunks", async () => {
+    const { result } = await run([
+      "<|tool_call>call:random",
+      "Number{max:6,min:1}<tool_call|>",
+    ]);
+    expect(result.toolCallDetected).toBe(true);
+    expect(result.toolCalls[0].toolName).toBe("randomNumber");
+  });
+});
+
 describe("processToolCallStream — edge cases", () => {
   it("only uses the first tool call from a multi-call fence", async () => {
     const { result } = await run([
