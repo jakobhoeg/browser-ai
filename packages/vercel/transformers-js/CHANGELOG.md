@@ -1,5 +1,12 @@
 # @browser-ai/transformers-js
 
+## 2.2.2
+
+### Patch Changes
+
+- c9cebcb: fix: increase default max_new_tokens from 512 to 4096
+- 087acf7: feat: add <|tool_call> format support
+
 ## 2.2.1
 
 ### Patch Changes
