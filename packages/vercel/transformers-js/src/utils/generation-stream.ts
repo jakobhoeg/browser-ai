@@ -11,7 +11,10 @@ import type {
   GenerationOptions,
 } from "../chat/transformers-js-worker-types";
 import type { ToolDefinition, ParsedToolCall } from "@browser-ai/shared";
-import { convertToolsToHuggingFaceFormat } from "./convert-tools";
+import {
+  buildApplyChatTemplateOptions,
+  normalizeStreamedTextChunk,
+} from "./generation-helpers";
 
 /**
  * Events emitted by the generation stream
@@ -66,16 +69,10 @@ export async function* createMainThreadGenerationStream(
 
   const [processor, model] = modelInstance;
 
-  const hfTools = tools?.length
-    ? convertToolsToHuggingFaceFormat(tools)
-    : undefined;
-
-  // Build shared apply_chat_template options
-  const templateOptions: Record<string, any> = {
-    add_generation_prompt: true,
-    ...(hfTools ? { tools: hfTools } : {}),
-    ...(enableThinking ? { enable_thinking: true } : {}),
-  };
+  const templateOptions = buildApplyChatTemplateOptions({
+    tools,
+    enableThinking,
+  });
 
   // Prepare inputs
   let inputs: any;
@@ -146,32 +143,14 @@ export async function* createMainThreadGenerationStream(
           skip_special_tokens: false,
           callback_function: (text: string) => {
             if (aborted) return;
-            // Filter out chat control tokens (e.g. <|im_end|>, <|endoftext|>,
-            // <|start_of_turn>, <end_of_turn|>) etc., but preserve tool call and
-            // thinking tags.
-            const trimmed = text.trim();
-            const isSpecialToken =
-              /^<\|[^>]+>$/.test(trimmed) || /^<[^|>]+\|>$/.test(trimmed);
-            const isToolCallToken =
-              trimmed === "<|tool_call|>" ||
-              trimmed === "<|tool_call>" ||
-              trimmed === "<tool_call|>" ||
-              /^<\/?tool_call>$/.test(trimmed);
 
-            if (
-              isSpecialToken &&
-              !isToolCallToken &&
-              !trimmed.includes("channel") // Gemma4 specific
-            ) {
+            const normalizedText = normalizeStreamedTextChunk(text);
+            if (normalizedText === null) {
               return;
             }
 
-            // Normalize alternative thinking tags to <think></think> so
-            // extractReasoningMiddleware({ tagName: "think" }) works for all models.
-            if (trimmed === "<|channel>") text = "<think>";
-            else if (trimmed === "<channel|>") text = "</think>";
             outputTokens++;
-            pushChunk({ type: "delta", delta: text });
+            pushChunk({ type: "delta", delta: normalizedText });
           },
         },
       );

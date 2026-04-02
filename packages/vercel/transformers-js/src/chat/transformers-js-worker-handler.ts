@@ -16,7 +16,10 @@ import {
   type ToolDefinition,
   type ParsedToolCall,
 } from "@browser-ai/shared";
-import { convertToolsToHuggingFaceFormat } from "../utils/convert-tools";
+import {
+  buildApplyChatTemplateOptions,
+  normalizeStreamedTextChunk,
+} from "../utils/generation-helpers";
 import type {
   WorkerMessage,
   WorkerGlobalScope,
@@ -170,19 +173,11 @@ export class TransformersJSWorkerHandler {
     const [processor, model] = modelInstance;
     const isVision = this.isVisionModel;
 
-    const hfTools =
-      tools && tools.length > 0
-        ? convertToolsToHuggingFaceFormat(tools)
-        : undefined;
-
     const processedMessages = messages;
-
-    // Build shared apply_chat_template options
-    const templateOptions: Record<string, any> = {
-      add_generation_prompt: true,
-      ...(hfTools ? { tools: hfTools } : {}),
-      ...(enableThinking ? { enable_thinking: true } : {}),
-    };
+    const templateOptions = buildApplyChatTemplateOptions({
+      tools,
+      enableThinking,
+    });
 
     // Prepare inputs based on model type
     // Using 'any' here as transformers.js returns various formats depending on model type
@@ -242,35 +237,15 @@ export class TransformersJSWorkerHandler {
       numTokens++;
     };
     const output_callback = (output: string) => {
-      // Filter out chat control tokens (e.g. <|im_end|>, <|endoftext|>,
-      // <|start_of_turn>, <end_of_turn|>) etc., but preserve tool call and
-      // thinking tags.
-      const trimmed = output.trim();
-      const isSpecialToken =
-        /^<\|[^>]+>$/.test(trimmed) || /^<[^|>]+\|>$/.test(trimmed);
-      const isToolCallToken =
-        trimmed === "<|tool_call|>" ||
-        trimmed === "<|tool_call>" ||
-        trimmed === "<tool_call|>" ||
-        /^<\/?tool_call>$/.test(trimmed);
-
-      if (
-        isSpecialToken &&
-        !isToolCallToken &&
-        !trimmed.includes("channel") // Gemma4 specific
-      ) {
+      const normalizedOutput = normalizeStreamedTextChunk(output);
+      if (normalizedOutput === null) {
         return;
       }
 
-      // Normalize alternative thinking tags to <think>/</ think> so
-      // extractReasoningMiddleware({ tagName: "think" }) works for all models.
-      if (trimmed === "<|channel>") output = "<think>";
-      else if (trimmed === "<channel|>") output = "</think>";
-
-      accumulatedText += output;
+      accumulatedText += normalizedOutput;
 
       if (tools && tools.length > 0 && !toolCallDetected) {
-        fenceDetector.addChunk(output);
+        fenceDetector.addChunk(normalizedOutput);
         const result = fenceDetector.detectStreamingFence();
 
         // If we detect a complete fence, check if it's a valid tool call
@@ -286,7 +261,7 @@ export class TransformersJSWorkerHandler {
       const tps = startTime
         ? (numTokens / (performance.now() - startTime)) * 1000
         : undefined;
-      this.sendUpdate(output, tps, numTokens);
+      this.sendUpdate(normalizedOutput, tps, numTokens);
     };
 
     const streamer = new TextStreamer(
