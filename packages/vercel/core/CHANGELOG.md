@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.1.12
+
+### Patch Changes
+
+- 52b76ec: fix: move topK and temperature from per-prompt to session-level options
+
 ## 2.1.11
 
 ### Patch Changes
