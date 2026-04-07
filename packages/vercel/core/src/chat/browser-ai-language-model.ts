@@ -166,8 +166,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
     const { systemMessage, messages } = convertToBrowserAIMessages(prompt);
 
     // Handle response format for Prompt API
-    const promptOptions: LanguageModelPromptOptions &
-      LanguageModelCreateCoreOptions = {};
+    const promptOptions: LanguageModelPromptOptions = {};
     if (responseFormat?.type === "json") {
       promptOptions.responseConstraint = responseFormat.schema as Record<
         string,
@@ -176,12 +175,13 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
     }
 
     // Map supported settings
+    const sessionOptions: LanguageModelCreateCoreOptions = {};
     if (temperature !== undefined) {
-      promptOptions.temperature = temperature;
+      sessionOptions.temperature = temperature;
     }
 
     if (topK !== undefined) {
-      promptOptions.topK = topK;
+      sessionOptions.topK = topK;
     }
 
     return {
@@ -189,6 +189,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       messages,
       warnings,
       promptOptions,
+      sessionOptions,
       hasMultiModalInput,
       expectedInputs,
       functionTools,
@@ -211,6 +212,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       messages,
       warnings,
       promptOptions,
+      sessionOptions,
       expectedInputs,
       functionTools,
     } = converted;
@@ -224,7 +226,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
     );
 
     const session = await this.getSession(
-      { signal: options.abortSignal },
+      { ...sessionOptions, signal: options.abortSignal },
       expectedInputs,
       systemPrompt || undefined,
     );
@@ -386,6 +388,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       messages,
       warnings,
       promptOptions,
+      sessionOptions,
       expectedInputs,
       functionTools,
     } = converted;
@@ -400,7 +403,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
     );
 
     const session = await this.getSession(
-      { signal: options.abortSignal },
+      { ...sessionOptions, signal: options.abortSignal },
       expectedInputs,
       systemPrompt || undefined,
     );
