@@ -55,30 +55,3 @@ export function decodeGeneratedText(
       : "";
   });
 }
-
-/**
- * Decodes a single sequence for text models (used in main thread)
- * @param processor - The tokenizer instance
- * @param sequence - Single output sequence
- * @param inputLength - Length of input tokens
- * @returns Decoded text string
- */
-export function decodeSingleSequence(
-  processor: PreTrainedTokenizer,
-  sequence: GenerationOutput,
-  inputLength: number,
-): string {
-  const outputData = (sequence as TokenSequence).data || sequence;
-  const tokenArray = Array.isArray(outputData)
-    ? outputData
-    : Array.from(outputData as ArrayLike<number>);
-
-  const newTokens =
-    tokenArray.length > inputLength
-      ? tokenArray.slice(inputLength)
-      : tokenArray;
-
-  return newTokens.length > 0
-    ? processor.decode(newTokens, { skip_special_tokens: true })
-    : "";
-}

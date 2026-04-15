@@ -55,14 +55,14 @@ export interface TransformersJSTranscriptionSettings extends Pick<
 /**
  * Check if we're running in a browser environment
  */
-export function isBrowserEnvironment(): boolean {
+function isBrowserEnvironment(): boolean {
   return typeof window !== "undefined";
 }
 
 /**
  * Check if we're running in a server environment (Node.js)
  */
-export function isServerEnvironment(): boolean {
+function isServerEnvironment(): boolean {
   return typeof window === "undefined" && typeof process !== "undefined";
 }
 

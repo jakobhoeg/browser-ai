@@ -19,7 +19,7 @@ import {
 /**
  * Events emitted by the generation stream
  */
-export type GenerationEvent =
+type GenerationEvent =
   | { type: "delta"; delta: string }
   | {
       type: "complete";

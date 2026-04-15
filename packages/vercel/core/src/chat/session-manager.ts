@@ -24,7 +24,7 @@ interface CustomProviderOptions {
 /**
  * Options for creating a new session
  */
-export interface SessionCreateOptions
+interface SessionCreateOptions
   extends LanguageModelCreateOptions, CustomProviderOptions {
   systemMessage?: string;
   expectedInputs?: Array<{ type: "text" | "image" | "audio" }>;
