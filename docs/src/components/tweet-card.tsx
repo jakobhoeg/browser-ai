@@ -5,12 +5,7 @@ import { getTweet } from "react-tweet/api";
 import { enrichTweet } from "react-tweet";
 
 async function TweetContent({ id }: { id: string }) {
-  let tweet;
-  try {
-    tweet = await getTweet(id);
-  } catch {
-    return null;
-  }
+  const tweet = await getTweet(id);
   if (!tweet) return null;
 
   const { user, entities, url } = enrichTweet(tweet);
