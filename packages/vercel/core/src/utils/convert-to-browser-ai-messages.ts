@@ -6,7 +6,7 @@ import {
   UnsupportedFunctionalityError,
 } from "@ai-sdk/provider";
 import { formatToolResults, type ToolResult } from "@browser-ai/shared";
-export interface ConvertedMessages {
+interface ConvertedMessages {
   systemMessage?: string;
   messages: LanguageModelMessage[];
 }

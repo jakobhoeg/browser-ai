@@ -7,7 +7,7 @@ import type { ToolDefinition } from "@browser-ai/shared";
 /**
  * HuggingFace tool definition format compatible with apply_chat_template
  */
-export interface HuggingFaceToolDefinition {
+interface HuggingFaceToolDefinition {
   type: "function";
   function: {
     name: string;

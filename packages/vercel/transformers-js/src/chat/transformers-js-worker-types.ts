@@ -3,9 +3,8 @@ import type {
   PreTrainedModel,
   PretrainedModelOptions,
   Processor,
-  ProgressInfo,
 } from "@huggingface/transformers";
-import type { ToolDefinition, ParsedToolCall } from "@browser-ai/shared";
+import type { ToolDefinition } from "@browser-ai/shared";
 
 export interface GenerationOptions {
   max_new_tokens?: number;
@@ -17,8 +16,6 @@ export interface GenerationOptions {
   num_beams?: number;
   early_stopping?: boolean;
 }
-
-export type { ProgressInfo } from "@huggingface/transformers";
 
 /**
  * Message content for different worker message types
@@ -50,21 +47,6 @@ export type WorkerMessage =
     }
   | { type: "interrupt" }
   | { type: "reset" };
-
-/**
- * Worker response types
- */
-export type WorkerResponse =
-  | {
-      status: "loading" | "ready" | "start" | "update" | "complete" | "error";
-      output?: string | string[];
-      data?: string;
-      tps?: number;
-      numTokens?: number;
-      inputLength?: number;
-      toolCalls?: ParsedToolCall[];
-    }
-  | ProgressInfo;
 
 /**
  * Type for worker global scope

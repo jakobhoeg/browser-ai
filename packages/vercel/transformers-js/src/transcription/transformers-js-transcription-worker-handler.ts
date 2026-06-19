@@ -10,26 +10,18 @@ import {
   type PreTrainedModel,
 } from "@huggingface/transformers";
 
-export interface TranscriptionWorkerMessage {
+interface TranscriptionWorkerMessage {
   type: "load" | "generate" | "interrupt" | "reset";
   data?: any;
 }
 
-export interface TranscriptionWorkerResponse {
-  status: "loading" | "ready" | "start" | "update" | "complete" | "error";
-  output?: string | string[];
-  data?: string;
-  tps?: number;
-  numTokens?: number;
-}
-
-export interface TranscriptionWorkerLoadOptions {
+interface TranscriptionWorkerLoadOptions {
   modelId?: string;
   dtype?: string;
   device?: string;
 }
 
-export interface TranscriptionWorkerGlobalScope {
+interface TranscriptionWorkerGlobalScope {
   postMessage(message: any): void;
   addEventListener(type: string, listener: (e: any) => void): void;
 }
