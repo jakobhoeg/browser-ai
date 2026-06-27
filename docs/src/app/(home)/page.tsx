@@ -89,16 +89,7 @@ export default function HomePage() {
             </div>
             <div className="relative items-center px-2 font-mono text-xs/6 text-black/40 dark:text-white/40 max-sm:px-4 flex after:absolute after:bottom-0 after:h-px after:w-[200vw] after:bg-gray-950/5 dark:after:bg-white/10 after:-left-[100vw]">
               <p className="text-balance">
-                This project is proudly sponsored by the creators behind the{" "}
-                <a
-                  href="https://developer.chrome.com/docs/ai/built-in"
-                  target="_blank"
-                  rel="noopener sponsored"
-                  className="underline"
-                >
-                  Built-in AI
-                </a>{" "}
-                initiative, and is part of the{" "}
+                This project is part of the{" "}
                 <a
                   href="https://vercel.com/oss"
                   target="_blank"
@@ -107,7 +98,16 @@ export default function HomePage() {
                 >
                   Vercel OSS Program
                 </a>
-                .
+                , and was previously sponsored by the creators behind the{" "}
+                <a
+                  href="https://developer.chrome.com/docs/ai/built-in"
+                  target="_blank"
+                  rel="noopener sponsored"
+                  className="underline"
+                >
+                  Built-in AI
+                </a>{" "}
+                initiative.
               </p>
             </div>
 
