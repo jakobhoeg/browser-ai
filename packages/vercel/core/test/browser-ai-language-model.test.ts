@@ -879,6 +879,112 @@ Running the tool now.`;
 
       expect(allToolCallIds.size).toBe(1); // All IDs should be identical
     });
+
+    it("should wrap the built-in tool scaffold when toolCallingInstructionsBefore and toolCallingInstructionsAfter are provided in doGenerate", async () => {
+      const toolCallingInstructionsBefore = "CUSTOM BEFORE TOOL SCHEMAS";
+      const toolCallingInstructionsAfter =
+        "CUSTOM AFTER TOOL SCHEMAS WITH EXTRA GUIDANCE";
+      mockPrompt.mockResolvedValue("No tool needed");
+
+      const model = new BrowserAIChatLanguageModel("text");
+      await model.doGenerate({
+        prompt: [{ role: "user", content: [{ type: "text", text: "hi" }] }],
+        tools: [
+          {
+            type: "function",
+            name: "myTool",
+            description: "A test tool",
+            inputSchema: {
+              type: "object",
+              properties: { arg: { type: "string" } },
+            },
+          },
+        ],
+        providerOptions: {
+          "browser-ai": {
+            toolCallingInstructionsBefore,
+            toolCallingInstructionsAfter,
+          },
+        },
+      });
+
+      // SessionManager converts systemMessage into initialPrompts[0].
+      const createCall = (globalThis as any).LanguageModel.create.mock
+        .calls[0][0];
+      expect(createCall.initialPrompts[0].role).toBe("system");
+      expect(createCall.initialPrompts[0].content).toContain(
+        toolCallingInstructionsBefore,
+      );
+      expect(createCall.initialPrompts[0].content).toContain("myTool");
+      expect(createCall.initialPrompts[0].content).toContain(
+        "# Tool Calling Instructions",
+      );
+      expect(createCall.initialPrompts[0].content).toContain(
+        "Only request one tool call at a time",
+      );
+      expect(createCall.initialPrompts[0].content).toContain("```tool_result");
+      expect(createCall.initialPrompts[0].content).toContain(
+        toolCallingInstructionsAfter,
+      );
+      expect(createCall.initialPrompts[0].content).not.toContain(
+        "You are a helpful AI assistant with access to tools.",
+      );
+    });
+
+    it("should wrap the built-in tool scaffold when toolCallingInstructionsBefore and toolCallingInstructionsAfter are provided in doStream", async () => {
+      const toolCallingInstructionsBefore = "STREAM BEFORE TOOL SCHEMAS";
+      const toolCallingInstructionsAfter = "STREAM AFTER TOOL SCHEMAS";
+      mockPromptStreaming.mockReturnValue(
+        new ReadableStream<string>({
+          start(controller) {
+            controller.close();
+          },
+        }),
+      );
+
+      const model = new BrowserAIChatLanguageModel("text");
+      await model.doStream({
+        prompt: [{ role: "user", content: [{ type: "text", text: "hi" }] }],
+        tools: [
+          {
+            type: "function",
+            name: "myTool",
+            description: "A test tool",
+            inputSchema: {
+              type: "object",
+              properties: { arg: { type: "string" } },
+            },
+          },
+        ],
+        providerOptions: {
+          "browser-ai": {
+            toolCallingInstructionsBefore,
+            toolCallingInstructionsAfter,
+          },
+        },
+      });
+
+      const createCall = (globalThis as any).LanguageModel.create.mock
+        .calls[0][0];
+      expect(createCall.initialPrompts[0].role).toBe("system");
+      expect(createCall.initialPrompts[0].content).toContain(
+        toolCallingInstructionsBefore,
+      );
+      expect(createCall.initialPrompts[0].content).toContain("myTool");
+      expect(createCall.initialPrompts[0].content).toContain(
+        "# Tool Calling Instructions",
+      );
+      expect(createCall.initialPrompts[0].content).toContain(
+        "Only request one tool call at a time",
+      );
+      expect(createCall.initialPrompts[0].content).toContain("```tool_result");
+      expect(createCall.initialPrompts[0].content).toContain(
+        toolCallingInstructionsAfter,
+      );
+      expect(createCall.initialPrompts[0].content).not.toContain(
+        "You are a helpful AI assistant with access to tools.",
+      );
+    });
   });
 
   describe("abort signal handling", () => {

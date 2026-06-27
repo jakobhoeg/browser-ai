@@ -14,6 +14,35 @@ import {
   WebLLMEmbeddingSettings,
 } from "./embedding/web-llm-embedding-model";
 
+/**
+ * Per-call provider options for WebLLM, passed via `providerOptions["web-llm"]`
+ * in each `generateText` / `streamText` call.
+ *
+ * Distinct from {@link WebLLMSettings}, which are set once at model-creation time.
+ */
+export interface WebLLMCallProviderOptions {
+  /**
+   * Inserts custom text before the built-in tool-calling scaffold.
+   * The scaffold still includes the generated tool schemas JSON and the
+   * standard tool_call/tool_result instructions.
+   */
+  toolCallingInstructionsBefore?: string;
+  /**
+   * Inserts custom text after the built-in tool-calling scaffold.
+   * The scaffold still includes the generated tool schemas JSON and the
+   * standard tool_call/tool_result instructions.
+   */
+  toolCallingInstructionsAfter?: string;
+  /**
+   * Additional generation config passed directly to the WebLLM engine.
+   * @see https://webllm.mlc.ai/docs/user/api_reference.html#generationconfig
+   */
+  extra_body?: {
+    enable_thinking?: boolean;
+    enable_latency_breakdown?: boolean;
+  };
+}
+
 export interface WebLLMProvider extends ProviderV3 {
   (modelId: WebLLMModelId, settings?: WebLLMSettings): WebLLMLanguageModel;
 

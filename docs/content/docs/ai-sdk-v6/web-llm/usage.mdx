@@ -98,6 +98,31 @@ const result = await streamText({
 
 It also supports [tool execution approval (`needsApproval`)](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#tool-execution-approval).
 
+## Custom Tool-Use Instructions
+
+By default the library appends its own built-in tool-calling scaffold, including the generated tool schemas JSON and the standard `tool_call` / `tool_result` instructions. For advanced use-cases you can insert extra instructions before and/or after that scaffold by passing `toolCallingInstructionsBefore` and/or `toolCallingInstructionsAfter` inside the `providerOptions` call option:
+
+```typescript
+import { generateText } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+
+const result = await generateText({
+  model: webLLM("Qwen3-0.6B-q0f16-MLC"),
+  prompt: "What is the weather in Paris?",
+  tools: { getWeather: { /* ... */ } },
+  providerOptions: {
+    "web-llm": {
+      toolCallingInstructionsBefore:
+        "You can use the following tools. Review the JSON carefully before selecting one.",
+      toolCallingInstructionsAfter:
+        "Prefer concise answers once the tool results contain enough information.",
+    },
+  },
+});
+```
+
+When either property is present and non-empty, the shared prompt builder keeps the generated tool schemas JSON and the standard tool-calling instructions, then inserts your custom text before and/or after that scaffold. Empty strings are treated as absent.
+
 ## Tool Calling with Structured Output
 
 ```ts
