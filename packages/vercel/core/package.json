@@ -49,7 +49,7 @@
     "tool-calling",
     "function-calling"
   ],
-  "license": "Apache License",
+  "license": "Apache-2.0",
   "dependencies": {
     "@mediapipe/tasks-text": "^0.10.22-rc.20250304"
   },

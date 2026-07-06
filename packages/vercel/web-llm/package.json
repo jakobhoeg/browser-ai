@@ -50,7 +50,7 @@
     "inference",
     "built-in-ai"
   ],
-  "license": "Apache License",
+  "license": "Apache-2.0",
   "peerDependencies": {
     "@mlc-ai/web-llm": "^0.2.79",
     "ai": "^6.0.0"
