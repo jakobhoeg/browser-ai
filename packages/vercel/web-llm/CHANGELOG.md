@@ -1,5 +1,11 @@
 # @browser-ai/web-llm
 
+## 2.1.8
+
+### Patch Changes
+
+- d7110d2: Use valid SPDX license identifier Apache-2.0
+
 ## 2.1.7
 
 ### Patch Changes

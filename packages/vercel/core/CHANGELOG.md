@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 2.1.13
+
+### Patch Changes
+
+- d7110d2: Use valid SPDX license identifier Apache-2.0
+
 ## 2.1.12
 
 ### Patch Changes
