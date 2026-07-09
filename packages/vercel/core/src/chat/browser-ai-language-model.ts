@@ -23,6 +23,7 @@ import { convertToBrowserAIMessages } from "../utils/convert-to-browser-ai-messa
 import { gatherUnsupportedSettingWarnings } from "../utils/warnings";
 import { getMultimodalInfo } from "../utils/prompt-utils";
 import { SessionManager } from "./session-manager";
+import type { BrowserAICallProviderOptions } from "../browser-ai-provider";
 
 export type BrowserAIChatModelId = "text";
 
@@ -184,6 +185,18 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       sessionOptions.topK = topK;
     }
 
+    const callProviderOptions = providerOptions?.["browser-ai"] as
+      | BrowserAICallProviderOptions
+      | undefined;
+    const toolCallingInstructionsBefore =
+      typeof callProviderOptions?.toolCallingInstructionsBefore === "string"
+        ? callProviderOptions.toolCallingInstructionsBefore || undefined
+        : undefined;
+    const toolCallingInstructionsAfter =
+      typeof callProviderOptions?.toolCallingInstructionsAfter === "string"
+        ? callProviderOptions.toolCallingInstructionsAfter || undefined
+        : undefined;
+
     return {
       systemMessage,
       messages,
@@ -193,6 +206,8 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       hasMultiModalInput,
       expectedInputs,
       functionTools,
+      toolCallingInstructionsBefore,
+      toolCallingInstructionsAfter,
     };
   }
 
@@ -215,6 +230,8 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       sessionOptions,
       expectedInputs,
       functionTools,
+      toolCallingInstructionsBefore,
+      toolCallingInstructionsAfter,
     } = converted;
 
     const systemPrompt = buildJsonToolSystemPrompt(
@@ -222,6 +239,8 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       functionTools,
       {
         allowParallelToolCalls: false,
+        toolCallingInstructionsBefore,
+        toolCallingInstructionsAfter,
       },
     );
 
@@ -391,6 +410,8 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       sessionOptions,
       expectedInputs,
       functionTools,
+      toolCallingInstructionsBefore,
+      toolCallingInstructionsAfter,
     } = converted;
 
     // Build system prompt with JSON tool calling instructions
@@ -399,6 +420,8 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       functionTools,
       {
         allowParallelToolCalls: false,
+        toolCallingInstructionsBefore,
+        toolCallingInstructionsAfter,
       },
     );
 

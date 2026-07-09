@@ -91,6 +91,138 @@ describe("@browser-ai/shared exports", () => {
       expect(result).toContain("Available Tools");
       expect(result).toContain("test");
     });
+
+    it("uses only toolCallingInstructionsBefore plus the built-in scaffold when only toolCallingInstructionsBefore is provided", () => {
+      const tools = [
+        {
+          name: "search",
+          description: "Search the web",
+          parameters: { type: "object", properties: {} },
+        },
+      ];
+      const custom = "CUSTOM INTRO TEXT";
+      const result = buildJsonToolSystemPrompt(undefined, tools, {
+        toolCallingInstructionsBefore: custom,
+      });
+      expect(result).toContain(custom);
+      expect(result).toContain("# Available Tools");
+      expect(result).toContain('"name": "search"');
+      expect(result.indexOf(custom)).toBeLessThan(
+        result.indexOf("# Available Tools"),
+      );
+      expect(result).toContain("# Tool Calling Instructions");
+      expect(result).toContain("Only request one tool call at a time");
+      expect(result).toContain("```tool_result");
+      expect(result).not.toContain(
+        "You are a helpful AI assistant with access to tools.",
+      );
+    });
+
+    it("prepends originalSystemPrompt before custom tool-calling scaffold", () => {
+      const tools = [
+        {
+          name: "t",
+          description: "d",
+          parameters: { type: "object", properties: {} },
+        },
+      ];
+      const sys = "You are a pirate.";
+      const before = "BEFORE";
+      const after = "AFTER";
+      const result = buildJsonToolSystemPrompt(sys, tools, {
+        toolCallingInstructionsBefore: before,
+        toolCallingInstructionsAfter: after,
+      });
+      expect(result.startsWith(`${sys}\n\n`)).toBe(true);
+      expect(result).toContain(before);
+      expect(result).toContain("# Tool Calling Instructions");
+      expect(result).toContain('"name": "t"');
+      expect(result).toContain(after);
+    });
+
+    it("uses only the built-in scaffold plus toolCallingInstructionsAfter when only toolCallingInstructionsAfter is provided", () => {
+      const tools = [
+        {
+          name: "t",
+          description: "d",
+          parameters: { type: "object", properties: {} },
+        },
+      ];
+      const result = buildJsonToolSystemPrompt(undefined, tools, {
+        toolCallingInstructionsAfter: "AFTER",
+      });
+      expect(result).toContain("# Available Tools");
+      expect(result).toContain('"name": "t"');
+      expect(result).toContain("# Tool Calling Instructions");
+      expect(result).toContain("Only request one tool call at a time");
+      expect(result).toContain("```tool_result");
+      expect(result.indexOf("```tool_result")).toBeLessThan(
+        result.indexOf("AFTER"),
+      );
+      expect(result).toContain("AFTER");
+      expect(result.indexOf("# Available Tools")).toBeLessThan(
+        result.indexOf("AFTER"),
+      );
+      expect(result).not.toContain(
+        "You are a helpful AI assistant with access to tools.",
+      );
+    });
+
+    it("uses toolCallingInstructionsBefore and toolCallingInstructionsAfter around the built-in scaffold when both are provided", () => {
+      const tools = [
+        {
+          name: "t",
+          description: "d",
+          parameters: { type: "object", properties: {} },
+        },
+      ];
+      const result = buildJsonToolSystemPrompt(undefined, tools, {
+        toolCallingInstructionsBefore: "BEFORE",
+        toolCallingInstructionsAfter: "AFTER",
+      });
+      expect(result.indexOf("BEFORE")).toBeLessThan(
+        result.indexOf("# Available Tools"),
+      );
+      expect(result).toContain('"name": "t"');
+      expect(result).toContain("# Tool Calling Instructions");
+      expect(result).toContain("Only request one tool call at a time");
+      expect(result).toContain("```tool_result");
+      expect(result.indexOf("```tool_result")).toBeLessThan(
+        result.indexOf("AFTER"),
+      );
+      expect(result).not.toContain(
+        "You are a helpful AI assistant with access to tools.",
+      );
+    });
+
+    it("falls back to default prompt only when neither replacement property is provided", () => {
+      const tools = [
+        {
+          name: "t",
+          description: "d",
+          parameters: { type: "object", properties: {} },
+        },
+      ];
+      const result = buildJsonToolSystemPrompt(undefined, tools, {});
+      expect(result).toContain("Available Tools");
+      expect(result).toContain("tool_call");
+    });
+
+    it("treats empty replacement prompt sections as absent", () => {
+      const tools = [
+        {
+          name: "t",
+          description: "d",
+          parameters: { type: "object", properties: {} },
+        },
+      ];
+      const result = buildJsonToolSystemPrompt(undefined, tools, {
+        toolCallingInstructionsBefore: "",
+        toolCallingInstructionsAfter: "",
+      });
+      expect(result).toContain("Available Tools");
+      expect(result).toContain("Only request one tool call at a time");
+    });
   });
 
   describe("parseJsonFunctionCalls", () => {

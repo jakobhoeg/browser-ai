@@ -191,6 +191,59 @@ describe("WebLLMLanguageModel", () => {
         }),
       );
     });
+
+    it("should wrap the built-in tool scaffold when toolCallingInstructionsBefore and toolCallingInstructionsAfter are provided", async () => {
+      mockChatCompletionsCreate.mockResolvedValue({
+        choices: [{ message: { content: "ok" }, finish_reason: "stop" }],
+        usage: { prompt_tokens: 5, completion_tokens: 2, total_tokens: 7 },
+      });
+
+      const model = new WebLLMLanguageModel("test-model");
+      const toolCallingInstructionsBefore =
+        "TOOLS AVAILABLE BELOW. Inspect the JSON before choosing one.";
+      const toolCallingInstructionsAfter =
+        "Summarize clearly after you have the necessary tool results.";
+
+      await model.doGenerate({
+        prompt: [{ role: "user", content: [{ type: "text", text: "hi" }] }],
+        tools: [
+          {
+            type: "function",
+            name: "search",
+            description: "Search",
+            inputSchema: { type: "object", properties: {} },
+          },
+        ],
+        providerOptions: {
+          "web-llm": {
+            toolCallingInstructionsBefore,
+            toolCallingInstructionsAfter,
+          },
+        },
+      });
+
+      const request = mockChatCompletionsCreate.mock.calls[0]?.[0];
+      const systemMessage = request?.messages.find(
+        (message: { role: string; content: string }) =>
+          message.role === "system",
+      );
+
+      expect(systemMessage?.content).toContain(toolCallingInstructionsBefore);
+      expect(systemMessage?.content).toContain('"name": "search"');
+      expect(systemMessage?.content).toContain("# Tool Calling Instructions");
+      expect(systemMessage?.content).toContain(
+        "Only request one tool call at a time",
+      );
+      expect(systemMessage?.content).toContain("```tool_result");
+      expect(systemMessage?.content).toContain(toolCallingInstructionsAfter);
+      expect(systemMessage?.content).not.toContain(
+        "You are a helpful AI assistant with access to tools.",
+      );
+      expect(systemMessage?.content).not.toContain("Important:");
+      expect(systemMessage?.content).not.toContain(
+        "Use exact tool and parameter names",
+      );
+    });
   });
 
   describe("doStream", () => {
@@ -496,6 +549,83 @@ describe("WebLLMLanguageModel", () => {
     });
 
     describe("doStream with tools", () => {
+      it("should wrap the built-in tool scaffold when toolCallingInstructionsBefore and toolCallingInstructionsAfter are provided", async () => {
+        async function* createTextStream(): AsyncGenerator<any, void, unknown> {
+          yield { choices: [{ delta: { content: "ok" } }] };
+          yield {
+            choices: [{ delta: {}, finish_reason: "stop" }],
+            usage: {
+              prompt_tokens: 12,
+              completion_tokens: 4,
+              total_tokens: 16,
+            },
+          };
+        }
+
+        mockChatCompletionsCreate.mockResolvedValue(createTextStream());
+
+        const model = new WebLLMLanguageModel("test-model");
+        const toolCallingInstructionsBefore =
+          "READ THE TOOL JSON BEFORE YOU PICK A TOOL.";
+        const toolCallingInstructionsAfter =
+          "Once tool results arrive, respond with a concise answer.";
+
+        const result = await model.doStream({
+          prompt: [
+            {
+              role: "user",
+              content: [{ type: "text", text: "What's the weather in SF?" }],
+            },
+          ],
+          tools: [
+            {
+              type: "function",
+              name: "get_weather",
+              description: "Get weather",
+              inputSchema: {
+                type: "object",
+                properties: { city: { type: "string" } },
+              },
+            },
+          ],
+          providerOptions: {
+            "web-llm": {
+              toolCallingInstructionsBefore,
+              toolCallingInstructionsAfter,
+            },
+          },
+        });
+
+        const reader = result.stream.getReader();
+        try {
+          await reader.read();
+        } finally {
+          reader.releaseLock();
+        }
+
+        const request = mockChatCompletionsCreate.mock.calls[0]?.[0];
+        const systemMessage = request?.messages.find(
+          (message: { role: string; content: string }) =>
+            message.role === "system",
+        );
+
+        expect(systemMessage?.content).toContain(toolCallingInstructionsBefore);
+        expect(systemMessage?.content).toContain('"name": "get_weather"');
+        expect(systemMessage?.content).toContain("# Tool Calling Instructions");
+        expect(systemMessage?.content).toContain(
+          "Only request one tool call at a time",
+        );
+        expect(systemMessage?.content).toContain("```tool_result");
+        expect(systemMessage?.content).toContain(toolCallingInstructionsAfter);
+        expect(systemMessage?.content).not.toContain(
+          "You are a helpful AI assistant with access to tools.",
+        );
+        expect(systemMessage?.content).not.toContain("Important:");
+        expect(systemMessage?.content).not.toContain(
+          "Use exact tool and parameter names",
+        );
+      });
+
       it("should stream tool calls in real-time", async () => {
         async function* createToolCallStream(): AsyncGenerator<
           any,

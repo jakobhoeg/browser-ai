@@ -57,6 +57,25 @@ export interface BrowserAIProviderSettings {
 }
 
 /**
+ * Per-call options passed via the AI SDK `providerOptions` call option
+ * under the `"browser-ai"` key.
+ */
+export interface BrowserAICallProviderOptions {
+  /**
+   * Inserts custom text before the built-in tool-calling scaffold.
+   * The scaffold still includes the generated tool schemas JSON and the
+   * standard tool_call/tool_result instructions.
+   */
+  toolCallingInstructionsBefore?: string;
+  /**
+   * Inserts custom text after the built-in tool-calling scaffold.
+   * The scaffold still includes the generated tool schemas JSON and the
+   * standard tool_call/tool_result instructions.
+   */
+  toolCallingInstructionsAfter?: string;
+}
+
+/**
  * Create a BrowserAI provider instance.
  */
 export function createBrowserAI(
