@@ -10,8 +10,8 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.0",
-    "@ai-sdk/react": "^3.0.1",
+    "@ai-sdk/openai": "^4.0.11",
+    "@ai-sdk/react": "^4.0.23",
     "@browser-ai/core": "*",
     "@browser-ai/transformers-js": "*",
     "@browser-ai/web-llm": "*",
@@ -31,7 +31,7 @@
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@shikijs/transformers": "^3.8.0",
     "@vercel/blob": "^2.4.0",
-    "ai": "^6.0.92",
+    "ai": "^7.0.22",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "embla-carousel-react": "^8.6.0",
