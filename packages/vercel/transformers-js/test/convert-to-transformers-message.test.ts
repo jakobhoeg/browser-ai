@@ -39,7 +39,11 @@ describe("convertToTransformersMessages", () => {
         role: "user",
         content: [
           { type: "text", text: "See this" },
-          { type: "file", mediaType: "image/png", data: { type: "data", data: "AAA" } },
+          {
+            type: "file",
+            mediaType: "image/png",
+            data: { type: "data", data: "AAA" },
+          },
         ],
       },
     ];
@@ -55,7 +59,11 @@ describe("convertToTransformersMessages", () => {
         role: "user",
         content: [
           { type: "text", text: "What is in this image?" },
-          { type: "file", mediaType: "image/png", data: { type: "data", data: base64 } },
+          {
+            type: "file",
+            mediaType: "image/png",
+            data: { type: "data", data: base64 },
+          },
           { type: "text", text: "Thanks" },
         ],
       },

@@ -23,7 +23,11 @@ describe("prompt-utils", () => {
           role: "user",
           content: [
             { type: "text", text: "What's in this image?" },
-            { type: "file", data: { type: "data", data: new Uint8Array() }, mediaType: "image/png" },
+            {
+              type: "file",
+              data: { type: "data", data: new Uint8Array() },
+              mediaType: "image/png",
+            },
           ],
         },
       ];
@@ -38,7 +42,11 @@ describe("prompt-utils", () => {
         {
           role: "user",
           content: [
-            { type: "file", data: { type: "data", data: new Uint8Array() }, mediaType: "audio/wav" },
+            {
+              type: "file",
+              data: { type: "data", data: new Uint8Array() },
+              mediaType: "audio/wav",
+            },
           ],
         },
       ];
@@ -53,8 +61,16 @@ describe("prompt-utils", () => {
         {
           role: "user",
           content: [
-            { type: "file", data: { type: "data", data: new Uint8Array() }, mediaType: "image/png" },
-            { type: "file", data: { type: "data", data: new Uint8Array() }, mediaType: "audio/wav" },
+            {
+              type: "file",
+              data: { type: "data", data: new Uint8Array() },
+              mediaType: "image/png",
+            },
+            {
+              type: "file",
+              data: { type: "data", data: new Uint8Array() },
+              mediaType: "audio/wav",
+            },
           ],
         },
       ];
@@ -70,8 +86,16 @@ describe("prompt-utils", () => {
         {
           role: "user",
           content: [
-            { type: "file", data: { type: "data", data: new Uint8Array() }, mediaType: "image/png" },
-            { type: "file", data: { type: "data", data: new Uint8Array() }, mediaType: "image/jpeg" },
+            {
+              type: "file",
+              data: { type: "data", data: new Uint8Array() },
+              mediaType: "image/png",
+            },
+            {
+              type: "file",
+              data: { type: "data", data: new Uint8Array() },
+              mediaType: "image/jpeg",
+            },
           ],
         },
       ];

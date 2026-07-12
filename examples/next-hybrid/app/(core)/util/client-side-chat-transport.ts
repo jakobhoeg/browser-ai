@@ -189,7 +189,8 @@ export class ClientSideChatTransport implements ChatTransport<BrowserAIUIMessage
         const result = streamText({
           model: this.model,
           tools: this.tools,
-          instructions: "You are a helpful assistant running fully in the browser. Keep answers concise.",
+          instructions:
+            "You are a helpful assistant running fully in the browser. Keep answers concise.",
           stopWhen: isStepCount(5),
           toolApproval: {
             webSearch: "user-approval",
