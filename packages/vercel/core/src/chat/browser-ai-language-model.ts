@@ -1,15 +1,15 @@
 import {
-  LanguageModelV3,
-  LanguageModelV3CallOptions,
-  SharedV3Warning,
-  LanguageModelV3Content,
-  LanguageModelV3FinishReason,
-  LanguageModelV3ProviderTool,
-  LanguageModelV3StreamPart,
-  LanguageModelV3ToolCall,
+  LanguageModelV4,
+  LanguageModelV4CallOptions,
+  SharedV4Warning,
+  LanguageModelV4Content,
+  LanguageModelV4FinishReason,
+  LanguageModelV4ProviderTool,
+  LanguageModelV4StreamPart,
+  LanguageModelV4ToolCall,
   JSONValue,
-  LanguageModelV3GenerateResult,
-  LanguageModelV3StreamResult,
+  LanguageModelV4GenerateResult,
+  LanguageModelV4StreamResult,
 } from "@ai-sdk/provider";
 import {
   buildJsonToolSystemPrompt,
@@ -67,8 +67,8 @@ type BrowserAIConfig = {
   options: BrowserAIChatSettings;
 };
 
-export class BrowserAIChatLanguageModel implements LanguageModelV3 {
-  readonly specificationVersion = "v3";
+export class BrowserAIChatLanguageModel implements LanguageModelV4 {
+  readonly specificationVersion = "v4";
   readonly modelId: BrowserAIChatModelId;
   readonly provider = "browser-ai";
 
@@ -112,7 +112,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
     });
   }
 
-  private getArgs(callOptions: Parameters<LanguageModelV3["doGenerate"]>[0]) {
+  private getArgs(callOptions: Parameters<LanguageModelV4["doGenerate"]>[0]) {
     const {
       prompt,
       maxOutputTokens,
@@ -128,7 +128,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       toolChoice,
       providerOptions,
     } = callOptions;
-    const warnings: SharedV3Warning[] = [];
+    const warnings: SharedV4Warning[] = [];
 
     // Gather warnings for unsupported settings
     warnings.push(
@@ -147,7 +147,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
     const functionTools = (tools ?? []).filter(isFunctionTool);
 
     const unsupportedTools = (tools ?? []).filter(
-      (tool): tool is LanguageModelV3ProviderTool => !isFunctionTool(tool),
+      (tool): tool is LanguageModelV4ProviderTool => !isFunctionTool(tool),
     );
 
     for (const tool of unsupportedTools) {
@@ -204,8 +204,8 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
    * @throws {UnsupportedFunctionalityError} When unsupported features like file input are used
    */
   public async doGenerate(
-    options: LanguageModelV3CallOptions,
-  ): Promise<LanguageModelV3GenerateResult> {
+    options: LanguageModelV4CallOptions,
+  ): Promise<LanguageModelV4GenerateResult> {
     const converted = this.getArgs(options);
     const {
       systemMessage,
@@ -244,7 +244,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
     if (toolCalls.length > 0) {
       const toolCallsToEmit = toolCalls.slice(0, 1);
 
-      const parts: LanguageModelV3Content[] = [];
+      const parts: LanguageModelV4Content[] = [];
 
       if (textContent) {
         parts.push({
@@ -259,7 +259,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
           toolCallId: call.toolCallId,
           toolName: call.toolName,
           input: JSON.stringify(call.args ?? {}),
-        } satisfies LanguageModelV3ToolCall);
+        } satisfies LanguageModelV4ToolCall);
       }
 
       return {
@@ -283,7 +283,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
       };
     }
 
-    const content: LanguageModelV3Content[] = [
+    const content: LanguageModelV4Content[] = [
       {
         type: "text",
         text: textContent || rawResponse,
@@ -380,8 +380,8 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
    * @throws {UnsupportedFunctionalityError} When unsupported features like file input are used
    */
   public async doStream(
-    options: LanguageModelV3CallOptions,
-  ): Promise<LanguageModelV3StreamResult> {
+    options: LanguageModelV4CallOptions,
+  ): Promise<LanguageModelV4StreamResult> {
     const converted = this.getArgs(options);
     const {
       systemMessage,
@@ -416,7 +416,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
     const conversationHistory = [...messages];
     const textId = "text-0";
 
-    const stream = new ReadableStream<LanguageModelV3StreamPart>({
+    const stream = new ReadableStream<LanguageModelV4StreamPart>({
       start: async (controller) => {
         controller.enqueue({
           type: "stream-start",
@@ -457,7 +457,7 @@ export class BrowserAIChatLanguageModel implements LanguageModelV3 {
           textStarted = false;
         };
 
-        const finishStream = (finishReason: LanguageModelV3FinishReason) => {
+        const finishStream = (finishReason: LanguageModelV4FinishReason) => {
           if (finished) return;
           finished = true;
           emitTextEndIfNeeded();

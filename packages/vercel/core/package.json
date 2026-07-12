@@ -54,7 +54,7 @@
     "@mediapipe/tasks-text": "^0.10.22-rc.20250304"
   },
   "peerDependencies": {
-    "ai": "^6.0.0"
+    "ai": "^7.0.0"
   },
   "devDependencies": {
     "@browser-ai/shared": "*",

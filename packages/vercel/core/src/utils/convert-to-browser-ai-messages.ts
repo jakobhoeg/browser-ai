@@ -1,8 +1,9 @@
 import {
-  LanguageModelV3Prompt,
-  LanguageModelV3ToolCallPart,
-  LanguageModelV3ToolResultPart,
-  LanguageModelV3ToolResultOutput,
+  LanguageModelV4Prompt,
+  LanguageModelV4ToolCallPart,
+  LanguageModelV4ToolResultPart,
+  LanguageModelV4ToolResultOutput,
+  SharedV4FileData,
   UnsupportedFunctionalityError,
 } from "@ai-sdk/provider";
 import { formatToolResults, type ToolResult } from "@browser-ai/shared";
@@ -29,28 +30,33 @@ function convertBase64ToUint8Array(base64: string): Uint8Array {
  * Browser AI supports: Blob, BufferSource (Uint8Array), URLs
  */
 function convertFileData(
-  data: URL | Uint8Array | string,
+  data: SharedV4FileData,
   mediaType: string,
 ): Uint8Array | string {
-  // Handle different data types from Vercel AI SDK
-  if (data instanceof URL) {
-    // URLs - keep as string (if supported by provider)
-    return data.toString();
-  }
+  switch (data.type) {
+    case "url":
+      // URLs - keep as string (if supported by provider)
+      return data.url.toString();
 
-  if (data instanceof Uint8Array) {
-    // Already in correct format
-    return data;
-  }
+    case "data":
+      return data.data instanceof Uint8Array
+        ? data.data
+        : // Base64 string from AI SDK - convert to Uint8Array
+          convertBase64ToUint8Array(data.data);
 
-  if (typeof data === "string") {
-    // Base64 string from AI SDK - convert to Uint8Array
-    return convertBase64ToUint8Array(data);
-  }
+    case "text":
+    case "reference":
+      throw new UnsupportedFunctionalityError({
+        functionality: `file data type '${data.type}' for ${mediaType}`,
+      });
 
-  // Exhaustive check - this should never happen with the union type
-  const exhaustiveCheck: never = data;
-  throw new Error(`Unexpected data type for ${mediaType}: ${exhaustiveCheck}`);
+    default: {
+      const exhaustiveCheck: never = data;
+      throw new Error(
+        `Unexpected data type for ${mediaType}: ${JSON.stringify(exhaustiveCheck)}`,
+      );
+    }
+  }
 }
 
 function normalizeToolArguments(input: unknown): unknown {
@@ -69,7 +75,7 @@ function normalizeToolArguments(input: unknown): unknown {
   return input ?? {};
 }
 
-function formatToolCallsJson(parts: LanguageModelV3ToolCallPart[]): string {
+function formatToolCallsJson(parts: LanguageModelV4ToolCallPart[]): string {
   if (!parts.length) {
     return "";
   }
@@ -92,7 +98,7 @@ ${payloads.join("\n")}
 \`\`\``;
 }
 
-function convertToolResultOutput(output: LanguageModelV3ToolResultOutput): {
+function convertToolResultOutput(output: LanguageModelV4ToolResultOutput): {
   value: unknown;
   isError: boolean;
 } {
@@ -116,7 +122,7 @@ function convertToolResultOutput(output: LanguageModelV3ToolResultOutput): {
   }
 }
 
-function toToolResult(part: LanguageModelV3ToolResultPart): ToolResult {
+function toToolResult(part: LanguageModelV4ToolResultPart): ToolResult {
   const { value, isError } = convertToolResultOutput(part.output);
   return {
     toolCallId: part.toolCallId,
@@ -131,7 +137,7 @@ function toToolResult(part: LanguageModelV3ToolResultPart): ToolResult {
  * Returns system message (for initialPrompts) and regular messages (for prompt method)
  */
 export function convertToBrowserAIMessages(
-  prompt: LanguageModelV3Prompt,
+  prompt: LanguageModelV4Prompt,
 ): ConvertedMessages {
   const normalizedPrompt = prompt.slice();
 
@@ -196,7 +202,7 @@ export function convertToBrowserAIMessages(
 
       case "assistant": {
         let text = "";
-        const toolCallParts: LanguageModelV3ToolCallPart[] = [];
+        const toolCallParts: LanguageModelV4ToolCallPart[] = [];
 
         for (const part of message.content) {
           switch (part.type) {
@@ -221,6 +227,16 @@ export function convertToBrowserAIMessages(
               throw new UnsupportedFunctionalityError({
                 functionality:
                   "tool-result parts in assistant messages (should be in tool messages)",
+              });
+            }
+            case "reasoning-file": {
+              throw new UnsupportedFunctionalityError({
+                functionality: "assistant reasoning file attachments",
+              });
+            }
+            case "custom": {
+              throw new UnsupportedFunctionalityError({
+                functionality: `custom content part: ${part.kind}`,
               });
             }
             default: {
@@ -257,7 +273,7 @@ export function convertToBrowserAIMessages(
       }
 
       case "tool": {
-        const toolParts = message.content as LanguageModelV3ToolResultPart[];
+        const toolParts = message.content as LanguageModelV4ToolResultPart[];
         const results: ToolResult[] = toolParts.map(toToolResult);
         const toolResultsJson = formatToolResults(results);
 

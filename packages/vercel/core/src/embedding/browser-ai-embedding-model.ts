@@ -1,7 +1,7 @@
 import {
-  EmbeddingModelV3,
-  EmbeddingModelV3CallOptions,
-  EmbeddingModelV3Result,
+  EmbeddingModelV4,
+  EmbeddingModelV4CallOptions,
+  EmbeddingModelV4Result,
 } from "@ai-sdk/provider";
 import { TextEmbedder } from "@mediapipe/tasks-text";
 
@@ -47,8 +47,8 @@ export interface BrowserAIEmbeddingModelSettings {
 // See more:
 // - https://github.com/google-ai-edge/mediapipe
 // - https://ai.google.dev/edge/mediapipe/solutions/text/text_embedder/web_js
-export class BrowserAIEmbeddingModel implements EmbeddingModelV3 {
-  readonly specificationVersion = "v3";
+export class BrowserAIEmbeddingModel implements EmbeddingModelV4 {
+  readonly specificationVersion = "v4";
   readonly provider = "google-mediapipe";
   readonly modelId: string = "embedding";
   readonly supportsParallelCalls = true;
@@ -93,8 +93,8 @@ export class BrowserAIEmbeddingModel implements EmbeddingModelV3 {
   };
 
   public doEmbed = async (
-    options: EmbeddingModelV3CallOptions,
-  ): Promise<EmbeddingModelV3Result> => {
+    options: EmbeddingModelV4CallOptions,
+  ): Promise<EmbeddingModelV4Result> => {
     // Note: abortSignal is not supported by MediaPipe TextEmbedder
     if (options.abortSignal?.aborted) {
       throw new Error("Operation was aborted");

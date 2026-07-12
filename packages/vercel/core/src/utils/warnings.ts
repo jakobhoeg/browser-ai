@@ -2,7 +2,7 @@
  * Warning generation utilities for unsupported settings and tools
  */
 
-import type { SharedV3Warning } from "@ai-sdk/provider";
+import type { SharedV4Warning } from "@ai-sdk/provider";
 import { createUnsupportedSettingWarning } from "@browser-ai/shared";
 
 // Re-export shared utilities
@@ -35,8 +35,8 @@ export function gatherUnsupportedSettingWarnings(options: {
   frequencyPenalty?: number;
   seed?: number;
   toolChoice?: unknown;
-}): SharedV3Warning[] {
-  const warnings: SharedV3Warning[] = [];
+}): SharedV4Warning[] {
+  const warnings: SharedV4Warning[] = [];
 
   if (options.maxOutputTokens != null) {
     warnings.push(

@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { convertToBrowserAIMessages } from "../src/utils/convert-to-browser-ai-messages";
 import {
-  LanguageModelV3Prompt,
-  LanguageModelV3Message,
+  LanguageModelV4Prompt,
+  LanguageModelV4Message,
   UnsupportedFunctionalityError,
 } from "@ai-sdk/provider";
 
 describe("convertToBrowserAIMessages", () => {
   describe("text messages", () => {
     it("should convert simple text user message", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [{ type: "text", text: "Hello, world!" }],
@@ -28,7 +28,7 @@ describe("convertToBrowserAIMessages", () => {
     });
 
     it("should extract system message", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "system",
           content: "You are a helpful assistant.",
@@ -51,7 +51,7 @@ describe("convertToBrowserAIMessages", () => {
     });
 
     it("should convert assistant messages", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [{ type: "text", text: "Hello!" }],
@@ -80,7 +80,7 @@ describe("convertToBrowserAIMessages", () => {
   describe("image file conversion", () => {
     it("should convert base64 image data to Uint8Array", () => {
       const base64Data = "SGVsbG8gV29ybGQ="; // "Hello World" in base64
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
@@ -88,7 +88,7 @@ describe("convertToBrowserAIMessages", () => {
             {
               type: "file",
               mediaType: "image/png",
-              data: base64Data,
+              data: { type: "data", data: base64Data },
             },
           ],
         },
@@ -116,14 +116,14 @@ describe("convertToBrowserAIMessages", () => {
 
     it("should handle Uint8Array image data directly", () => {
       const uint8Data = new Uint8Array([1, 2, 3, 4]);
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
             {
               type: "file",
               mediaType: "image/jpeg",
-              data: uint8Data,
+              data: { type: "data", data: uint8Data },
             },
           ],
         },
@@ -139,14 +139,14 @@ describe("convertToBrowserAIMessages", () => {
 
     it("should handle URL image data", () => {
       const imageUrl = new URL("https://example.com/image.png");
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
             {
               type: "file",
               mediaType: "image/webp",
-              data: imageUrl,
+              data: { type: "url", url: imageUrl },
             },
           ],
         },
@@ -164,7 +164,7 @@ describe("convertToBrowserAIMessages", () => {
   describe("audio file conversion", () => {
     it("should convert base64 audio data to Uint8Array", () => {
       const base64Data = "UklGRnQAAABXQVZF"; // Valid WAV header start in base64
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
@@ -172,7 +172,7 @@ describe("convertToBrowserAIMessages", () => {
             {
               type: "file",
               mediaType: "audio/wav",
-              data: base64Data,
+              data: { type: "data", data: base64Data },
             },
           ],
         },
@@ -188,14 +188,14 @@ describe("convertToBrowserAIMessages", () => {
 
     it("should handle Uint8Array audio data directly", () => {
       const audioData = new Uint8Array([82, 73, 70, 70]); // "RIFF" header
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
             {
               type: "file",
               mediaType: "audio/mp3",
-              data: audioData,
+              data: { type: "data", data: audioData },
             },
           ],
         },
@@ -212,7 +212,7 @@ describe("convertToBrowserAIMessages", () => {
 
   describe("mixed content", () => {
     it("should handle mixed text, image, and audio content", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
@@ -220,13 +220,13 @@ describe("convertToBrowserAIMessages", () => {
             {
               type: "file",
               mediaType: "image/png",
-              data: "SGVsbG8=", // "Hello" in base64
+              data: { type: "data", data: "SGVsbG8=" }, // "Hello" in base64
             },
             { type: "text", text: "And this audio:" },
             {
               type: "file",
               mediaType: "audio/wav",
-              data: new Uint8Array([1, 2, 3]),
+              data: { type: "data", data: new Uint8Array([1, 2, 3]) },
             },
           ],
         },
@@ -256,7 +256,7 @@ describe("convertToBrowserAIMessages", () => {
 
   describe("tool support", () => {
     it("should convert assistant tool calls into toolCall fences", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "assistant",
           content: [
@@ -268,11 +268,11 @@ describe("convertToBrowserAIMessages", () => {
               input: { location: "Seattle" },
             },
           ],
-        } as LanguageModelV3Message,
+        } as LanguageModelV4Message,
         {
           role: "user",
           content: [{ type: "text", text: "Thanks!" }],
-        } as LanguageModelV3Message,
+        } as LanguageModelV4Message,
       ];
 
       const result = convertToBrowserAIMessages(prompt);
@@ -289,7 +289,7 @@ describe("convertToBrowserAIMessages", () => {
     });
 
     it("should serialize scalar tool inputs as JSON strings", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "assistant",
           content: [
@@ -300,11 +300,11 @@ describe("convertToBrowserAIMessages", () => {
               input: "Zurich",
             },
           ],
-        } as LanguageModelV3Message,
+        } as LanguageModelV4Message,
         {
           role: "user",
           content: [{ type: "text", text: "Appreciate it." }],
-        } as LanguageModelV3Message,
+        } as LanguageModelV4Message,
       ];
 
       const result = convertToBrowserAIMessages(prompt);
@@ -321,7 +321,7 @@ describe("convertToBrowserAIMessages", () => {
     });
 
     it("should handle parameter names with special characters", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "assistant",
           content: [
@@ -332,11 +332,11 @@ describe("convertToBrowserAIMessages", () => {
               input: { "123-name": "Alice" },
             },
           ],
-        } as LanguageModelV3Message,
+        } as LanguageModelV4Message,
         {
           role: "user",
           content: [{ type: "text", text: "Continue." }],
-        } as LanguageModelV3Message,
+        } as LanguageModelV4Message,
       ];
 
       const result = convertToBrowserAIMessages(prompt);
@@ -346,7 +346,7 @@ describe("convertToBrowserAIMessages", () => {
     });
 
     it("should deserialize JSON-stringified tool inputs", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "assistant",
           content: [
@@ -357,7 +357,7 @@ describe("convertToBrowserAIMessages", () => {
               input: JSON.stringify({ query: "status:open", limit: 5 }),
             },
           ],
-        } as LanguageModelV3Message,
+        } as LanguageModelV4Message,
       ];
 
       const result = convertToBrowserAIMessages(prompt);
@@ -369,7 +369,7 @@ describe("convertToBrowserAIMessages", () => {
     });
 
     it("should serialize multiple tool calls within a single fence", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "assistant",
           content: [
@@ -386,7 +386,7 @@ describe("convertToBrowserAIMessages", () => {
               input: { value: 2 },
             },
           ],
-        } as LanguageModelV3Message,
+        } as LanguageModelV4Message,
       ];
 
       const result = convertToBrowserAIMessages(prompt);
@@ -400,7 +400,7 @@ describe("convertToBrowserAIMessages", () => {
     });
 
     it("should retain a trailing assistant tool call message", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "assistant",
           content: [
@@ -412,7 +412,7 @@ describe("convertToBrowserAIMessages", () => {
               input: { location: "Seattle" },
             },
           ],
-        } as LanguageModelV3Message,
+        } as LanguageModelV4Message,
       ];
 
       const result = convertToBrowserAIMessages(prompt);
@@ -426,7 +426,7 @@ describe("convertToBrowserAIMessages", () => {
     });
 
     it("should convert tool results into user tool_result blocks", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "tool",
           content: [
@@ -440,7 +440,7 @@ describe("convertToBrowserAIMessages", () => {
               },
             },
           ],
-        } as LanguageModelV3Message,
+        } as LanguageModelV4Message,
       ];
 
       const result = convertToBrowserAIMessages(prompt);
@@ -457,14 +457,14 @@ describe("convertToBrowserAIMessages", () => {
 
   describe("error handling", () => {
     it("should throw for unsupported file types", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
             {
               type: "file",
               mediaType: "video/mp4",
-              data: "some data",
+              data: { type: "data", data: "some data" },
             },
           ],
         },
@@ -482,11 +482,11 @@ describe("convertToBrowserAIMessages", () => {
           content: [
             {
               type: "unsupported" as any,
-              data: "some data",
+              data: { type: "data", data: "some data" },
             },
           ],
         },
-      ] as LanguageModelV3Prompt;
+      ] as LanguageModelV4Prompt;
 
       expect(() => convertToBrowserAIMessages(prompt)).toThrow(
         UnsupportedFunctionalityError,
@@ -494,14 +494,14 @@ describe("convertToBrowserAIMessages", () => {
     });
 
     it("should throw for invalid base64 data", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
             {
               type: "file",
               mediaType: "image/png",
-              data: "invalid-base64-data!@#",
+              data: { type: "data", data: "invalid-base64-data!@#" },
             },
           ],
         },
@@ -520,7 +520,7 @@ describe("convertToBrowserAIMessages", () => {
     });
 
     it("should handle empty content arrays", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [],

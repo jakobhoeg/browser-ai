@@ -2,7 +2,7 @@
  * Utilities for prompt processing and transformation
  */
 
-import type { LanguageModelV3Prompt } from "@ai-sdk/provider";
+import type { LanguageModelV4Prompt } from "@ai-sdk/provider";
 
 /**
  * Detect multimodal content and collect expected input types in a single pass.
@@ -10,7 +10,7 @@ import type { LanguageModelV3Prompt } from "@ai-sdk/provider";
  * @param prompt - The prompt to analyze
  * @returns hasMultiModalInput flag and the expectedInputs array (undefined when text-only)
  */
-export function getMultimodalInfo(prompt: LanguageModelV3Prompt): {
+export function getMultimodalInfo(prompt: LanguageModelV4Prompt): {
   hasMultiModalInput: boolean;
   expectedInputs: Array<{ type: "text" | "image" | "audio" }> | undefined;
 } {
