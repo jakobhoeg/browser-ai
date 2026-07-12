@@ -6,7 +6,8 @@ import {
   ChatRequestOptions,
   createUIMessageStream,
   tool,
-  stepCountIs,
+  isStepCount,
+  toUIMessageStream,
 } from "ai";
 import {
   browserAI,
@@ -24,7 +25,6 @@ export const createTools = () => ({
         .string()
         .describe("The search query to find information on the web"),
     }),
-    needsApproval: true,
     execute: async ({ query }) => {
       try {
         // Call the API route instead of Exa directly
@@ -189,7 +189,11 @@ export class ClientSideChatTransport implements ChatTransport<BrowserAIUIMessage
         const result = streamText({
           model: this.model,
           tools: this.tools,
-          stopWhen: stepCountIs(5),
+          instructions: "You are a helpful assistant running fully in the browser. Keep answers concise.",
+          stopWhen: isStepCount(5),
+          toolApproval: {
+            webSearch: "user-approval",
+          },
           messages: prompt,
           abortSignal,
           onChunk: (event) => {
@@ -202,9 +206,22 @@ export class ClientSideChatTransport implements ChatTransport<BrowserAIUIMessage
               downloadProgressId = undefined;
             }
           },
+          onEnd: ({ usage, finalStep }) => {
+            console.log(
+              `[browser-ai] total usage (all steps): ${usage.totalTokens} tokens, ` +
+                `final step: ${finalStep.usage.totalTokens} tokens, ` +
+                `finish reason: ${finalStep.finishReason}`,
+            );
+          },
         });
 
-        writer.merge(result.toUIMessageStream({ sendStart: false }));
+        writer.merge(
+          toUIMessageStream({
+            stream: result.stream,
+            tools: this.tools,
+            sendStart: false,
+          }),
+        );
       },
     });
   }
