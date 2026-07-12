@@ -1,9 +1,9 @@
 import {
-  EmbeddingModelV3,
-  LanguageModelV3,
+  EmbeddingModelV4,
+  LanguageModelV4,
   NoSuchModelError,
-  ProviderV3,
-  TranscriptionModelV3,
+  ProviderV4,
+  TranscriptionModelV4,
 } from "@ai-sdk/provider";
 import {
   TransformersJSLanguageModel,
@@ -22,7 +22,7 @@ import {
   TransformersJSTranscriptionSettings,
 } from "./transcription/transformers-js-transcription-model";
 
-export interface TransformersJSProvider extends ProviderV3 {
+export interface TransformersJSProvider extends ProviderV4 {
   (
     modelId: TransformersJSModelId,
     settings?: TransformersJSModelSettings,
@@ -47,22 +47,22 @@ export interface TransformersJSProvider extends ProviderV3 {
   embedding(
     modelId: TransformersJSEmbeddingModelId,
     settings?: TransformersJSEmbeddingSettings,
-  ): EmbeddingModelV3;
+  ): EmbeddingModelV4;
 
   embeddingModel: (
     modelId: TransformersJSEmbeddingModelId,
     settings?: TransformersJSEmbeddingSettings,
-  ) => EmbeddingModelV3;
+  ) => EmbeddingModelV4;
 
   transcription(
     modelId: TransformersJSTranscriptionModelId,
     settings?: TransformersJSTranscriptionSettings,
-  ): TranscriptionModelV3;
+  ): TranscriptionModelV4;
 
   transcriptionModel: (
     modelId: TransformersJSTranscriptionModelId,
     settings?: TransformersJSTranscriptionSettings,
-  ) => TranscriptionModelV3;
+  ) => TranscriptionModelV4;
 }
 
 export interface TransformersJSProviderSettings {
@@ -138,7 +138,7 @@ export function createTransformersJS(
     return createChatModel(modelId, settings);
   };
 
-  provider.specificationVersion = "v3" as const;
+  provider.specificationVersion = "v4" as const;
   provider.languageModel = createChatModel;
   provider.chat = createChatModel;
   provider.embedding = createEmbeddingModel;

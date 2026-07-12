@@ -133,10 +133,8 @@ describe("TransformersJSLanguageModel", () => {
 
     const { text } = await generateText({
       model,
-      messages: [
-        { role: "system", content: "You are a helpful assistant." },
-        { role: "user", content: "Who are you?" },
-      ],
+      instructions: "You are a helpful assistant.",
+      messages: [{ role: "user", content: "Who are you?" }],
     });
 
     expect(text).toBe("I am a helpful assistant.");

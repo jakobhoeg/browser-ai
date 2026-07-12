@@ -2,12 +2,12 @@ import { describe, it, expect } from "vitest";
 import { convertToTransformersMessages } from "../src/utils/convert-to-transformers-message";
 import {
   UnsupportedFunctionalityError,
-  type LanguageModelV3Prompt,
+  type LanguageModelV4Prompt,
 } from "@ai-sdk/provider";
 
 describe("convertToTransformersMessages", () => {
   it("converts simple text user message", () => {
-    const prompt: LanguageModelV3Prompt = [
+    const prompt: LanguageModelV4Prompt = [
       { role: "user", content: [{ type: "text", text: "Hello" }] },
     ];
 
@@ -16,7 +16,7 @@ describe("convertToTransformersMessages", () => {
   });
 
   it("converts assistant text message", () => {
-    const prompt: LanguageModelV3Prompt = [
+    const prompt: LanguageModelV4Prompt = [
       { role: "assistant", content: [{ type: "text", text: "Hi" }] },
     ];
 
@@ -25,7 +25,7 @@ describe("convertToTransformersMessages", () => {
   });
 
   it("keeps system content as-is", () => {
-    const prompt: LanguageModelV3Prompt = [
+    const prompt: LanguageModelV4Prompt = [
       { role: "system", content: "You are helpful." },
     ];
 
@@ -34,12 +34,12 @@ describe("convertToTransformersMessages", () => {
   });
 
   it("throws for non-vision file input in user message", () => {
-    const prompt: LanguageModelV3Prompt = [
+    const prompt: LanguageModelV4Prompt = [
       {
         role: "user",
         content: [
           { type: "text", text: "See this" },
-          { type: "file", mediaType: "image/png", data: "AAA" },
+          { type: "file", mediaType: "image/png", data: { type: "data", data: "AAA" } },
         ],
       },
     ];
@@ -50,12 +50,12 @@ describe("convertToTransformersMessages", () => {
 
   it("converts image content when isVisionModel=true", () => {
     const base64 = "SGVsbG8="; // Hello
-    const prompt: LanguageModelV3Prompt = [
+    const prompt: LanguageModelV4Prompt = [
       {
         role: "user",
         content: [
           { type: "text", text: "What is in this image?" },
-          { type: "file", mediaType: "image/png", data: base64 },
+          { type: "file", mediaType: "image/png", data: { type: "data", data: base64 } },
           { type: "text", text: "Thanks" },
         ],
       },
@@ -99,7 +99,7 @@ describe("convertToTransformersMessages", () => {
   });
 
   it("converts assistant tool-call content to native HF format", () => {
-    const prompt: LanguageModelV3Prompt = [
+    const prompt: LanguageModelV4Prompt = [
       {
         role: "assistant",
         content: [
@@ -129,7 +129,7 @@ describe("convertToTransformersMessages", () => {
   });
 
   it("converts assistant with both text and tool-call", () => {
-    const prompt: LanguageModelV3Prompt = [
+    const prompt: LanguageModelV4Prompt = [
       {
         role: "assistant",
         content: [

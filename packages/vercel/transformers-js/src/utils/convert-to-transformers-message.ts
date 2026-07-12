@@ -1,5 +1,6 @@
 import {
-  LanguageModelV3Prompt,
+  LanguageModelV4Prompt,
+  SharedV4FileData,
   UnsupportedFunctionalityError,
 } from "@ai-sdk/provider";
 
@@ -7,38 +8,21 @@ function uint8ArrayToBase64(uint8array: Uint8Array): string {
   return btoa(String.fromCharCode(...uint8array));
 }
 
-function convertDataToURL(
-  data:
-    | string
-    | Buffer
-    | URL
-    | Uint8Array
-    | ArrayBuffer
-    | ReadableStream
-    | undefined,
-  mediaType: string,
-): string {
-  if (data instanceof URL) return data.toString();
+function convertDataToURL(data: SharedV4FileData, mediaType: string): string {
+  switch (data.type) {
+    case "url":
+      return data.url.toString();
 
-  if (typeof data === "string") {
-    return `data:${mediaType};base64,${data}`;
+    case "data":
+      return data.data instanceof Uint8Array
+        ? `data:${mediaType};base64,${uint8ArrayToBase64(data.data)}`
+        : `data:${mediaType};base64,${data.data}`;
+
+    default:
+      throw new UnsupportedFunctionalityError({
+        functionality: `file data type: ${data.type}`,
+      });
   }
-
-  if (data instanceof Uint8Array) {
-    return `data:${mediaType};base64,${uint8ArrayToBase64(data)}`;
-  }
-
-  if (data instanceof ArrayBuffer) {
-    return `data:${mediaType};base64,${uint8ArrayToBase64(new Uint8Array(data))}`;
-  }
-
-  if (typeof Buffer !== "undefined" && data instanceof Buffer) {
-    return `data:${mediaType};base64,${data.toString("base64")}`;
-  }
-
-  throw new UnsupportedFunctionalityError({
-    functionality: `file data type: ${typeof data}`,
-  });
 }
 
 /**
@@ -117,7 +101,7 @@ function processVisionContent(
 }
 
 export function convertToTransformersMessages(
-  prompt: LanguageModelV3Prompt,
+  prompt: LanguageModelV4Prompt,
   isVisionModel: boolean = false,
 ): TransformersMessage[] {
   return prompt.flatMap(
