@@ -3,8 +3,8 @@
  */
 
 import type {
-  SharedV3Warning,
-  LanguageModelV3ProviderTool,
+  SharedV4Warning,
+  LanguageModelV4ProviderTool,
 } from "@ai-sdk/provider";
 
 /**
@@ -25,7 +25,7 @@ import type {
 export function createUnsupportedSettingWarning(
   feature: string,
   details: string,
-): SharedV3Warning {
+): SharedV4Warning {
   return {
     type: "unsupported",
     feature,
@@ -49,9 +49,9 @@ export function createUnsupportedSettingWarning(
  * ```
  */
 export function createUnsupportedToolWarning(
-  tool: LanguageModelV3ProviderTool,
+  tool: LanguageModelV4ProviderTool,
   details: string,
-): SharedV3Warning {
+): SharedV4Warning {
   return {
     type: "unsupported",
     feature: `tool:${tool.name}`,

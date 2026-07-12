@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { LanguageModelV3StreamPart } from "@ai-sdk/provider";
+import type { LanguageModelV4StreamPart } from "@ai-sdk/provider";
 import {
   processToolCallStream,
   generateToolCallId,
@@ -10,10 +10,10 @@ async function* makeChunks(strings: string[]): AsyncIterable<string> {
 }
 
 function makeController() {
-  const events: LanguageModelV3StreamPart[] = [];
+  const events: LanguageModelV4StreamPart[] = [];
   const controller = {
-    enqueue: (event: LanguageModelV3StreamPart) => events.push(event),
-  } as unknown as ReadableStreamDefaultController<LanguageModelV3StreamPart>;
+    enqueue: (event: LanguageModelV4StreamPart) => events.push(event),
+  } as unknown as ReadableStreamDefaultController<LanguageModelV4StreamPart>;
   return { controller, events };
 }
 
@@ -80,7 +80,7 @@ describe("processToolCallStream — valid tool call", () => {
   it("emits a tool-call event with correct fields", async () => {
     const { events } = await run([FENCE]);
     const ev = events.find((e) => e.type === "tool-call") as Extract<
-      LanguageModelV3StreamPart,
+      LanguageModelV4StreamPart,
       { type: "tool-call" }
     >;
     expect(ev.toolName).toBe("search");
@@ -127,7 +127,7 @@ describe("processToolCallStream — chunked tool call", () => {
       ' "v"}}\n```',
     ]);
     const startEvent = events.find((e) => e.type === "tool-input-start") as
-      | Extract<LanguageModelV3StreamPart, { type: "tool-input-start" }>
+      | Extract<LanguageModelV4StreamPart, { type: "tool-input-start" }>
       | undefined;
     expect(startEvent).toBeDefined();
     expect(startEvent!.toolName).toBe("early_name");

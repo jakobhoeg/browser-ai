@@ -1,4 +1,4 @@
-import type { LanguageModelV3StreamPart } from "@ai-sdk/provider";
+import type { LanguageModelV4StreamPart } from "@ai-sdk/provider";
 import { ToolCallFenceDetector } from "./tool-call-detector";
 import {
   createArgumentsStreamState,
@@ -31,7 +31,7 @@ export function generateToolCallId(): string {
 export async function processToolCallStream(
   chunks: AsyncIterable<string>,
   emitTextDelta: (delta: string) => void,
-  controller: ReadableStreamDefaultController<LanguageModelV3StreamPart>,
+  controller: ReadableStreamDefaultController<LanguageModelV4StreamPart>,
   options?: { stopEarlyOnToolCall?: boolean },
 ): Promise<ToolCallStreamResult> {
   const fenceDetector = new ToolCallFenceDetector();

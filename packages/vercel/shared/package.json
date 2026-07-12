@@ -34,7 +34,7 @@
     "@ai-sdk/provider": "*"
   },
   "devDependencies": {
-    "@ai-sdk/provider": "^3.0.8",
+    "@ai-sdk/provider": "^4.0.2",
     "@types/node": "^25.2.3",
     "rimraf": "^6.1.2",
     "tsup": "^8.5.1",

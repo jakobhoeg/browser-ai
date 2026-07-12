@@ -1,6 +1,6 @@
 import type {
   JSONSchema7,
-  LanguageModelV3FunctionTool,
+  LanguageModelV4FunctionTool,
 } from "@ai-sdk/provider";
 
 /**
@@ -13,7 +13,7 @@ export type JSONSchema = JSONSchema7;
  * Tool definition in AI SDK format (function tools only)
  */
 export type ToolDefinition = Pick<
-  LanguageModelV3FunctionTool,
+  LanguageModelV4FunctionTool,
   "name" | "description"
 > & {
   parameters: JSONSchema7;
