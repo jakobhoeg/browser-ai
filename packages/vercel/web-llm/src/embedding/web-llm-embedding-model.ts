@@ -1,7 +1,7 @@
 import {
-  EmbeddingModelV3,
-  EmbeddingModelV3CallOptions,
-  EmbeddingModelV3Result,
+  EmbeddingModelV4,
+  EmbeddingModelV4CallOptions,
+  EmbeddingModelV4Result,
   TooManyEmbeddingValuesForCallError,
   LoadSettingError,
 } from "@ai-sdk/provider";
@@ -51,8 +51,8 @@ type WebLLMEmbeddingConfig = {
   options: WebLLMEmbeddingSettings;
 };
 
-export class WebLLMEmbeddingModel implements EmbeddingModelV3 {
-  readonly specificationVersion = "v3";
+export class WebLLMEmbeddingModel implements EmbeddingModelV4 {
+  readonly specificationVersion = "v4";
   readonly provider = "web-llm";
   readonly modelId: WebLLMEmbeddingModelId;
   readonly maxEmbeddingsPerCall: number;
@@ -195,8 +195,8 @@ export class WebLLMEmbeddingModel implements EmbeddingModelV3 {
    * Embed texts using the WebLLM embedding model
    */
   public async doEmbed(
-    options: EmbeddingModelV3CallOptions,
-  ): Promise<EmbeddingModelV3Result> {
+    options: EmbeddingModelV4CallOptions,
+  ): Promise<EmbeddingModelV4Result> {
     const { values, abortSignal } = options;
 
     if (values.length > this.maxEmbeddingsPerCall) {

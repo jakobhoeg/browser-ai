@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { convertToWebLLMMessages } from "../src/utils/convert-to-webllm-messages";
 import {
-  LanguageModelV3Prompt,
+  LanguageModelV4Prompt,
   UnsupportedFunctionalityError,
 } from "@ai-sdk/provider";
 
 describe("convertToWebLLMMessages", () => {
   describe("text messages", () => {
     it("should convert simple text user message", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [{ type: "text", text: "Hello, world!" }],
@@ -26,7 +26,7 @@ describe("convertToWebLLMMessages", () => {
     });
 
     it("should convert system message", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "system",
           content: "You are a helpful assistant.",
@@ -44,7 +44,7 @@ describe("convertToWebLLMMessages", () => {
     });
 
     it("should convert assistant message", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "assistant",
           content: [{ type: "text", text: "Hi there!" }],
@@ -62,7 +62,7 @@ describe("convertToWebLLMMessages", () => {
     });
 
     it("should handle conversation with multiple message types", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "system",
           content: "You are helpful.",
@@ -90,7 +90,7 @@ describe("convertToWebLLMMessages", () => {
   describe("image file conversion", () => {
     it("should convert base64 image data to data URL", () => {
       const base64Data = "SGVsbG8gV29ybGQ="; // "Hello World" in base64
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
@@ -98,7 +98,7 @@ describe("convertToWebLLMMessages", () => {
             {
               type: "file",
               mediaType: "image/png",
-              data: base64Data,
+              data: { type: "data", data: base64Data },
             },
           ],
         },
@@ -122,7 +122,7 @@ describe("convertToWebLLMMessages", () => {
     });
 
     it("should handle mixed text and image content", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
@@ -130,7 +130,7 @@ describe("convertToWebLLMMessages", () => {
             {
               type: "file",
               mediaType: "image/png",
-              data: "aGVsbG8=", // "hello" in base64
+              data: { type: "data", data: "aGVsbG8=" }, // "hello" in base64
             },
             { type: "text", text: "What do you see?" },
           ],
@@ -157,14 +157,14 @@ describe("convertToWebLLMMessages", () => {
 
   describe("error handling", () => {
     it("should throw for non-image file types", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
             {
               type: "file",
               mediaType: "audio/mp3",
-              data: "some data",
+              data: { type: "data", data: "some data" },
             },
           ],
         },
