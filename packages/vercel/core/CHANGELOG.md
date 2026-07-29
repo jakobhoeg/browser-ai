@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 3.0.0
+
+### Major Changes
+
+- a6ca007: feat: update to ai sdk v7
+
 ## 2.1.13
 
 ### Patch Changes
