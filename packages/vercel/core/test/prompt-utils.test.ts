@@ -3,12 +3,12 @@ import {
   getMultimodalInfo,
   prependSystemPromptToMessages,
 } from "../src/utils/prompt-utils";
-import type { LanguageModelV3Prompt } from "@ai-sdk/provider";
+import type { LanguageModelV4Prompt } from "@ai-sdk/provider";
 
 describe("prompt-utils", () => {
   describe("getMultimodalInfo", () => {
     it("returns hasMultiModalInput=false and no expectedInputs for text-only prompt", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         { role: "user", content: [{ type: "text", text: "Hello" }] },
       ];
       expect(getMultimodalInfo(prompt)).toEqual({
@@ -18,12 +18,16 @@ describe("prompt-utils", () => {
     });
 
     it("detects image file", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
             { type: "text", text: "What's in this image?" },
-            { type: "file", data: new Uint8Array(), mediaType: "image/png" },
+            {
+              type: "file",
+              data: { type: "data", data: new Uint8Array() },
+              mediaType: "image/png",
+            },
           ],
         },
       ];
@@ -34,11 +38,15 @@ describe("prompt-utils", () => {
     });
 
     it("detects audio file", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
-            { type: "file", data: new Uint8Array(), mediaType: "audio/wav" },
+            {
+              type: "file",
+              data: { type: "data", data: new Uint8Array() },
+              mediaType: "audio/wav",
+            },
           ],
         },
       ];
@@ -49,12 +57,20 @@ describe("prompt-utils", () => {
     });
 
     it("detects both image and audio when both present", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
-            { type: "file", data: new Uint8Array(), mediaType: "image/png" },
-            { type: "file", data: new Uint8Array(), mediaType: "audio/wav" },
+            {
+              type: "file",
+              data: { type: "data", data: new Uint8Array() },
+              mediaType: "image/png",
+            },
+            {
+              type: "file",
+              data: { type: "data", data: new Uint8Array() },
+              mediaType: "audio/wav",
+            },
           ],
         },
       ];
@@ -66,12 +82,20 @@ describe("prompt-utils", () => {
     });
 
     it("deduplicates multiple images", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
-            { type: "file", data: new Uint8Array(), mediaType: "image/png" },
-            { type: "file", data: new Uint8Array(), mediaType: "image/jpeg" },
+            {
+              type: "file",
+              data: { type: "data", data: new Uint8Array() },
+              mediaType: "image/png",
+            },
+            {
+              type: "file",
+              data: { type: "data", data: new Uint8Array() },
+              mediaType: "image/jpeg",
+            },
           ],
         },
       ];
@@ -82,13 +106,13 @@ describe("prompt-utils", () => {
     });
 
     it("ignores files with unknown media types", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         {
           role: "user",
           content: [
             {
               type: "file",
-              data: new Uint8Array(),
+              data: { type: "data", data: new Uint8Array() },
               mediaType: "application/pdf",
             },
           ],
@@ -101,14 +125,14 @@ describe("prompt-utils", () => {
     });
 
     it("ignores files on assistant messages (only checks user messages)", () => {
-      const prompt: LanguageModelV3Prompt = [
+      const prompt: LanguageModelV4Prompt = [
         { role: "user", content: [{ type: "text", text: "Hello" }] },
         {
           role: "assistant",
           content: [
             {
               type: "file" as any,
-              data: new Uint8Array(),
+              data: { type: "data", data: new Uint8Array() },
               mediaType: "image/png",
             },
           ],

@@ -1,7 +1,7 @@
 import {
-  EmbeddingModelV3,
+  EmbeddingModelV4,
   NoSuchModelError,
-  ProviderV3,
+  ProviderV4,
 } from "@ai-sdk/provider";
 import {
   WebLLMLanguageModel,
@@ -14,7 +14,7 @@ import {
   WebLLMEmbeddingSettings,
 } from "./embedding/web-llm-embedding-model";
 
-export interface WebLLMProvider extends ProviderV3 {
+export interface WebLLMProvider extends ProviderV4 {
   (modelId: WebLLMModelId, settings?: WebLLMSettings): WebLLMLanguageModel;
 
   /**
@@ -36,7 +36,7 @@ export interface WebLLMProvider extends ProviderV3 {
   embedding(
     modelId: WebLLMEmbeddingModelId,
     settings?: WebLLMEmbeddingSettings,
-  ): EmbeddingModelV3;
+  ): EmbeddingModelV4;
 
   /**
    * Creates a model for text embeddings.
@@ -44,7 +44,7 @@ export interface WebLLMProvider extends ProviderV3 {
   embeddingModel: (
     modelId: WebLLMEmbeddingModelId,
     settings?: WebLLMEmbeddingSettings,
-  ) => EmbeddingModelV3;
+  ) => EmbeddingModelV4;
 }
 
 /**
@@ -78,7 +78,7 @@ export function createWebLLM(): WebLLMProvider {
     return createLanguageModel(modelId, settings);
   };
 
-  provider.specificationVersion = "v3" as const;
+  provider.specificationVersion = "v4" as const;
   provider.languageModel = createLanguageModel;
   provider.chat = createLanguageModel;
   provider.embedding = createEmbeddingModel;

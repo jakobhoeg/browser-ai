@@ -1,0 +1,260 @@
+---
+title: useChat Integration
+description: Integrate @browser-ai/transformers-js with the useChat hook in AI SDK v7
+---
+
+## Overview
+
+When using this library with the `useChat` hook, you'll need to create a [custom transport](https://ai-sdk.dev/docs/ai-sdk-ui/transport) implementation to handle client-side AI with download progress.
+This is not required, but it makes it easier for you to build better user experiences.
+
+## Complete Transport Example
+
+```ts
+import {
+  ChatTransport,
+  UIMessageChunk,
+  streamText,
+  convertToModelMessages,
+  ChatRequestOptions,
+  createUIMessageStream,
+  tool,
+  isStepCount,
+  toUIMessageStream,
+} from "ai";
+import {
+  TransformersJSLanguageModel,
+  TransformersUIMessage,
+} from "@browser-ai/transformers-js";
+import z from "zod";
+
+export const createTools = () => ({
+  webSearch: tool({
+    description:
+      "Search the web for information when you need up-to-date information or facts not in your knowledge base. Use this when the user asks about current events, recent developments, or specific factual information you're unsure about.",
+    inputSchema: z.object({
+      query: z
+        .string()
+        .describe("The search query to find information on the web"),
+    }),
+    execute: async ({ query }) => {
+      // ...
+    },
+  }),
+});
+
+/**
+ * Client-side chat transport AI SDK implementation that handles AI model communication
+ * with in-browser AI capabilities.
+ *
+ * @implements {ChatTransport<TransformersUIMessage>}
+ */
+export class TransformersChatTransport implements ChatTransport<TransformersUIMessage> {
+  private readonly model: TransformersJSLanguageModel;
+  private tools: ReturnType<typeof createTools>;
+
+  constructor(model: TransformersJSLanguageModel) {
+    this.model = model;
+    this.tools = createTools();
+  }
+
+  async sendMessages(
+    options: {
+      chatId: string;
+      messages: TransformersUIMessage[];
+      abortSignal: AbortSignal | undefined;
+    } & {
+      trigger: "submit-message" | "submit-tool-result" | "regenerate-message";
+      messageId: string | undefined;
+    } & ChatRequestOptions,
+  ): Promise<ReadableStream<UIMessageChunk>> {
+    const { messages, abortSignal } = options;
+    const prompt = await convertToModelMessages(messages);
+    const model = this.model;
+
+    return createUIMessageStream<TransformersUIMessage>({
+      execute: async ({ writer }) => {
+        let downloadProgressId: string | undefined;
+        const availability = await model.availability();
+
+        // Only track progress if model needs downloading
+        if (availability !== "available") {
+          await model.createSessionWithProgress((progress) => {
+            const percent = Math.round(progress * 100);
+
+            if (progress >= 1) {
+              if (downloadProgressId) {
+                writer.write({
+                  type: "data-modelDownloadProgress",
+                  id: downloadProgressId,
+                  data: {
+                    status: "complete",
+                    progress: 100,
+                    message:
+                      "Model finished downloading! Getting ready for inference...",
+                  },
+                });
+              }
+              return;
+            }
+
+            if (!downloadProgressId) {
+              downloadProgressId = `download-${Date.now()}`;
+            }
+
+            writer.write({
+              type: "data-modelDownloadProgress",
+              id: downloadProgressId,
+              data: {
+                status: "downloading",
+                progress: percent,
+                message: `Downloading browser AI model... ${percent}%`,
+              },
+              transient: !downloadProgressId,
+            });
+          });
+        }
+
+        const result = streamText({
+          model,
+          tools: this.tools,
+          stopWhen: isStepCount(5),
+          messages: prompt,
+          abortSignal,
+          onChunk: (event) => {
+            if (event.chunk.type === "text-delta" && downloadProgressId) {
+              writer.write({
+                type: "data-modelDownloadProgress",
+                id: downloadProgressId,
+                data: { status: "complete", progress: 100, message: "" },
+              });
+              downloadProgressId = undefined;
+            }
+          },
+        });
+
+        writer.merge(
+          toUIMessageStream({
+            stream: result.stream,
+            tools: this.tools,
+            sendStart: false,
+          }),
+        );
+      },
+    });
+  }
+
+  async reconnectToStream(
+    options: {
+      chatId: string;
+    } & ChatRequestOptions,
+  ): Promise<ReadableStream<UIMessageChunk> | null> {
+    // Client-side AI doesn't support stream reconnection
+    return null;
+  }
+}
+```
+
+## Basic Transport Structure
+
+Here's a simplified example of how to structure a custom transport:
+
+```typescript
+import {
+  ChatTransport,
+  UIMessageChunk,
+  streamText,
+  convertToModelMessages,
+  ChatRequestOptions,
+  toUIMessageStream,
+} from "ai";
+import {
+  TransformersJSLanguageModel,
+  TransformersUIMessage,
+} from "@browser-ai/transformers-js";
+
+// This class won't stream back data parts with the download progress if
+// the model hasn't yet been downloaded
+export class SimpleTransformersChatTransport implements ChatTransport<TransformersUIMessage> {
+  private readonly model: TransformersJSLanguageModel;
+
+  constructor(model: TransformersJSLanguageModel) {
+    this.model = model;
+  }
+
+  async sendMessages(
+    options: {
+      chatId: string;
+      messages: TransformersUIMessage[];
+      abortSignal: AbortSignal | undefined;
+    } & {
+      trigger: "submit-message" | "submit-tool-result" | "regenerate-message";
+      messageId: string | undefined;
+    } & ChatRequestOptions,
+  ): Promise<ReadableStream<UIMessageChunk>> {
+    const prompt = convertToModelMessages(options.messages);
+
+    const result = streamText({
+      model: this.model,
+      messages: prompt,
+      abortSignal: options.abortSignal,
+    });
+
+    return toUIMessageStream({ stream: result.stream });
+  }
+
+  async reconnectToStream(
+    options: {
+      chatId: string;
+    } & ChatRequestOptions,
+  ): Promise<ReadableStream<UIMessageChunk> | null> {
+    // Client-side AI doesn't support stream reconnection
+    return null;
+  }
+}
+```
+
+You can then use the `useChat()` hook in your components:
+
+```ts
+import {
+  transformersJS,
+  TransformersUIMessage,
+} from "@browser-ai/transformers-js";
+
+const model = transformersJS("HuggingFaceTB/SmolLM2-360M-Instruct", {
+  device: "webgpu",
+  worker: new Worker(new URL("./worker.ts", import.meta.url), {
+    type: "module",
+  }),
+});
+
+const { sendMessage, messages, stop } = useChat<TransformersUIMessage>({
+  transport: new TransformersChatTransport(model),
+});
+```
+
+In case the device is incompatible with local in-browser LLMs, and we want to use a server-side AI model, we can simply use the utility function from the package first:
+
+```ts
+import {
+  transformersJS,
+  TransformersUIMessage,
+  doesBrowserSupportTransformersJS,
+} from "@browser-ai/transformers-js";
+
+const model = transformersJS("HuggingFaceTB/SmolLM2-360M-Instruct", {
+  device: "webgpu",
+  worker: new Worker(new URL("./worker.ts", import.meta.url), {
+    type: "module",
+  }),
+});
+
+const { sendMessage, messages, stop } = useChat<TransformersUIMessage>({
+  transport: doesBrowserSupportTransformersJS() // check for device compatibility
+    ? new TransformersChatTransport(model)
+    : new DefaultChatTransport<UIMessage>({
+        api: "/api/chat",
+      }),
+});
+```

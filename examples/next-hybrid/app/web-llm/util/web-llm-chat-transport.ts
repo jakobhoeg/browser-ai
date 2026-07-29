@@ -8,7 +8,8 @@ import {
   wrapLanguageModel,
   extractReasoningMiddleware,
   tool,
-  stepCountIs,
+  isStepCount,
+  toUIMessageStream,
 } from "ai";
 import { WebLLMUIMessage, WebLLMLanguageModel } from "@browser-ai/web-llm";
 import z from "zod";
@@ -22,7 +23,6 @@ export const createTools = () => ({
         .string()
         .describe("The search query to find information on the web"),
     }),
-    needsApproval: true,
     execute: async ({ query }) => {
       try {
         // Call the API route instead of Exa directly
@@ -152,7 +152,10 @@ export class WebLLMChatTransport implements ChatTransport<WebLLMUIMessage> {
             }),
           }),
           tools: this.tools,
-          stopWhen: stepCountIs(5),
+          stopWhen: isStepCount(5),
+          toolApproval: {
+            webSearch: "user-approval",
+          },
           messages: prompt,
           abortSignal,
           onChunk: (event) => {
@@ -167,7 +170,13 @@ export class WebLLMChatTransport implements ChatTransport<WebLLMUIMessage> {
           },
         });
 
-        writer.merge(result.toUIMessageStream({ sendStart: false }));
+        writer.merge(
+          toUIMessageStream({
+            stream: result.stream,
+            tools: this.tools,
+            sendStart: false,
+          }),
+        );
       },
     });
   }

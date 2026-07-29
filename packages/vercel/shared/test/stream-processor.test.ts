@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { LanguageModelV3StreamPart } from "@ai-sdk/provider";
+import type { LanguageModelV4StreamPart } from "@ai-sdk/provider";
 import {
   processToolCallStream,
   generateToolCallId,
@@ -10,10 +10,10 @@ async function* makeChunks(strings: string[]): AsyncIterable<string> {
 }
 
 function makeController() {
-  const events: LanguageModelV3StreamPart[] = [];
+  const events: LanguageModelV4StreamPart[] = [];
   const controller = {
-    enqueue: (event: LanguageModelV3StreamPart) => events.push(event),
-  } as unknown as ReadableStreamDefaultController<LanguageModelV3StreamPart>;
+    enqueue: (event: LanguageModelV4StreamPart) => events.push(event),
+  } as unknown as ReadableStreamDefaultController<LanguageModelV4StreamPart>;
   return { controller, events };
 }
 
@@ -38,7 +38,7 @@ async function run(
   return { result, events, text: getText() };
 }
 
-describe("processToolCallStream — plain text", () => {
+describe("processToolCallStream - plain text", () => {
   it("emits text via emitTextDelta, no tool detection", async () => {
     const { result, text } = await run(["Hello", " world"]);
     expect(result.toolCallDetected).toBe(false);
@@ -53,7 +53,7 @@ describe("processToolCallStream — plain text", () => {
   });
 });
 
-describe("processToolCallStream — valid tool call", () => {
+describe("processToolCallStream - valid tool call", () => {
   const FENCE =
     '```tool_call\n{"name": "search", "arguments": {"q": "test"}}\n```';
 
@@ -80,7 +80,7 @@ describe("processToolCallStream — valid tool call", () => {
   it("emits a tool-call event with correct fields", async () => {
     const { events } = await run([FENCE]);
     const ev = events.find((e) => e.type === "tool-call") as Extract<
-      LanguageModelV3StreamPart,
+      LanguageModelV4StreamPart,
       { type: "tool-call" }
     >;
     expect(ev.toolName).toBe("search");
@@ -107,7 +107,7 @@ describe("processToolCallStream — valid tool call", () => {
   });
 });
 
-describe("processToolCallStream — chunked tool call", () => {
+describe("processToolCallStream - chunked tool call", () => {
   it("assembles a tool call from multiple chunks", async () => {
     const { result } = await run([
       "```tool_call\n",
@@ -127,14 +127,14 @@ describe("processToolCallStream — chunked tool call", () => {
       ' "v"}}\n```',
     ]);
     const startEvent = events.find((e) => e.type === "tool-input-start") as
-      | Extract<LanguageModelV3StreamPart, { type: "tool-input-start" }>
+      | Extract<LanguageModelV4StreamPart, { type: "tool-input-start" }>
       | undefined;
     expect(startEvent).toBeDefined();
     expect(startEvent!.toolName).toBe("early_name");
   });
 });
 
-describe("processToolCallStream — text around tool calls", () => {
+describe("processToolCallStream - text around tool calls", () => {
   it("emits text before the fence via emitTextDelta", async () => {
     const { text } = await run([
       'Before. ```tool_call\n{"name": "t", "arguments": {}}\n```',
@@ -151,7 +151,7 @@ describe("processToolCallStream — text around tool calls", () => {
   });
 });
 
-describe("processToolCallStream — malformed fence", () => {
+describe("processToolCallStream - malformed fence", () => {
   it("treats a fence with non-JSON content as plain text", async () => {
     const { result, text } = await run(["```tool_call\nnot json\n```"]);
     expect(result.toolCallDetected).toBe(false);
@@ -166,7 +166,7 @@ describe("processToolCallStream — malformed fence", () => {
   });
 });
 
-describe("processToolCallStream — stopEarlyOnToolCall", () => {
+describe("processToolCallStream - stopEarlyOnToolCall", () => {
   function makeTrackedChunks(strings: string[]) {
     const consumed: string[] = [];
     async function* gen() {
@@ -204,7 +204,7 @@ describe("processToolCallStream — stopEarlyOnToolCall", () => {
   });
 });
 
-describe("processToolCallStream — call:name{params} style", () => {
+describe("processToolCallStream - call:name{params} style", () => {
   const FENCE = "<|tool_call>call:randomNumber{max:6,min:1}<tool_call|>";
 
   it("detects the tool call and parses parameters", async () => {
@@ -241,7 +241,7 @@ describe("processToolCallStream — call:name{params} style", () => {
   });
 });
 
-describe("processToolCallStream — edge cases", () => {
+describe("processToolCallStream - edge cases", () => {
   it("only uses the first tool call from a multi-call fence", async () => {
     const { result } = await run([
       '```tool_call\n[{"name": "a", "arguments": {}}, {"name": "b", "arguments": {}}]\n```',

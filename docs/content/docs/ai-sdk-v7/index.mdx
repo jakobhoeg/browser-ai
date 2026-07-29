@@ -1,0 +1,43 @@
+---
+title: Introduction
+description: Introduction to the @browser-ai packages and Vercel AI SDK v7
+---
+
+If you've been experimenting with running local language models directly in the browser using Transformers.js, WebLLM, or the new Prompt API in Chrome/Edge, you're likely familiar with the challenges:
+
+- **Custom hooks and UI components**: Each framework requires its own integration patterns
+- **Fallback complexity**: Building robust integration layers to automatically fall back to server-side models when client-side compatibility is an issue
+- **API fragmentation**: Significant differences in API specifications across different in-browser LLM frameworks
+
+### API Fragmentation
+
+The main issue is that the ways of using in-browser LLMs are fundamentally different:
+
+- **Transformers.js** introduces its own [`pipeline`](https://huggingface.co/docs/transformers.js/en/pipelines) API, supporting a range of NLP, Computer Vision, Audio, and Multimodal tasks by leveraging ONNX Runtime
+- **WebLLM** provides an OpenAI-style API and leverages their own [MLCEngine](https://llm.mlc.ai/), WebGPU and WebAssembly for model execution
+- **The Prompt API** (utilizing Gemini Nano and Phi4-mini) offers native browser integration via the JavaScript `LanguageModel` namespace
+
+Besides these API differences, it's also tricky to easily fall back to server-side models when the client device can't run local models due to hardware limitations (e.g., insufficient VRAM) or browser compatibility issues (e.g., WebGPU still not being implemented in some browsers).
+
+## Solution
+
+The `@browser-ai` library bridges this gap by providing a unified solution that lets you:
+
+- Experiment with in-browser AI models using familiar patterns
+- Seamlessly fall back to server-side models when needed
+- Use the same Vercel AI SDK eco system you already know
+- Avoid building complex integration layers from scratch
+
+Use the different engines in the same reliable way:
+
+```typescript
+import { streamText } from "ai";
+import { browserAI } from "@browser-ai/core";
+// or: import { transformersJS } from "@browser-ai/transformers-js";
+// or: import { webLLM } from "@browser-ai/web-llm";
+
+const result = streamText({
+  model: browserAI(), // change model provider here
+  prompt: "Why is the sky blue?",
+});
+```

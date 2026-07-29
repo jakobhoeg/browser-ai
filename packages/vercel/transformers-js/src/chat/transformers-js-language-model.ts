@@ -1,14 +1,14 @@
 import {
-  LanguageModelV3,
-  LanguageModelV3CallOptions,
-  SharedV3Warning,
-  LanguageModelV3Content,
-  LanguageModelV3FinishReason,
-  LanguageModelV3ProviderTool,
-  LanguageModelV3StreamPart,
+  LanguageModelV4,
+  LanguageModelV4CallOptions,
+  SharedV4Warning,
+  LanguageModelV4Content,
+  LanguageModelV4FinishReason,
+  LanguageModelV4ProviderTool,
+  LanguageModelV4StreamPart,
   LoadSettingError,
-  LanguageModelV3GenerateResult,
-  LanguageModelV3StreamResult,
+  LanguageModelV4GenerateResult,
+  LanguageModelV4StreamResult,
 } from "@ai-sdk/provider";
 import {
   AutoTokenizer,
@@ -149,8 +149,8 @@ class InterruptableStoppingCriteria extends StoppingCriteria {
   }
 }
 
-export class TransformersJSLanguageModel implements LanguageModelV3 {
-  readonly specificationVersion = "v3";
+export class TransformersJSLanguageModel implements LanguageModelV4 {
+  readonly specificationVersion = "v4";
   readonly modelId: TransformersJSModelId;
   readonly provider = "transformers-js";
 
@@ -377,14 +377,14 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
     tools,
     toolChoice,
     providerOptions,
-  }: Parameters<LanguageModelV3["doGenerate"]>[0]): {
+  }: Parameters<LanguageModelV4["doGenerate"]>[0]): {
     messages: TransformersMessage[];
-    warnings: SharedV3Warning[];
+    warnings: SharedV4Warning[];
     generationOptions: GenerationOptions;
     functionTools: ToolDefinition[];
     enableThinking: boolean;
   } {
-    const warnings: SharedV3Warning[] = [];
+    const warnings: SharedV4Warning[] = [];
     // Filter and warn about unsupported tools
     const functionTools: ToolDefinition[] = (tools ?? [])
       .filter(isFunctionTool)
@@ -395,7 +395,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
       }));
 
     const unsupportedTools = (tools ?? []).filter(
-      (tool): tool is LanguageModelV3ProviderTool => !isFunctionTool(tool),
+      (tool): tool is LanguageModelV4ProviderTool => !isFunctionTool(tool),
     );
 
     for (const tool of unsupportedTools) {
@@ -537,8 +537,8 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
    * Generates a complete text response using TransformersJS
    */
   public async doGenerate(
-    options: LanguageModelV3CallOptions,
-  ): Promise<LanguageModelV3GenerateResult> {
+    options: LanguageModelV4CallOptions,
+  ): Promise<LanguageModelV4GenerateResult> {
     const {
       messages,
       warnings,
@@ -602,7 +602,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
 
       if (toolCalls.length > 0) {
         const toolCallsToEmit = toolCalls.slice(0, 1);
-        const parts: LanguageModelV3Content[] = [];
+        const parts: LanguageModelV4Content[] = [];
 
         if (textContent) {
           parts.push({
@@ -641,7 +641,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
         };
       }
 
-      const content: LanguageModelV3Content[] = [
+      const content: LanguageModelV4Content[] = [
         {
           type: "text",
           text: textContent || generatedText,
@@ -737,8 +737,8 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
    * Generates a streaming text response using TransformersJS
    */
   public async doStream(
-    options: LanguageModelV3CallOptions,
-  ): Promise<LanguageModelV3StreamResult> {
+    options: LanguageModelV4CallOptions,
+  ): Promise<LanguageModelV4StreamResult> {
     const {
       messages,
       warnings,
@@ -757,7 +757,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
     const self = this;
     const textId = "text-0";
 
-    const stream = new ReadableStream<LanguageModelV3StreamPart>({
+    const stream = new ReadableStream<LanguageModelV4StreamPart>({
       async start(controller) {
         controller.enqueue({ type: "stream-start", warnings });
 
@@ -819,7 +819,7 @@ export class TransformersJSLanguageModel implements LanguageModelV3 {
             controller.enqueue({ type: "text-end", id: textId });
           }
 
-          const finishReason: LanguageModelV3FinishReason =
+          const finishReason: LanguageModelV4FinishReason =
             result.toolCallDetected
               ? { unified: "tool-calls", raw: "tool-calls" }
               : { unified: "stop", raw: "stop" };

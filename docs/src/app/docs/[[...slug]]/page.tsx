@@ -13,9 +13,9 @@ import type { Metadata } from "next";
 export default async function Page(props: PageProps<"/docs/[[...slug]]">) {
   const params = await props.params;
 
-  // Redirect /docs to /docs/ai-sdk-v6
+  // Redirect /docs to /docs/ai-sdk-v7
   if (!params.slug || params.slug.length === 0) {
-    redirect("/docs/ai-sdk-v6");
+    redirect("/docs/ai-sdk-v7");
   }
 
   const page = source.getPage(params.slug);

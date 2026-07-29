@@ -8,7 +8,8 @@ import {
   wrapLanguageModel,
   extractReasoningMiddleware,
   tool,
-  stepCountIs,
+  isStepCount,
+  toUIMessageStream,
 } from "ai";
 import {
   TransformersJSLanguageModel,
@@ -25,7 +26,6 @@ export const createTools = () => ({
         .string()
         .describe("The search query to find information on the web"),
     }),
-    needsApproval: true,
     execute: async ({ query }) => {
       try {
         // Call the API route instead of Exa directly
@@ -156,7 +156,10 @@ export class TransformersChatTransport implements ChatTransport<TransformersUIMe
             }),
           }),
           tools: this.tools,
-          stopWhen: stepCountIs(5),
+          stopWhen: isStepCount(5),
+          toolApproval: {
+            webSearch: "user-approval",
+          },
           messages: prompt,
           abortSignal,
           providerOptions: {
@@ -176,7 +179,13 @@ export class TransformersChatTransport implements ChatTransport<TransformersUIMe
           },
         });
 
-        writer.merge(result.toUIMessageStream({ sendStart: false }));
+        writer.merge(
+          toUIMessageStream({
+            stream: result.stream,
+            tools: this.tools,
+            sendStart: false,
+          }),
+        );
       },
     });
   }

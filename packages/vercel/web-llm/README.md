@@ -26,7 +26,7 @@ The `@browser-ai/web-llm` package is the AI SDK provider for open-source built-i
 
 ## Documentation
 
-For a complete documentation including examples, refer to [this](https://www.browser-ai.dev/docs/ai-sdk-v6/web-llm) site.
+For a complete documentation including examples, refer to [this](https://www.browser-ai.dev/docs/ai-sdk-v7/web-llm) site.
 
 ## Author
 

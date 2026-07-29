@@ -4,7 +4,7 @@ import {
   createUnsupportedToolWarning,
   gatherUnsupportedSettingWarnings,
 } from "../src/utils/warnings";
-import type { LanguageModelV3ProviderTool } from "@ai-sdk/provider";
+import type { LanguageModelV4ProviderTool } from "@ai-sdk/provider";
 
 describe("warnings", () => {
   describe("createUnsupportedSettingWarning", () => {
@@ -37,7 +37,7 @@ describe("warnings", () => {
 
   describe("createUnsupportedToolWarning", () => {
     it("should create a warning with tool information", () => {
-      const mockTool: LanguageModelV3ProviderTool = {
+      const mockTool: LanguageModelV4ProviderTool = {
         type: "provider",
         id: "test.tool",
         name: "testTool",

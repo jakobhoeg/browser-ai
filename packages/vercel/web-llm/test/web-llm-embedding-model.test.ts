@@ -57,7 +57,7 @@ describe("WebLLMEmbeddingModel", () => {
       expect(model).toBeInstanceOf(WebLLMEmbeddingModel);
       expect(model.modelId).toBe("test-model");
       expect(model.provider).toBe("web-llm");
-      expect(model.specificationVersion).toBe("v3");
+      expect(model.specificationVersion).toBe("v4");
       expect(model.supportsParallelCalls).toBe(false);
       expect(model.maxEmbeddingsPerCall).toBe(100);
     });

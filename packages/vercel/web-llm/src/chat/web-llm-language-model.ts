@@ -1,15 +1,15 @@
 import {
-  LanguageModelV3,
-  LanguageModelV3CallOptions,
-  SharedV3Warning,
-  LanguageModelV3Content,
-  LanguageModelV3FinishReason,
-  LanguageModelV3ProviderTool,
-  LanguageModelV3StreamPart,
-  LanguageModelV3ToolCall,
+  LanguageModelV4,
+  LanguageModelV4CallOptions,
+  SharedV4Warning,
+  LanguageModelV4Content,
+  LanguageModelV4FinishReason,
+  LanguageModelV4ProviderTool,
+  LanguageModelV4StreamPart,
+  LanguageModelV4ToolCall,
   LoadSettingError,
-  LanguageModelV3GenerateResult,
-  LanguageModelV3StreamResult,
+  LanguageModelV4GenerateResult,
+  LanguageModelV4StreamResult,
 } from "@ai-sdk/provider";
 import { convertToWebLLMMessages } from "../utils/convert-to-webllm-messages";
 
@@ -76,8 +76,8 @@ type WebLLMConfig = {
   options: WebLLMSettings;
 };
 
-export class WebLLMLanguageModel implements LanguageModelV3 {
-  readonly specificationVersion = "v3";
+export class WebLLMLanguageModel implements LanguageModelV4 {
+  readonly specificationVersion = "v4";
   readonly modelId: WebLLMModelId;
   readonly provider = "web-llm";
 
@@ -194,8 +194,8 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
     tools,
     toolChoice,
     providerOptions,
-  }: Parameters<LanguageModelV3["doGenerate"]>[0]) {
-    const warnings: SharedV3Warning[] = [];
+  }: Parameters<LanguageModelV4["doGenerate"]>[0]) {
+    const warnings: SharedV4Warning[] = [];
 
     const functionTools: ToolDefinition[] = (tools ?? [])
       .filter(isFunctionTool)
@@ -206,7 +206,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       }));
 
     const unsupportedTools = (tools ?? []).filter(
-      (tool): tool is LanguageModelV3ProviderTool => !isFunctionTool(tool),
+      (tool): tool is LanguageModelV4ProviderTool => !isFunctionTool(tool),
     );
 
     for (const tool of unsupportedTools) {
@@ -315,8 +315,8 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
    * @throws {UnsupportedFunctionalityError} When unsupported features like file input are used
    */
   public async doGenerate(
-    options: LanguageModelV3CallOptions,
-  ): Promise<LanguageModelV3GenerateResult> {
+    options: LanguageModelV4CallOptions,
+  ): Promise<LanguageModelV4GenerateResult> {
     const converted = this.getArgs(options);
     const { messages, warnings, requestOptions, functionTools } = converted;
 
@@ -372,7 +372,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
       if (toolCalls.length > 0) {
         const toolCallsToEmit = toolCalls.slice(0, 1);
 
-        const parts: LanguageModelV3Content[] = [];
+        const parts: LanguageModelV4Content[] = [];
 
         if (textContent) {
           parts.push({
@@ -387,7 +387,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
             toolCallId: call.toolCallId,
             toolName: call.toolName,
             input: JSON.stringify(call.args ?? {}),
-          } satisfies LanguageModelV3ToolCall);
+          } satisfies LanguageModelV4ToolCall);
         }
 
         return {
@@ -411,14 +411,14 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
         };
       }
 
-      const content: LanguageModelV3Content[] = [
+      const content: LanguageModelV4Content[] = [
         {
           type: "text",
           text: textContent || rawResponse,
         },
       ];
 
-      let finishReason: LanguageModelV3FinishReason = {
+      let finishReason: LanguageModelV4FinishReason = {
         unified: "stop",
         raw: choice.finish_reason,
       };
@@ -518,8 +518,8 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
    * @throws {UnsupportedFunctionalityError} When unsupported features like file input are used
    */
   public async doStream(
-    options: LanguageModelV3CallOptions,
-  ): Promise<LanguageModelV3StreamResult> {
+    options: LanguageModelV4CallOptions,
+  ): Promise<LanguageModelV4StreamResult> {
     const converted = this.getArgs(options);
     const { messages, warnings, requestOptions, functionTools } = converted;
 
@@ -556,7 +556,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
 
     const textId = "text-0";
 
-    const stream = new ReadableStream<LanguageModelV3StreamPart>({
+    const stream = new ReadableStream<LanguageModelV4StreamPart>({
       async start(controller) {
         controller.enqueue({
           type: "stream-start",
@@ -596,7 +596,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
         };
 
         const finishStream = (
-          finishReason: LanguageModelV3FinishReason,
+          finishReason: LanguageModelV4FinishReason,
           usage?: {
             prompt_tokens?: number;
             completion_tokens?: number;
@@ -671,7 +671,7 @@ export class WebLLMLanguageModel implements LanguageModelV3 {
             emitTextDelta(result.trailingText);
           }
 
-          const finishReason: LanguageModelV3FinishReason = isAbort
+          const finishReason: LanguageModelV4FinishReason = isAbort
             ? { unified: "other", raw: "abort" }
             : result.toolCallDetected
               ? { unified: "tool-calls", raw: "tool-calls" }

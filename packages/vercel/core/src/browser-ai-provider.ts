@@ -1,7 +1,7 @@
 import {
-  EmbeddingModelV3,
+  EmbeddingModelV4,
   NoSuchModelError,
-  ProviderV3,
+  ProviderV4,
 } from "@ai-sdk/provider";
 import {
   BrowserAIChatLanguageModel,
@@ -13,7 +13,7 @@ import {
   BrowserAIEmbeddingModelSettings,
 } from "./embedding/browser-ai-embedding-model";
 
-export interface BrowserAIProvider extends ProviderV3 {
+export interface BrowserAIProvider extends ProviderV4 {
   (
     modelId?: BrowserAIChatModelId,
     settings?: BrowserAIChatSettings,
@@ -38,12 +38,12 @@ export interface BrowserAIProvider extends ProviderV3 {
   embedding(
     modelId: "embedding",
     settings?: BrowserAIEmbeddingModelSettings,
-  ): EmbeddingModelV3;
+  ): EmbeddingModelV4;
 
   embeddingModel: (
     modelId: "embedding",
     settings?: BrowserAIEmbeddingModelSettings,
-  ) => EmbeddingModelV3;
+  ) => EmbeddingModelV4;
 
   // Not implemented
   imageModel(modelId: string): never;
@@ -89,11 +89,13 @@ export function createBrowserAI(
     return createChatModel(modelId, settings);
   };
 
-  provider.specificationVersion = "v3" as const;
+  provider.specificationVersion = "v4" as const;
   provider.languageModel = createChatModel;
   provider.chat = createChatModel;
   provider.embedding = createEmbeddingModel;
   provider.embeddingModel = createEmbeddingModel;
+  provider.textEmbedding = createEmbeddingModel;
+  provider.textEmbeddingModel = createEmbeddingModel;
 
   provider.imageModel = (modelId: string) => {
     throw new NoSuchModelError({ modelId, modelType: "imageModel" });

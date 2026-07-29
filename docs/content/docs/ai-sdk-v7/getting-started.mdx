@@ -1,0 +1,82 @@
+---
+title: Getting Started
+description: Introduction to using @browser-ai packages with Vercel AI SDK v7
+---
+
+## Package Versions for AI SDK v7
+
+| Package                       |  AI SDK v7  |
+| ----------------------------- | :---------: |
+| `@browser-ai/core`            | ✓ `≥ 3.0.0` |
+| `@browser-ai/transformers-js` | ✓ `≥ 3.0.0` |
+| `@browser-ai/web-llm`         | ✓ `≥ 3.0.0` |
+
+<Callout type="info">
+  Version 3 of the `@browser-ai` packages requires AI SDK `ai@^7.0.0` and Node.js `>=22`. If you are still on AI SDK v6, use the v2 packages and the [AI SDK v6 documentation](/docs/ai-sdk-v6).
+</Callout>
+
+## Installation
+
+```bash
+# For Chrome/Edge built-in browser AI (Prompt API)
+npm i @browser-ai/core
+
+# For Transformers.js (Hugging Face models)
+npm i @browser-ai/transformers-js
+
+# For WebLLM (MLC models)
+npm i @browser-ai/web-llm
+```
+
+## Available Packages
+
+### @browser-ai/core
+
+Access Chrome and Edge's built-in browser AI capabilities through the experimental [Prompt API](https://github.com/webmachinelearning/prompt-api). The provider will automatically work in all browsers that support the Prompt API since the browser handles model orchestration. For instance, if your client uses Edge, it will use [Phi4-mini](https://learn.microsoft.com/en-us/microsoft-edge/web-platform/prompt-api#the-phi-4-mini-model), and for Chrome it will use [Gemini Nano](https://developer.chrome.com/docs/ai/prompt-api#model_download).
+
+- **Language Models**: Text generation with Gemini Nano (Chrome) or Phi Mini (Edge)
+- **Text Embeddings**: Generate embeddings using browser-native models
+- **Multimodal Support**: Image and audio input
+- **Structured Data**: Generate structured data
+- **Tool Calling**: Function calling with JSON format support
+
+[View Core Documentation →](/docs/ai-sdk-v7/core)
+
+### @browser-ai/transformers-js
+
+Run [Hugging Face Transformers](https://huggingface.co/models) models directly in the browser or server-side with WebGPU/WASM acceleration:
+
+- **Open-source Language Models**: SmolLM, Qwen, Llama, and more
+- **Text Embeddings**: GTE, MiniLM, and other embedding models
+- **Vision Models**: SmolVLM and other multimodal models
+- **Web Worker Support**: Efficient background processing
+- **Transcription**: Whisper models for speech-to-text
+- **Tool Calling**: Function calling support
+
+[View Transformers.js Documentation →](/docs/ai-sdk-v7/transformers-js)
+
+### @browser-ai/web-llm
+
+High-performance in-browser LLM inference using [WebLLM](https://github.com/mlc-ai/web-llm) with WebGPU. Allows using a ton of popular open-source models such as **Llama3** and **Qwen3**:
+
+- **Open-source Language Models**: Llama, Qwen, Phi, and many more
+- **Download Progress**: Real-time model download tracking
+- **Web Worker Support**: Efficient background processing
+- **Tool Calling**: Function calling support
+
+[View Web-LLM Documentation →](/docs/ai-sdk-v7/web-llm)
+
+## Easy Server Fallback
+
+One of the biggest advantages is the ability to seamlessly fall back to server-side models:
+
+```typescript
+import { browserAI, doesBrowserSupportBrowserAI } from "@browser-ai/core";
+
+// Prioritize local inference, fall back to cloud when needed
+const { messages, sendMessage } = useChat({
+  transport: doesBrowserSupportBrowserAI()
+    ? new ClientSideChatTransport(browserAI())
+    : new DefaultChatTransport({ api: "/api/chat" }),
+});
+```

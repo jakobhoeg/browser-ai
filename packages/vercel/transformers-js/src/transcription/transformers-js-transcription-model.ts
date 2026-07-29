@@ -1,7 +1,7 @@
 import {
-  TranscriptionModelV3,
-  TranscriptionModelV3CallOptions,
-  SharedV3Warning,
+  TranscriptionModelV4,
+  TranscriptionModelV4CallOptions,
+  SharedV4Warning,
   LoadSettingError,
 } from "@ai-sdk/provider";
 import {
@@ -76,8 +76,8 @@ type TranscriptionModelInstance = [
   PreTrainedModel,
 ];
 
-export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
-  readonly specificationVersion = "v3";
+export class TransformersJSTranscriptionModel implements TranscriptionModelV4 {
+  readonly specificationVersion = "v4";
   readonly provider = "transformers-js";
   readonly modelId: TransformersJSTranscriptionModelId;
 
@@ -310,8 +310,8 @@ export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
     });
   }
 
-  private getArgs({ audio, providerOptions }: TranscriptionModelV3CallOptions) {
-    const warnings: SharedV3Warning[] = [];
+  private getArgs({ audio, providerOptions }: TranscriptionModelV4CallOptions) {
+    const warnings: SharedV4Warning[] = [];
 
     const transformersJSOptions = providerOptions?.["transformers-js"];
 
@@ -382,8 +382,8 @@ export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
   }
 
   async doGenerate(
-    options: TranscriptionModelV3CallOptions,
-  ): Promise<Awaited<ReturnType<TranscriptionModelV3["doGenerate"]>>> {
+    options: TranscriptionModelV4CallOptions,
+  ): Promise<Awaited<ReturnType<TranscriptionModelV4["doGenerate"]>>> {
     const currentDate = new Date();
     const { audio, language, returnTimestamps, maxNewTokens, warnings } =
       this.getArgs(options);
@@ -451,10 +451,10 @@ export class TransformersJSTranscriptionModel implements TranscriptionModelV3 {
     language: string | undefined,
     returnTimestamps: boolean | undefined,
     maxNewTokens: number | undefined,
-    warnings: SharedV3Warning[],
+    warnings: SharedV4Warning[],
     currentDate: Date,
-    options: TranscriptionModelV3CallOptions,
-  ): Promise<Awaited<ReturnType<TranscriptionModelV3["doGenerate"]>>> {
+    options: TranscriptionModelV4CallOptions,
+  ): Promise<Awaited<ReturnType<TranscriptionModelV4["doGenerate"]>>> {
     const worker = this.config.worker!;
 
     await this.initializeWorker();

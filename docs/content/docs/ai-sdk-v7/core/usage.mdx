@@ -1,0 +1,232 @@
+---
+title: Usage
+description: Features and usage examples for @browser-ai/core with AI SDK v7
+---
+
+## Basic Text Generation
+
+### Streaming Text
+
+```typescript
+import { streamText } from "ai";
+import { browserAI } from "@browser-ai/core";
+
+const result = streamText({
+  model: browserAI(),
+  prompt: "Invent a new holiday and describe its traditions.",
+});
+
+for await (const textPart of result.textStream) {
+  console.log(textPart);
+}
+```
+
+### Non-streaming Text
+
+```typescript
+import { generateText } from "ai";
+import { browserAI } from "@browser-ai/core";
+
+const result = await generateText({
+  model: browserAI(),
+  prompt: "Invent a new holiday and describe its traditions.",
+});
+
+console.log(result.text);
+```
+
+## Text Embeddings
+
+Generate text embeddings using browser-native embedding capabilities:
+
+```typescript
+import { embed, embedMany } from "ai";
+import { browserAI } from "@browser-ai/core";
+
+// Single embedding
+const { embedding, usage } = await embed({
+  model: browserAI.embedding("embedding"),
+  value: "Hello, world!",
+});
+
+// Multiple embeddings
+const { embedding, usage } = await embedMany({
+  model: browserAI.embedding("embedding"),
+  values: ["Hello", "World", "AI"],
+});
+```
+
+## Download Progress Tracking
+
+When using browser AI models for the first time, the model needs to be downloaded. Track progress to improve UX:
+
+```typescript
+import { streamText } from "ai";
+import { browserAI } from "@browser-ai/core";
+
+const model = browserAI();
+const availability = await model.availability();
+
+if (availability === "unavailable") {
+  console.log("Browser doesn't support built-in AI");
+  return;
+}
+
+if (availability === "downloadable") {
+  await model.createSessionWithProgress((progress) => {
+    console.log(`Download progress: ${Math.round(progress * 100)}%`);
+  });
+}
+
+// Model is ready
+const result = streamText({
+  model,
+  prompt: "Invent a new holiday and describe its traditions.",
+});
+```
+
+## Multimodal Support
+
+The Prompt API supports both images and audio files (currently only Chrome):
+
+```typescript
+import { streamText } from "ai";
+import { browserAI } from "@browser-ai/core";
+
+const result = streamText({
+  model: browserAI(),
+  messages: [
+    {
+      // Image
+      role: "user",
+      content: [
+        { type: "text", text: "What's in this image?" },
+        { type: "file", mediaType: "image/png", data: base64ImageData },
+      ],
+    },
+    {
+      // Audio
+      role: "user",
+      content: [{ type: "file", mediaType: "audio/mp3", data: audioData }],
+    },
+  ],
+});
+
+for await (const chunk of result.textStream) {
+  console.log(chunk);
+}
+```
+
+## Tool Calling
+
+The `browserAI` model supports tool calling with multi-step execution:
+
+```typescript
+import { streamText, isStepCount } from "ai";
+import { browserAI } from "@browser-ai/core";
+import { z } from "zod";
+
+const result = await streamText({
+  model: browserAI(),
+  messages: [{ role: "user", content: "What's the weather in San Francisco?" }],
+  tools: {
+    weather: tool({
+      description: "Get the weather in a location",
+      inputSchema: z.object({
+        location: z.string().describe("The location to get the weather for"),
+      }),
+      execute: async ({ location }) => ({
+        location,
+        temperature: 72 + Math.floor(Math.random() * 21) - 10,
+      }),
+    }),
+  },
+  stopWhen: isStepCount(5), // multiple steps
+});
+```
+
+It also supports [tool execution approval](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#tool-execution-approval), which in AI SDK v7 is configured with the `toolApproval` option on the call (or agent) instead of `needsApproval` on the tool.
+
+## Tool Calling with Structured Output
+
+```ts
+import { Output, ToolLoopAgent, tool } from "ai";
+import { browserAI } from "@browser-ai/core";
+import { z } from "zod";
+
+const agent = new ToolLoopAgent({
+  model: browserAI(),
+  tools: {
+    weather: tool({
+      description: "Get the weather in a location",
+      inputSchema: z.object({ city: z.string() }),
+      execute: async ({ city }) => {
+        // ...
+      },
+    }),
+  },
+  output: Output.object({
+    schema: z.object({
+      summary: z.string(),
+      temperature: z.number(),
+      recommendation: z.string(),
+    }),
+  }),
+});
+
+const { output } = await agent.generate({
+  prompt: "What is the weather in San Francisco and what should I wear?",
+});
+```
+
+## Structured Output
+
+Generate structured JSON output with schema validation:
+
+### Using generateText
+
+```typescript
+import { generateText } from "ai";
+import { browserAI } from "@browser-ai/core";
+import { z } from "zod";
+
+const { output } = await generateText({
+  model: browserAI(),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(
+          z.object({ name: z.string(), amount: z.string() }),
+        ),
+        steps: z.array(z.string()),
+      }),
+    }),
+  }),
+  prompt: "Generate a lasagna recipe.",
+});
+```
+
+### Using streamText
+
+```typescript
+import { streamText } from "ai";
+import { browserAI } from "@browser-ai/core";
+import { z } from "zod";
+
+const { partialOutputStream } = streamText({
+  model: browserAI(),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(
+          z.object({ name: z.string(), amount: z.string() }),
+        ),
+        steps: z.array(z.string()),
+      }),
+    }),
+  }),
+  prompt: "Generate a lasagna recipe.",
+});
+```

@@ -1,6 +1,6 @@
 import type {
   JSONSchema7,
-  LanguageModelV3FunctionTool,
+  LanguageModelV4FunctionTool,
 } from "@ai-sdk/provider";
 import type { ToolDefinition } from "@browser-ai/shared";
 
@@ -25,7 +25,7 @@ export interface HuggingFaceToolDefinition {
  * @returns Array of HuggingFace-formatted tool definitions
  */
 export function convertToolsToHuggingFaceFormat(
-  tools: Array<LanguageModelV3FunctionTool | ToolDefinition>,
+  tools: Array<LanguageModelV4FunctionTool | ToolDefinition>,
 ): HuggingFaceToolDefinition[] {
   return tools.map((tool) => {
     const parameters =

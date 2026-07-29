@@ -59,7 +59,7 @@ describe("WebLLMLanguageModel", () => {
       );
 
       expect(model).toBeInstanceOf(WebLLMLanguageModel);
-      expect(model.specificationVersion).toBe("v3");
+      expect(model.specificationVersion).toBe("v4");
       expect(model.provider).toBe("web-llm");
       expect(model.modelId).toBe("Llama-3.1-8B-Instruct-q4f32_1-MLC");
     });

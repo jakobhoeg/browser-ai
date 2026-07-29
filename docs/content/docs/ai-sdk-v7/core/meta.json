@@ -1,0 +1,13 @@
+{
+  "title": "@browser-ai/core",
+  "description": "Browser AI provider (Chrome & Edge)",
+  "icon": "Cpu",
+  "pages": [
+    "index",
+    "installation",
+    "usage",
+    "usechat-integration",
+    "agents",
+    "api-reference"
+  ]
+}

@@ -1,7 +1,8 @@
 import {
-  LanguageModelV3Prompt,
-  LanguageModelV3ToolResultPart,
-  LanguageModelV3ToolResultOutput,
+  LanguageModelV4Prompt,
+  LanguageModelV4ToolResultPart,
+  LanguageModelV4ToolResultOutput,
+  SharedV4FileData,
   UnsupportedFunctionalityError,
 } from "@ai-sdk/provider";
 import * as webllm from "@mlc-ai/web-llm";
@@ -10,7 +11,7 @@ import { formatToolResults, type ToolResult } from "@browser-ai/shared";
 /**
  * Converts the AI SDK ToolResultOutput format to a simple value + error flag
  */
-function convertToolResultOutput(output: LanguageModelV3ToolResultOutput): {
+function convertToolResultOutput(output: LanguageModelV4ToolResultOutput): {
   value: unknown;
   isError: boolean;
 } {
@@ -37,7 +38,7 @@ function convertToolResultOutput(output: LanguageModelV3ToolResultOutput): {
 /**
  * Converts a ToolResultPart to our internal ToolResult format
  */
-function toToolResult(part: LanguageModelV3ToolResultPart): ToolResult {
+function toToolResult(part: LanguageModelV4ToolResultPart): ToolResult {
   const { value, isError } = convertToolResultOutput(part.output);
   return {
     toolCallId: part.toolCallId,
@@ -54,47 +55,26 @@ function uint8ArrayToBase64(uint8array: Uint8Array): string {
   return btoa(binary);
 }
 
-function convertDataToURL(
-  data:
-    | string
-    | Buffer
-    | URL
-    | Uint8Array
-    | ArrayBuffer
-    | ReadableStream
-    | undefined,
-  mediaType: string,
-): string {
-  if (data instanceof URL) {
-    return data.toString();
-  }
+function convertDataToURL(data: SharedV4FileData, mediaType: string): string {
+  switch (data.type) {
+    case "url":
+      return data.url.toString();
 
-  if (typeof data === "string") {
-    // AI SDK provides base64 string
-    return `data:${mediaType};base64,${data}`;
-  }
+    case "data":
+      return data.data instanceof Uint8Array
+        ? `data:${mediaType};base64,${uint8ArrayToBase64(data.data)}`
+        : // AI SDK provides base64 string
+          `data:${mediaType};base64,${data.data}`;
 
-  if (data instanceof Uint8Array) {
-    return `data:${mediaType};base64,${uint8ArrayToBase64(data)}`;
+    default:
+      throw new UnsupportedFunctionalityError({
+        functionality: `file data type: ${data.type}`,
+      });
   }
-
-  if (data instanceof ArrayBuffer) {
-    return `data:${mediaType};base64,${uint8ArrayToBase64(
-      new Uint8Array(data),
-    )}`;
-  }
-
-  if (typeof Buffer !== "undefined" && data instanceof Buffer) {
-    return `data:${mediaType};base64,${data.toString("base64")}`;
-  }
-
-  throw new UnsupportedFunctionalityError({
-    functionality: `file data type: ${typeof data}`,
-  });
 }
 
 export function convertToWebLLMMessages(
-  prompt: LanguageModelV3Prompt,
+  prompt: LanguageModelV4Prompt,
 ): webllm.ChatCompletionMessageParam[] {
   const messages: webllm.ChatCompletionMessageParam[] = [];
 

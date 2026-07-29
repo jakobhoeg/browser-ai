@@ -1,0 +1,47 @@
+---
+title: Installation
+description: Setup @browser-ai/core for AI SDK v7
+---
+
+## Package Installation
+
+```bash
+npm i @browser-ai/core
+```
+
+## Version Compatibility
+
+| @browser-ai/core | AI SDK | Notes                        |
+| ---------------- | ------ | ---------------------------- |
+| v3.0.0 and above | v7.x   | Current stable for AI SDK v7 |
+| v2.x             | v6.x   | Use for AI SDK v6            |
+| v1.0.0           | v5.x   | Use for AI SDK v5            |
+
+<Callout type="info">
+  For AI SDK v6, please refer to the [v6
+  documentation](/docs/ai-sdk-v6/core/installation), and for AI SDK v5 the [v5
+  documentation](/docs/ai-sdk-v5/core/installation).
+</Callout>
+
+### Edge Setup
+
+1. Use Edge Dev/Canary version **138.0.3309.2 or higher**
+2. Navigate to `edge://flags/#prompt-api-for-phi-mini`
+3. Set it to **Enabled**
+4. Restart Edge
+
+For more information, check out [Chrome's official guide](https://developer.chrome.com/docs/extensions/ai/prompt-api).
+
+## Verifying Installation
+
+After installation, you can verify browser support:
+
+```typescript
+import { doesBrowserSupportBrowserAI } from "@browser-ai/core";
+
+if (doesBrowserSupportBrowserAI()) {
+  console.log("Browser supports browser AI!");
+} else {
+  console.log("Browser AI not available, use server fallback");
+}
+```

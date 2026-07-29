@@ -5,6 +5,7 @@ import {
   streamText,
   convertToModelMessages,
   ChatRequestOptions,
+  toUIMessageStream,
 } from "ai";
 import { browserAI } from "@browser-ai/core";
 
@@ -29,7 +30,7 @@ export class SimpleClientSideChatTransport implements ChatTransport<UIMessage> {
       abortSignal: options.abortSignal,
     });
 
-    return result.toUIMessageStream();
+    return toUIMessageStream({ stream: result.stream });
   }
 
   async reconnectToStream(

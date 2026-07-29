@@ -1,0 +1,13 @@
+{
+  "title": "@browser-ai/web-llm",
+  "description": "WebLLM models in the browser",
+  "icon": "Zap",
+  "pages": [
+    "index",
+    "installation",
+    "usage",
+    "usechat-integration",
+    "agents",
+    "api-reference"
+  ]
+}
