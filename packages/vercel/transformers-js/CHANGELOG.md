@@ -1,5 +1,11 @@
 # @browser-ai/transformers-js
 
+## 3.0.0
+
+### Major Changes
+
+- a6ca007: feat: update to ai sdk v7
+
 ## 2.2.2
 
 ### Patch Changes
