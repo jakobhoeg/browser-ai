@@ -29,11 +29,11 @@ For detailed documentation, browser requirements and advanced usage, refer to th
 
 ### Package Versions
 
-| Package                       | AI SDK v5 |  AI SDK v6  |
-| ----------------------------- | :-------: | :---------: |
-| `@browser-ai/core`            | ✓ `1.0.0` | ✓ `≥ 2.0.0` |
-| `@browser-ai/transformers-js` | ✓ `1.0.0` | ✓ `≥ 2.0.0` |
-| `@browser-ai/web-llm`         | ✓ `1.0.0` | ✓ `≥ 2.0.0` |
+| Package                       | AI SDK v5 | AI SDK v6 |  AI SDK v7  |
+| ----------------------------- | :-------: | :-------: | :---------: |
+| `@browser-ai/core`            | ✓ `1.0.0` |  ✓ `2.x`  | ✓ `≥ 3.0.0` |
+| `@browser-ai/transformers-js` | ✓ `1.0.0` |  ✓ `2.x`  | ✓ `≥ 3.0.0` |
+| `@browser-ai/web-llm`         | ✓ `1.0.0` |  ✓ `2.x`  | ✓ `≥ 3.0.0` |
 
 ```bash
 # For Chrome/Edge built-in browser AI models
@@ -111,7 +111,7 @@ Contributions are more than welcome! However, please make sure to check out the 
 
 If you've ever built apps with local language models, you're likely familiar with the challenges: creating custom hooks, UI components and state management (lots of it), while also building complex integration layers to fall back to server-side models when compatibility is an issue.
 
-Read more about this [here](https://www.browser-ai.dev/docs/ai-sdk-v6).
+Read more about this [here](https://www.browser-ai.dev/docs/ai-sdk-v7).
 
 ## Author
 

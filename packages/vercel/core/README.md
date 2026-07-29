@@ -26,7 +26,7 @@ The `@browser-ai/core` package is the AI SDK provider for your Chrome and Edge b
 
 ## Documentation
 
-For a complete documentation including examples, refer to [this](https://www.browser-ai.dev/docs/ai-sdk-v6/core) site.
+For a complete documentation including examples, refer to [this](https://www.browser-ai.dev/docs/ai-sdk-v7/core) site.
 
 ## Author
 

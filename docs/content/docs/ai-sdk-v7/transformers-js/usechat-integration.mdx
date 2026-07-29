@@ -1,3 +1,16 @@
+---
+title: useChat Integration
+description: Integrate @browser-ai/transformers-js with the useChat hook in AI SDK v7
+---
+
+## Overview
+
+When using this library with the `useChat` hook, you'll need to create a [custom transport](https://ai-sdk.dev/docs/ai-sdk-ui/transport) implementation to handle client-side AI with download progress.
+This is not required, but it makes it easier for you to build better user experiences.
+
+## Complete Transport Example
+
+```ts
 import {
   ChatTransport,
   UIMessageChunk,
@@ -5,8 +18,6 @@ import {
   convertToModelMessages,
   ChatRequestOptions,
   createUIMessageStream,
-  wrapLanguageModel,
-  extractReasoningMiddleware,
   tool,
   isStepCount,
   toUIMessageStream,
@@ -27,50 +38,7 @@ export const createTools = () => ({
         .describe("The search query to find information on the web"),
     }),
     execute: async ({ query }) => {
-      try {
-        // Call the API route instead of Exa directly
-        const response = await fetch("/api/web-search", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ query }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          return errorData.error || "Failed to search the web";
-        }
-
-        const result = await response.json();
-        return result;
-      } catch (err) {
-        return `Failed to search the web: ${err instanceof Error ? err.message : "Unknown error"}`;
-      }
-    },
-  }),
-  getCurrentTime: tool({
-    description:
-      "Get the current date and time. Use this when the user asks about the current time, date, or day of the week.",
-    inputSchema: z.object({}),
-    execute: async () => {
-      const now = new Date();
-      return {
-        timestamp: now.toISOString(),
-        date: now.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
-        time: now.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: true,
-        }),
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      };
+      // ...
     },
   }),
 });
@@ -83,7 +51,6 @@ export const createTools = () => ({
  */
 export class TransformersChatTransport implements ChatTransport<TransformersUIMessage> {
   private readonly model: TransformersJSLanguageModel;
-  public enableThinking = false;
   private tools: ReturnType<typeof createTools>;
 
   constructor(model: TransformersJSLanguageModel) {
@@ -143,30 +110,17 @@ export class TransformersChatTransport implements ChatTransport<TransformersUIMe
                 progress: percent,
                 message: `Downloading browser AI model... ${percent}%`,
               },
-              transient: !downloadProgressId, // transient only on first write
+              transient: !downloadProgressId,
             });
           });
         }
 
         const result = streamText({
-          model: wrapLanguageModel({
-            model,
-            middleware: extractReasoningMiddleware({
-              tagName: "think",
-            }),
-          }),
+          model,
           tools: this.tools,
           stopWhen: isStepCount(5),
-          toolApproval: {
-            webSearch: "user-approval",
-          },
           messages: prompt,
           abortSignal,
-          providerOptions: {
-            "transformers-js": {
-              enableThinking: this.enableThinking,
-            },
-          },
           onChunk: (event) => {
             if (event.chunk.type === "text-delta" && downloadProgressId) {
               writer.write({
@@ -199,3 +153,108 @@ export class TransformersChatTransport implements ChatTransport<TransformersUIMe
     return null;
   }
 }
+```
+
+## Basic Transport Structure
+
+Here's a simplified example of how to structure a custom transport:
+
+```typescript
+import {
+  ChatTransport,
+  UIMessageChunk,
+  streamText,
+  convertToModelMessages,
+  ChatRequestOptions,
+  toUIMessageStream,
+} from "ai";
+import {
+  TransformersJSLanguageModel,
+  TransformersUIMessage,
+} from "@browser-ai/transformers-js";
+
+// This class won't stream back data parts with the download progress if
+// the model hasn't yet been downloaded
+export class SimpleTransformersChatTransport implements ChatTransport<TransformersUIMessage> {
+  private readonly model: TransformersJSLanguageModel;
+
+  constructor(model: TransformersJSLanguageModel) {
+    this.model = model;
+  }
+
+  async sendMessages(
+    options: {
+      chatId: string;
+      messages: TransformersUIMessage[];
+      abortSignal: AbortSignal | undefined;
+    } & {
+      trigger: "submit-message" | "submit-tool-result" | "regenerate-message";
+      messageId: string | undefined;
+    } & ChatRequestOptions,
+  ): Promise<ReadableStream<UIMessageChunk>> {
+    const prompt = convertToModelMessages(options.messages);
+
+    const result = streamText({
+      model: this.model,
+      messages: prompt,
+      abortSignal: options.abortSignal,
+    });
+
+    return toUIMessageStream({ stream: result.stream });
+  }
+
+  async reconnectToStream(
+    options: {
+      chatId: string;
+    } & ChatRequestOptions,
+  ): Promise<ReadableStream<UIMessageChunk> | null> {
+    // Client-side AI doesn't support stream reconnection
+    return null;
+  }
+}
+```
+
+You can then use the `useChat()` hook in your components:
+
+```ts
+import {
+  transformersJS,
+  TransformersUIMessage,
+} from "@browser-ai/transformers-js";
+
+const model = transformersJS("HuggingFaceTB/SmolLM2-360M-Instruct", {
+  device: "webgpu",
+  worker: new Worker(new URL("./worker.ts", import.meta.url), {
+    type: "module",
+  }),
+});
+
+const { sendMessage, messages, stop } = useChat<TransformersUIMessage>({
+  transport: new TransformersChatTransport(model),
+});
+```
+
+In case the device is incompatible with local in-browser LLMs, and we want to use a server-side AI model, we can simply use the utility function from the package first:
+
+```ts
+import {
+  transformersJS,
+  TransformersUIMessage,
+  doesBrowserSupportTransformersJS,
+} from "@browser-ai/transformers-js";
+
+const model = transformersJS("HuggingFaceTB/SmolLM2-360M-Instruct", {
+  device: "webgpu",
+  worker: new Worker(new URL("./worker.ts", import.meta.url), {
+    type: "module",
+  }),
+});
+
+const { sendMessage, messages, stop } = useChat<TransformersUIMessage>({
+  transport: doesBrowserSupportTransformersJS() // check for device compatibility
+    ? new TransformersChatTransport(model)
+    : new DefaultChatTransport<UIMessage>({
+        api: "/api/chat",
+      }),
+});
+```

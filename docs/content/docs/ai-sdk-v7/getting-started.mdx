@@ -1,31 +1,31 @@
 ---
 title: Getting Started
-description: Introduction to using @browser-ai packages with Vercel AI SDK v6
+description: Introduction to using @browser-ai packages with Vercel AI SDK v7
 ---
 
-<Callout type="info">
-  This documentation covers the v2 packages, which target AI SDK v6. For AI SDK v7, use the v3 packages and the [AI SDK v7 section](/docs/ai-sdk-v7).
-</Callout>
+## Package Versions for AI SDK v7
 
-## Package Versions for AI SDK v6
-
-| Package                       | AI SDK v6  |
+| Package                       |  AI SDK v7  |
 | ----------------------------- | :---------: |
-| `@browser-ai/core`            | ✓ `≥ 2.0.0` |
-| `@browser-ai/transformers-js` | ✓ `≥ 2.0.0` |
-| `@browser-ai/web-llm`         | ✓ `≥ 2.0.0` |
+| `@browser-ai/core`            | ✓ `≥ 3.0.0` |
+| `@browser-ai/transformers-js` | ✓ `≥ 3.0.0` |
+| `@browser-ai/web-llm`         | ✓ `≥ 3.0.0` |
+
+<Callout type="info">
+  Version 3 of the `@browser-ai` packages requires AI SDK `ai@^7.0.0` and Node.js `>=22`. If you are still on AI SDK v6, use the v2 packages and the [AI SDK v6 documentation](/docs/ai-sdk-v6).
+</Callout>
 
 ## Installation
 
 ```bash
 # For Chrome/Edge built-in browser AI (Prompt API)
-npm i @browser-ai/core@2
+npm i @browser-ai/core
 
 # For Transformers.js (Hugging Face models)
-npm i @browser-ai/transformers-js@2
+npm i @browser-ai/transformers-js
 
 # For WebLLM (MLC models)
-npm i @browser-ai/web-llm@2
+npm i @browser-ai/web-llm
 ```
 
 ## Available Packages
@@ -40,7 +40,7 @@ Access Chrome and Edge's built-in browser AI capabilities through the experiment
 - **Structured Data**: Generate structured data
 - **Tool Calling**: Function calling with JSON format support
 
-[View Core Documentation →](/docs/ai-sdk-v6/core)
+[View Core Documentation →](/docs/ai-sdk-v7/core)
 
 ### @browser-ai/transformers-js
 
@@ -53,7 +53,7 @@ Run [Hugging Face Transformers](https://huggingface.co/models) models directly i
 - **Transcription**: Whisper models for speech-to-text
 - **Tool Calling**: Function calling support
 
-[View Transformers.js Documentation →](/docs/ai-sdk-v6/transformers-js)
+[View Transformers.js Documentation →](/docs/ai-sdk-v7/transformers-js)
 
 ### @browser-ai/web-llm
 
@@ -64,7 +64,7 @@ High-performance in-browser LLM inference using [WebLLM](https://github.com/mlc-
 - **Web Worker Support**: Efficient background processing
 - **Tool Calling**: Function calling support
 
-[View Web-LLM Documentation →](/docs/ai-sdk-v6/web-llm)
+[View Web-LLM Documentation →](/docs/ai-sdk-v7/web-llm)
 
 ## Easy Server Fallback
 

@@ -38,7 +38,7 @@ async function run(
   return { result, events, text: getText() };
 }
 
-describe("processToolCallStream — plain text", () => {
+describe("processToolCallStream - plain text", () => {
   it("emits text via emitTextDelta, no tool detection", async () => {
     const { result, text } = await run(["Hello", " world"]);
     expect(result.toolCallDetected).toBe(false);
@@ -53,7 +53,7 @@ describe("processToolCallStream — plain text", () => {
   });
 });
 
-describe("processToolCallStream — valid tool call", () => {
+describe("processToolCallStream - valid tool call", () => {
   const FENCE =
     '```tool_call\n{"name": "search", "arguments": {"q": "test"}}\n```';
 
@@ -107,7 +107,7 @@ describe("processToolCallStream — valid tool call", () => {
   });
 });
 
-describe("processToolCallStream — chunked tool call", () => {
+describe("processToolCallStream - chunked tool call", () => {
   it("assembles a tool call from multiple chunks", async () => {
     const { result } = await run([
       "```tool_call\n",
@@ -134,7 +134,7 @@ describe("processToolCallStream — chunked tool call", () => {
   });
 });
 
-describe("processToolCallStream — text around tool calls", () => {
+describe("processToolCallStream - text around tool calls", () => {
   it("emits text before the fence via emitTextDelta", async () => {
     const { text } = await run([
       'Before. ```tool_call\n{"name": "t", "arguments": {}}\n```',
@@ -151,7 +151,7 @@ describe("processToolCallStream — text around tool calls", () => {
   });
 });
 
-describe("processToolCallStream — malformed fence", () => {
+describe("processToolCallStream - malformed fence", () => {
   it("treats a fence with non-JSON content as plain text", async () => {
     const { result, text } = await run(["```tool_call\nnot json\n```"]);
     expect(result.toolCallDetected).toBe(false);
@@ -166,7 +166,7 @@ describe("processToolCallStream — malformed fence", () => {
   });
 });
 
-describe("processToolCallStream — stopEarlyOnToolCall", () => {
+describe("processToolCallStream - stopEarlyOnToolCall", () => {
   function makeTrackedChunks(strings: string[]) {
     const consumed: string[] = [];
     async function* gen() {
@@ -204,7 +204,7 @@ describe("processToolCallStream — stopEarlyOnToolCall", () => {
   });
 });
 
-describe("processToolCallStream — call:name{params} style", () => {
+describe("processToolCallStream - call:name{params} style", () => {
   const FENCE = "<|tool_call>call:randomNumber{max:6,min:1}<tool_call|>";
 
   it("detects the tool call and parses parameters", async () => {
@@ -241,7 +241,7 @@ describe("processToolCallStream — call:name{params} style", () => {
   });
 });
 
-describe("processToolCallStream — edge cases", () => {
+describe("processToolCallStream - edge cases", () => {
   it("only uses the first tool call from a multi-call fence", async () => {
     const { result } = await run([
       '```tool_call\n[{"name": "a", "arguments": {}}, {"name": "b", "arguments": {}}]\n```',

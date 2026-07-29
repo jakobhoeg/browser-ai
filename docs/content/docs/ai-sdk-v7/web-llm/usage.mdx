@@ -1,0 +1,295 @@
+---
+title: Usage
+description: Features and usage examples for @browser-ai/web-llm with AI SDK v7
+---
+
+## Basic Text Generation
+
+### Streaming Text
+
+```typescript
+import { streamText } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+
+const result = streamText({
+  model: webLLM("Qwen3-0.6B-q0f16-MLC"),
+  prompt: "Invent a new holiday and describe its traditions.",
+});
+
+for await (const textPart of result.textStream) {
+  console.log(textPart);
+}
+```
+
+### Non-streaming Text
+
+```typescript
+import { generateText } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+
+const result = await generateText({
+  model: webLLM("Qwen3-0.6B-q0f16-MLC"),
+  prompt: "Invent a new holiday and describe its traditions.",
+});
+
+console.log(result.text);
+```
+
+## Download Progress Tracking
+
+When using WebLLM models for the first time, the model needs to be downloaded. Track progress to improve UX:
+
+```typescript
+import { streamText } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+
+const model = webLLM("Qwen3-0.6B-q0f16-MLC");
+const availability = await model.availability();
+
+if (availability === "unavailable") {
+  console.log("Browser doesn't support WebLLM");
+  return;
+}
+
+if (availability === "downloadable") {
+  await model.createSessionWithProgress((progress) => {
+    console.log(`Download progress: ${Math.round(progress * 100)}%`);
+  });
+}
+
+// Model is ready
+const result = streamText({
+  model,
+  messages: [{ role: "user", content: "Hello!" }],
+});
+```
+
+## Tool Calling
+
+<Callout type="info">
+  For best tool calling results, use reasoning models like Qwen3.
+</Callout>
+
+The `webLLM` model supports tool calling with multi-step execution:
+
+```typescript
+import { streamText, tool, isStepCount } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+import { z } from "zod";
+
+const result = await streamText({
+  model: webLLM("Qwen3-0.6B-q0f16-MLC"),
+  messages: [{ role: "user", content: "What's the weather in San Francisco?" }],
+  tools: {
+    weather: tool({
+      description: "Get the weather in a location",
+      inputSchema: z.object({
+        location: z.string().describe("The location to get the weather for"),
+      }),
+      execute: async ({ location }) => ({
+        location,
+        temperature: 72 + Math.floor(Math.random() * 21) - 10,
+      }),
+    }),
+  },
+  stopWhen: isStepCount(5), // multiple steps
+});
+```
+
+It also supports [tool execution approval](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#tool-execution-approval), which in AI SDK v7 is configured with the `toolApproval` option on the call (or agent) instead of `needsApproval` on the tool.
+
+## Tool Calling with Structured Output
+
+```ts
+import { Output, ToolLoopAgent, tool } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+import { z } from "zod";
+
+const agent = new ToolLoopAgent({
+  model: webLLM("Qwen3-0.6B-q0f16-MLC"),
+  tools: {
+    weather: tool({
+      description: "Get the weather in a location",
+      inputSchema: z.object({ city: z.string() }),
+      execute: async ({ city }) => {
+        // ...
+      },
+    }),
+  },
+  output: Output.object({
+    schema: z.object({
+      summary: z.string(),
+      temperature: z.number(),
+      recommendation: z.string(),
+    }),
+  }),
+});
+
+const { output } = await agent.generate({
+  prompt: "What is the weather in San Francisco and what should I wear?",
+});
+```
+
+## Structured Output
+
+Generate structured JSON output with schema validation:
+
+### Using generateText
+
+```typescript
+import { generateText, Output } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+import { z } from "zod";
+
+const { output } = await generateText({
+  model: webLLM("Qwen3-0.6B-q0f16-MLC"),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(
+          z.object({ name: z.string(), amount: z.string() }),
+        ),
+        steps: z.array(z.string()),
+      }),
+    }),
+  }),
+  prompt: "Generate a lasagna recipe.",
+});
+```
+
+### Using streamText
+
+```typescript
+import { streamText, Output } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+import { z } from "zod";
+
+const { partialOutputStream } = streamText({
+  model: webLLM("Qwen3-0.6B-q0f16-MLC"),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(
+          z.object({ name: z.string(), amount: z.string() }),
+        ),
+        steps: z.array(z.string()),
+      }),
+    }),
+  }),
+  prompt: "Generate a lasagna recipe.",
+});
+```
+
+## Web Worker Usage
+
+For better performance, run models off the main thread:
+
+### 1. Create worker.ts
+
+```typescript
+import { WebWorkerMLCEngineHandler } from "@browser-ai/web-llm";
+
+const handler = new WebWorkerMLCEngineHandler();
+self.onmessage = (msg: MessageEvent) => {
+  handler.onmessage(msg);
+};
+```
+
+### 2. Use the worker
+
+```typescript
+import { streamText } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+
+const model = webLLM("Qwen3-0.6B-q0f16-MLC", {
+  worker: new Worker(new URL("./worker.ts", import.meta.url), {
+    type: "module",
+  }),
+});
+
+const result = streamText({
+  model,
+  messages: [{ role: "user", content: "Hello!" }],
+});
+
+for await (const chunk of result.textStream) {
+  console.log(chunk);
+}
+```
+
+## Embeddings
+
+Generate text embeddings for semantic search, RAG, and similarity matching.
+
+**Available models:** `snowflake-arctic-embed-m-q0f32-MLC-b32`, `snowflake-arctic-embed-s-q0f32-MLC-b32`, and variants. See [WebLLM config](https://github.com/mlc-ai/web-llm/blob/main/src/config.ts) for the full list.
+
+### Basic Embedding
+
+```typescript
+import { embed } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+
+const model = webLLM.embeddingModel("snowflake-arctic-embed-m-q0f32-MLC-b32");
+
+const { embedding } = await embed({
+  model,
+  value: "What is the meaning of life?",
+});
+
+console.log(embedding); // [0.123, -0.456, ...]
+```
+
+### Multiple Embeddings
+
+```typescript
+import { embedMany } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+
+const model = webLLM.embeddingModel("snowflake-arctic-embed-m-q0f32-MLC-b32");
+
+const { embeddings } = await embedMany({
+  model,
+  values: ["first document", "second document", "third document"],
+});
+```
+
+### Similarity Search
+
+```typescript
+import { embed, cosineSimilarity } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+
+const model = webLLM.embeddingModel("snowflake-arctic-embed-m-q0f32-MLC-b32");
+
+const { embedding: queryEmbedding } = await embed({
+  model,
+  value: "What is AI?",
+});
+
+const { embedding: docEmbedding } = await embed({
+  model,
+  value: "Artificial intelligence is a branch of computer science.",
+});
+
+const similarity = cosineSimilarity(queryEmbedding, docEmbedding);
+console.log(similarity); // 0.87
+```
+
+### Download Progress Tracking
+
+```typescript
+import { embed } from "ai";
+import { webLLM } from "@browser-ai/web-llm";
+
+const model = webLLM.embeddingModel("snowflake-arctic-embed-m-q0f32-MLC-b32");
+
+if ((await model.availability()) === "downloadable") {
+  await model.createSessionWithProgress((progress) => {
+    console.log(`Download: ${progress.text}`);
+  });
+}
+
+const { embedding } = await embed({ model, value: "hello" });
+```

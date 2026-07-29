@@ -1,0 +1,159 @@
+---
+title: API Reference
+description: Complete API documentation for @browser-ai/web-llm with AI SDK v7
+---
+
+## Provider Functions
+
+### `webLLM(modelId, settings?)`
+
+Creates a WebLLM model instance.
+
+**Parameters:**
+
+- `modelId`: The model identifier from the [supported list of models](https://github.com/mlc-ai/web-llm/blob/main/src/config.ts)
+- `settings` (optional): Configuration options
+  - `appConfig?: AppConfig` - Custom app configuration for WebLLM
+  - `initProgressCallback?: (progress: number) => void` - Progress callback for model initialization
+  - `engineConfig?: MLCEngineConfig` - Engine configuration options
+  - `worker?: Worker` - A web worker instance to run the model in for better performance
+
+**Returns:** `WebLLMLanguageModel`
+
+### `webLLM.embeddingModel(modelId, settings?)`
+
+Creates a WebLLM embedding model instance.
+
+**Parameters:**
+
+- `modelId`: The embedding model identifier
+- `settings` (optional): Configuration options
+  - `appConfig?: AppConfig` - Custom app configuration for WebLLM
+  - `initProgressCallback?: (progress: WebLLMProgress) => void` - Progress callback for model initialization
+  - `engineConfig?: MLCEngineConfig` - Engine configuration options
+  - `worker?: Worker` - A web worker instance to run the model in
+  - `maxEmbeddingsPerCall?: number` - Maximum texts per call (default: 100)
+
+**Returns:** `WebLLMEmbeddingModel`
+
+**Available Models:**
+
+| Model ID                                 | Size   | Batch |
+| ---------------------------------------- | ------ | ----- |
+| `snowflake-arctic-embed-m-q0f32-MLC-b32` | Medium | 32    |
+| `snowflake-arctic-embed-m-q0f32-MLC-b4`  | Medium | 4     |
+| `snowflake-arctic-embed-s-q0f32-MLC-b32` | Small  | 32    |
+| `snowflake-arctic-embed-s-q0f32-MLC-b4`  | Small  | 4     |
+
+See [WebLLM config](https://github.com/mlc-ai/web-llm/blob/main/src/config.ts) for the latest list of supported models.
+
+---
+
+## Utility Functions
+
+### `doesBrowserSupportWebLLM()`
+
+Quick check if the browser supports WebLLM. Useful for component-level decisions and feature flags.
+
+**Returns:** `boolean` - `true` if browser supports WebGPU, `false` otherwise
+
+---
+
+## Model Methods
+
+### `WebLLMLanguageModel.availability()`
+
+Checks the current availability status of the WebLLM model.
+
+**Returns:** `Promise<"unavailable" | "downloadable" | "available">`
+
+| Status           | Description                                         |
+| ---------------- | --------------------------------------------------- |
+| `"unavailable"`  | Model is not supported in the browser (no WebGPU)   |
+| `"downloadable"` | Model is supported but needs to be downloaded first |
+| `"available"`    | Model is ready to use                               |
+
+### `WebLLMLanguageModel.createSessionWithProgress(onProgress?)`
+
+Creates a language model session with optional download progress monitoring.
+
+**Parameters:**
+
+- `onProgress?: (progress: number) => void` - Optional callback that receives progress values from 0 to 1 during model download
+
+**Returns:** `Promise<WebLLMLanguageModel>` - The configured language model instance
+
+### `WebLLMLanguageModel.isModelInitialized`
+
+Property that indicates if the model is initialized and ready to use.
+
+**Returns:** `boolean`
+
+---
+
+## Worker Handler
+
+### `WebWorkerMLCEngineHandler`
+
+Re-exported from `@mlc-ai/web-llm` for Web Worker usage.
+
+```typescript
+import { WebWorkerMLCEngineHandler } from "@browser-ai/web-llm";
+
+const handler = new WebWorkerMLCEngineHandler();
+self.onmessage = (msg: MessageEvent) => handler.onmessage(msg);
+```
+
+---
+
+## Types
+
+### `WebLLMUIMessage`
+
+Extended UI message type for use with the `useChat` hook that includes custom data parts for WebLLM functionality.
+
+```typescript
+type WebLLMUIMessage = UIMessage<
+  never,
+  {
+    modelDownloadProgress: {
+      status: "downloading" | "complete" | "error";
+      progress?: number;
+      message: string;
+    };
+    notification: {
+      message: string;
+      level: "info" | "warning" | "error";
+    };
+  }
+>;
+```
+
+### `DownloadProgressCallback`
+
+The callback type for receiving model download progress. Shared across all `@browser-ai` packages.
+
+```typescript
+type DownloadProgressCallback = (progress: number) => void;
+```
+
+### `WebLLMModelId`
+
+Type alias for model identifiers.
+
+```typescript
+type WebLLMModelId = string;
+```
+
+### `WebLLMSettings`
+
+Configuration options for the WebLLM model.
+
+```typescript
+interface WebLLMSettings {
+  appConfig?: AppConfig;
+  initProgressCallback?: (progress: number) => void;
+  engineConfig?: MLCEngineConfig;
+  worker?: Worker;
+}
+```

@@ -1,0 +1,80 @@
+---
+title: Migrating to v3
+description: Upgrade the @browser-ai packages from v2 (AI SDK v6) to v3 (AI SDK v7)
+---
+
+Version 3 of the `@browser-ai` packages targets [Vercel AI SDK v7](https://ai-sdk.dev/docs/migration-guides/migration-guide-7-0). The providers themselves keep the same public surface - `browserAI()`, `transformersJS()`, `webLLM()`, their embedding/transcription models, and the download-progress helpers are unchanged. What changes is the AI SDK version you use them with.
+
+## 1. Update your dependencies
+
+```bash
+npm i ai@^7 @browser-ai/core@^3
+# and/or
+npm i @browser-ai/transformers-js@^3
+npm i @browser-ai/web-llm@^3
+```
+
+<Callout type="warn">
+  AI SDK v7 requires Node.js `>=22` and its packages are ESM-only. If you use `@ai-sdk/react`, upgrade it alongside `ai`.
+</Callout>
+
+## 2. Update your AI SDK call sites
+
+These are the AI SDK v7 changes most likely to affect code that uses `@browser-ai`:
+
+| v6                                   | v7                                                                                        |
+| ------------------------------------ | ----------------------------------------------------------------------------------------- |
+| `system: "..."`                      | `instructions: "..."`                                                                     |
+| `stepCountIs(5)`                     | `isStepCount(5)`                                                                          |
+| `result.fullStream`                  | `result.stream`                                                                           |
+| `result.toUIMessageStream(opts)`     | `toUIMessageStream({ stream: result.stream, ...opts })`                                   |
+| `result.toUIMessageStreamResponse()` | `createUIMessageStreamResponse({ stream: toUIMessageStream({ stream: result.stream }) })` |
+| `result.toTextStreamResponse()`      | `createTextStreamResponse({ stream: toTextStream({ stream: result.stream }) })`           |
+| `onFinish` / `onStepFinish`          | `onEnd` / `onStepEnd`                                                                     |
+| `needsApproval` on `tool()`          | `toolApproval: { toolName: "user-approval" }` on the call                                 |
+| `usage.cachedInputTokens`            | `usage.inputTokenDetails.cacheReadTokens`                                                 |
+| `usage.reasoningTokens`              | `usage.outputTokenDetails.reasoningTokens`                                                |
+
+### Custom transports
+
+Custom `ChatTransport` implementations are the most common place this shows up, since they call `toUIMessageStream` directly:
+
+```ts
+// v2 / AI SDK v6
+writer.merge(result.toUIMessageStream({ sendStart: false }));
+
+// v3 / AI SDK v7
+writer.merge(
+  toUIMessageStream({
+    stream: result.stream,
+    tools: this.tools,
+    sendStart: false,
+  }),
+);
+```
+
+See the per-package [useChat integration](/docs/ai-sdk-v7/core/usechat-integration) pages for full, updated transport examples.
+
+### Multi-step results
+
+In v7, top-level result fields such as `content`, `toolCalls`, `toolResults`, and `usage` cover **all** steps. If you relied on final-step-only values, read them from `result.finalStep` instead:
+
+```ts
+const { usage, finalStep } = await generateText({ model: browserAI(), prompt });
+
+usage.totalTokens; // all steps
+finalStep.usage.totalTokens; // final step only
+finalStep.finishReason;
+```
+
+### `onChunk`
+
+`onChunk` now receives every stream part, including lifecycle, boundary, finish, abort, and error parts. Always narrow on `chunk.type` before using a part:
+
+```ts
+onChunk: (event) => {
+  if (event.chunk.type === "text-delta") {
+    // ...
+  }
+},
+```

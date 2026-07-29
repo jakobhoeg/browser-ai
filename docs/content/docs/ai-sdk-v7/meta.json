@@ -1,0 +1,13 @@
+{
+  "title": "AI SDK v7",
+  "description": "Using @browser-ai with Vercel AI SDK v7",
+  "root": true,
+  "pages": [
+    "index",
+    "getting-started",
+    "migration",
+    "core",
+    "transformers-js",
+    "web-llm"
+  ]
+}

@@ -1,0 +1,176 @@
+---
+title: API Reference
+description: Complete API documentation for @browser-ai/transformers-js with AI SDK v7
+---
+
+## Provider Functions
+
+### `transformersJS(modelId, settings?)`
+
+Creates a Transformers.js language model instance.
+
+**Parameters:**
+
+- `modelId`: A Hugging Face model ID (e.g., `"HuggingFaceTB/SmolLM2-360M-Instruct"`)
+- `settings` (optional): Configuration options
+  - `device?: "auto" | "cpu" | "webgpu" | "gpu"` - Inference device (default: "auto")
+  - `dtype?: "auto" | "fp32" | "fp16" | "q8" | "q4" | "q4f16"` - Data type for model weights
+  - `isVisionModel?: boolean` - Whether this is a vision model (default: false)
+  - `worker?: Worker` - Web Worker for off-main-thread execution
+  - `initProgressCallback?: (progress: number) => void` - Progress callback
+  - `localModelPath?: string` - Path to load local models from (Node.js only)
+  - `cacheDir?: string` - Directory for caching model files (Node.js only)
+
+**Returns:** `TransformersJSLanguageModel`
+
+### `transformersJS.textEmbedding(modelId, settings?)`
+
+Creates a Transformers.js embedding model instance.
+
+**Parameters:**
+
+- `modelId`: A Hugging Face embedding model ID (e.g., `"Supabase/gte-small"`)
+- `settings` (optional): Configuration options
+  - `device?: "auto" | "cpu" | "webgpu"` - Inference device (default: "auto")
+  - `dtype?: "auto" | "fp32" | "fp16" | "q8" | "q4" | "q4f16"` - Data type
+  - `normalize?: boolean` - Normalize embeddings (default: true)
+  - `pooling?: "mean" | "cls" | "max"` - Pooling strategy (default: "mean")
+  - `maxTokens?: number` - Maximum input tokens (default: 512)
+
+**Returns:** `TransformersJSEmbeddingModel`
+
+### `transformersJS.transcription(modelId, settings?)`
+
+Creates a Transformers.js transcription model instance.
+
+**Parameters:**
+
+- `modelId`: A Hugging Face Whisper model ID (e.g., `"Xenova/whisper-base"`)
+- `settings` (optional): Configuration options
+  - `device?: "auto" | "cpu" | "webgpu"` - Inference device
+  - `dtype?: "auto" | "fp32" | "fp16" | "q8" | "q4"` - Data type
+  - `maxNewTokens?: number` - Maximum tokens to generate (default: 448)
+  - `language?: string` - Language hint for accuracy
+  - `returnTimestamps?: boolean` - Return segment timestamps (default: false)
+  - `worker?: Worker` - Web Worker for off-main-thread execution
+
+**Returns:** `TransformersJSTranscriptionModel`
+
+---
+
+## Utility Functions
+
+### `doesBrowserSupportTransformersJS()`
+
+Quick check if the browser supports Transformers.js with optimal performance.
+
+**Returns:** `boolean` - `true` if browser has WebGPU or WebAssembly support
+
+---
+
+## Model Methods
+
+### `TransformersJSLanguageModel.availability()`
+
+Checks the current availability status of the model.
+
+**Returns:** `Promise<"unavailable" | "downloadable" | "available">`
+
+| Status           | Description                                         |
+| ---------------- | --------------------------------------------------- |
+| `"unavailable"`  | Model is not supported in the environment           |
+| `"downloadable"` | Model is supported but needs to be downloaded first |
+| `"available"`    | Model is ready to use                               |
+
+### `TransformersJSLanguageModel.createSessionWithProgress(onProgress?)`
+
+Creates a language model session with optional download progress monitoring.
+
+**Parameters:**
+
+- `onProgress?: (progress: number) => void` - Callback receiving progress values from 0 to 1
+
+**Returns:** `Promise<TransformersJSLanguageModel>`
+
+### `TransformersJSEmbeddingModel.availability()`
+
+Checks current availability status for the embedding model.
+
+**Returns:** `Promise<"unavailable" | "downloadable" | "available">`
+
+### `TransformersJSEmbeddingModel.createSessionWithProgress(onProgress?)`
+
+Creates/initializes an embedding model session with optional progress monitoring.
+
+**Parameters:**
+
+- `onProgress?: (progress: number) => void`
+
+**Returns:** `Promise<TransformersJSEmbeddingModel>`
+
+### `TransformersJSTranscriptionModel.availability()`
+
+Checks current availability status for the transcription model.
+
+**Returns:** `Promise<"unavailable" | "downloadable" | "available">`
+
+### `TransformersJSTranscriptionModel.createSessionWithProgress(onProgress?)`
+
+Creates/initializes a transcription model session with optional progress monitoring.
+
+**Parameters:**
+
+- `onProgress?: (progress: number) => void`
+
+**Returns:** `Promise<TransformersJSTranscriptionModel>`
+
+---
+
+## Worker Handlers
+
+### `TransformersJSWorkerHandler`
+
+Utility handler for Web Worker usage with language models.
+
+```typescript
+import { TransformersJSWorkerHandler } from "@browser-ai/transformers-js";
+
+const handler = new TransformersJSWorkerHandler();
+self.onmessage = (msg: MessageEvent) => handler.onmessage(msg);
+```
+
+### `TransformersJSTranscriptionWorkerHandler`
+
+Utility handler for Web Worker usage with transcription models.
+
+```typescript
+import { TransformersJSTranscriptionWorkerHandler } from "@browser-ai/transformers-js";
+
+const handler = new TransformersJSTranscriptionWorkerHandler();
+self.onmessage = (msg: MessageEvent) => handler.onmessage(msg);
+```
+
+---
+
+## Types
+
+### `TransformersUIMessage`
+
+Extended UI message type for use with the `useChat` hook that includes custom data parts for Transformers.js functionality.
+
+```typescript
+type TransformersUIMessage = UIMessage<
+  never,
+  {
+    modelDownloadProgress: {
+      status: "downloading" | "complete" | "error";
+      progress?: number;
+      message: string;
+    };
+    notification: {
+      message: string;
+      level: "info" | "warning" | "error";
+    };
+  }
+>;
+```

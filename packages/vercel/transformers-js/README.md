@@ -26,7 +26,7 @@ The `@browser-ai/transformers-js` package is the AI SDK provider for Transformer
 
 ## Documentation
 
-For a complete documentation including examples, refer to [this](https://www.browser-ai.dev/docs/ai-sdk-v6/transformers-js) site.
+For a complete documentation including examples, refer to [this](https://www.browser-ai.dev/docs/ai-sdk-v7/transformers-js) site.
 
 ## Author
 

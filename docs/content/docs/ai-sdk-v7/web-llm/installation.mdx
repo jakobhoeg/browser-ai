@@ -1,0 +1,38 @@
+---
+title: Installation
+description: Setup @browser-ai/web-llm for AI SDK v7
+---
+
+## Package Installation
+
+```bash
+npm i @browser-ai/web-llm
+```
+
+## Version Compatibility
+
+| @browser-ai/web-llm | AI SDK | Notes                        |
+| ------------------- | ------ | ---------------------------- |
+| v3.0.0 and above    | v7.x   | Current stable for AI SDK v7 |
+| v2.x                | v6.x   | Use for AI SDK v6            |
+| v1.0.0 and below    | v5.x   | Use for AI SDK v5            |
+
+<Callout type="info">
+  For AI SDK v6, please refer to the [v6
+  documentation](/docs/ai-sdk-v6/web-llm/installation), and for AI SDK v5 the
+  [v5 documentation](/docs/ai-sdk-v5/web-llm/installation).
+</Callout>
+
+## Verifying Installation
+
+After installation, you can verify browser support:
+
+```typescript
+import { doesBrowserSupportWebLLM } from "@browser-ai/web-llm";
+
+if (doesBrowserSupportWebLLM()) {
+  console.log("Browser supports WebLLM!");
+} else {
+  console.log("WebLLM not available, use server fallback");
+}
+```

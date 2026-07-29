@@ -1,0 +1,111 @@
+---
+title: API Reference
+description: Complete API documentation for @browser-ai/core with AI SDK v7
+---
+
+## Provider Functions
+
+### `browserAI(modelId?, settings?)`
+
+Creates a browser AI model instance for chat.
+
+**Parameters:**
+
+- `modelId` (optional): The model identifier, defaults to `'text'`
+- `settings` (optional): Configuration options
+  - `temperature?: number` - Controls randomness (0-1)
+  - `topK?: number` - Limits vocabulary selection
+  - `onContextOverflow?: (event: Event) => void` - Callback for when the model context window is exceeded
+
+**Returns:** `BrowserAIChatLanguageModel`
+
+### `browserAI.textEmbedding(modelId, settings?)`
+
+Creates an embedding model instance.
+
+**Parameters:**
+
+- `modelId`: Must be `'embedding'`
+- `settings` (optional): Configuration options
+  - `wasmLoaderPath?: string` - Path to WASM loader (default: CDN hosted)
+  - `wasmBinaryPath?: string` - Path to WASM binary (default: CDN hosted)
+  - `modelAssetPath?: string` - Path to model asset file (default: CDN hosted)
+  - `l2Normalize?: boolean` - Normalize with L2 norm (default: false)
+  - `quantize?: boolean` - Quantize embeddings to bytes (default: false)
+  - `delegate?: 'CPU' | 'GPU'` - Backend for inference
+
+**Returns:** `BrowserAIEmbeddingModel`
+
+---
+
+## Utility Functions
+
+### `doesBrowserSupportBrowserAI()`
+
+Quick check if the browser supports the browser AI API. Useful for component-level decisions and feature flags.
+
+**Returns:** `boolean` - `true` if browser supports the Prompt API, `false` otherwise
+
+---
+
+## Model Methods
+
+### `BrowserAIChatLanguageModel.availability()`
+
+Checks the current availability status of the browser AI model.
+
+**Returns:** `Promise<"unavailable" | "downloadable" | "downloading" | "available">`
+
+| Status           | Description                                         |
+| ---------------- | --------------------------------------------------- |
+| `"unavailable"`  | Model is not supported in the browser               |
+| `"downloadable"` | Model is supported but needs to be downloaded first |
+| `"downloading"`  | Model is currently being downloaded                 |
+| `"available"`    | Model is ready to use                               |
+
+### `BrowserAIChatLanguageModel.createSessionWithProgress(onProgress?)`
+
+Creates a language model session with optional download progress monitoring.
+
+**Parameters:**
+
+- `onDownloadProgress?: (progress: number) => void` - Optional callback that receives progress values from 0 to 1 during model download
+
+**Returns:** `Promise<BrowserAIChatLanguageModel>` - The configured language model instance
+
+### `BrowserAIChatLanguageModel.getContextUsage()`
+
+Gets the current context usage (tokens consumed) of the current session. If the session is not available returns undefined.
+
+**Returns:** `number | undefined`
+
+### `BrowserAIChatLanguageModel.getContextWindow()`
+
+Gets the context window size (token limit) of the current session. If the session is not available returns undefined.
+
+**Returns:** `number | undefined`
+
+---
+
+## Types
+
+### `BrowserAIUIMessage`
+
+Extended UI message type for use with the `useChat` hook that includes custom data parts for browser AI functionality.
+
+```typescript
+type BrowserAIUIMessage = UIMessage<
+  never,
+  {
+    modelDownloadProgress: {
+      status: "downloading" | "complete" | "error";
+      progress?: number;
+      message: string;
+    };
+    notification: {
+      message: string;
+      level: "info" | "warning" | "error";
+    };
+  }
+>;
+```

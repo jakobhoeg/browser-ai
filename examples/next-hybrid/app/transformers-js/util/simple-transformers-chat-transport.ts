@@ -4,6 +4,7 @@ import {
   streamText,
   convertToModelMessages,
   ChatRequestOptions,
+  toUIMessageStream,
 } from "ai";
 import {
   TransformersJSLanguageModel,
@@ -38,7 +39,7 @@ export class SimpleTransformersChatTransport implements ChatTransport<Transforme
       messages: prompt,
       abortSignal: abortSignal,
     });
-    return result.toUIMessageStream();
+    return toUIMessageStream({ stream: result.stream });
   }
 
   async reconnectToStream(

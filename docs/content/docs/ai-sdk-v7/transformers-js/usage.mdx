@@ -1,0 +1,238 @@
+---
+title: Usage
+description: Features and usage examples for @browser-ai/transformers-js with AI SDK v7
+---
+
+## Basic Text Generation
+
+### Streaming Text
+
+```typescript
+import { streamText } from "ai";
+import { transformersJS } from "@browser-ai/transformers-js";
+
+const result = streamText({
+  model: transformersJS("HuggingFaceTB/SmolLM2-360M-Instruct"),
+  prompt: "Invent a new holiday and describe its traditions.",
+});
+
+for await (const textPart of result.textStream) {
+  console.log(textPart);
+}
+```
+
+### Non-streaming Text
+
+```typescript
+import { generateText } from "ai";
+import { transformersJS } from "@browser-ai/transformers-js";
+
+const result = await generateText({
+  model: transformersJS("HuggingFaceTB/SmolLM2-360M-Instruct"),
+  prompt: "Invent a new holiday and describe its traditions.",
+});
+
+console.log(result.text);
+```
+
+## Text Embeddings
+
+Generate text embeddings using Transformers.js embedding models:
+
+```typescript
+import { embed, embedMany } from "ai";
+import { transformersJS } from "@browser-ai/transformers-js";
+
+// Single embedding
+const { embedding, usage } = await embed({
+  model: transformersJS.embedding("Supabase/gte-small"),
+  value: "Hello, world!",
+});
+
+// Multiple embeddings
+const { embedding, usage } = await embedMany({
+  model: transformersJS.embedding("Supabase/gte-small"),
+  values: ["Hello", "World", "AI"],
+});
+```
+
+## Download Progress Tracking
+
+When using models for the first time, they need to be downloaded. Track progress to improve UX:
+
+```typescript
+import { streamText } from "ai";
+import { transformersJS } from "@browser-ai/transformers-js";
+
+const model = transformersJS("HuggingFaceTB/SmolLM2-360M-Instruct");
+const availability = await model.availability();
+
+if (availability === "unavailable") {
+  console.log("Browser doesn't support Transformers.js");
+  return;
+}
+
+if (availability === "downloadable") {
+  await model.createSessionWithProgress((progress) => {
+    console.log(`Download progress: ${Math.round(progress * 100)}%`);
+  });
+}
+
+// Model is ready
+const result = streamText({
+  model,
+  prompt: "Invent a new holiday and describe its traditions.",
+});
+```
+
+## Vision Models
+
+Process images with vision-capable models:
+
+```typescript
+import { streamText } from "ai";
+import { transformersJS } from "@browser-ai/transformers-js";
+
+const result = streamText({
+  model: transformersJS("HuggingFaceTB/SmolVLM-256M-Instruct", {
+    isVisionModel: true,
+    device: "webgpu",
+  }),
+  messages: [
+    {
+      role: "user",
+      content: [
+        { type: "text", text: "Describe this image" },
+        { type: "file", mediaType: "image/png", data: base64ImageData },
+      ],
+    },
+  ],
+});
+
+for await (const chunk of result.textStream) {
+  console.log(chunk);
+}
+```
+
+## Audio Transcription
+
+Transcribe audio using Whisper models:
+
+```typescript
+import { transcribe } from "ai";
+import { transformersJS } from "@browser-ai/transformers-js";
+
+const transcript = await transcribe({
+  model: transformersJS.transcription("Xenova/whisper-base"),
+  audio: audioFile,
+});
+
+console.log(transcript.text);
+console.log(transcript.segments); // Array of segments with timestamps
+```
+
+## Tool Calling
+
+<Callout type="info">
+  For best tool calling results, use reasoning models like Qwen3.
+</Callout>
+
+The `transformersJS` model supports tool calling with multi-step execution:
+
+```typescript
+import { streamText, tool, isStepCount } from "ai";
+import { transformersJS } from "@browser-ai/transformers-js";
+import { z } from "zod";
+
+const result = await streamText({
+  model: transformersJS("onnx-community/Qwen3-0.6B-ONNX"),
+  messages: [{ role: "user", content: "What's the weather in San Francisco?" }],
+  tools: {
+    weather: tool({
+      description: "Get the weather in a location",
+      inputSchema: z.object({
+        location: z.string().describe("The location to get the weather for"),
+      }),
+      execute: async ({ location }) => ({
+        location,
+        temperature: 72 + Math.floor(Math.random() * 21) - 10,
+      }),
+    }),
+  },
+  stopWhen: isStepCount(5), // multiple steps
+});
+```
+
+It also supports [tool execution approval](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#tool-execution-approval), which in AI SDK v7 is configured with the `toolApproval` option on the call (or agent) instead of `needsApproval` on the tool.
+
+## Tool Calling with Structured Output
+
+Not yet implemented.
+
+## Structured Output
+
+Not yet implemented.
+
+## Web Worker Usage
+
+For better performance, run models off the main thread:
+
+### 1. Create worker.ts
+
+```typescript
+import { TransformersJSWorkerHandler } from "@browser-ai/transformers-js";
+
+const handler = new TransformersJSWorkerHandler();
+self.onmessage = (msg: MessageEvent) => {
+  handler.onmessage(msg);
+};
+```
+
+### 2. Use the worker
+
+```typescript
+import { streamText } from "ai";
+import { transformersJS } from "@browser-ai/transformers-js";
+
+const model = transformersJS("HuggingFaceTB/SmolLM2-360M-Instruct", {
+  worker: new Worker(new URL("./worker.ts", import.meta.url), {
+    type: "module",
+  }),
+  device: "webgpu",
+});
+
+const result = streamText({
+  model,
+  messages: [{ role: "user", content: "Hello!" }],
+});
+```
+
+## Server-side Inference
+
+Transformers.js allows running the in-browser models on the server too:
+
+```typescript
+// In a Next.js API route (app/api/chat/route.ts)
+import {
+  streamText,
+  toUIMessageStream,
+  createUIMessageStreamResponse,
+} from "ai";
+import { transformersJS } from "@browser-ai/transformers-js";
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+
+  const model = transformersJS("HuggingFaceTB/SmolLM2-135M-Instruct");
+
+  const result = streamText({
+    model,
+    messages,
+    temperature: 0.7,
+  });
+
+  return createUIMessageStreamResponse({
+    stream: toUIMessageStream({ stream: result.stream }),
+  });
+}
+```
