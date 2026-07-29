@@ -3,6 +3,26 @@ import Image from "next/image";
 import Link from "next/link";
 import { getTweet } from "react-tweet/api";
 import { enrichTweet } from "react-tweet";
+import type { Tweet } from "react-tweet/api";
+
+type TweetEntities = Tweet["entities"];
+
+function withEntities<T extends { entities: TweetEntities }>(tweet: T): T {
+  const entities = tweet.entities as Partial<TweetEntities>;
+  return {
+    ...tweet,
+    entities: {
+      ...entities,
+      hashtags: entities.hashtags ?? [],
+      user_mentions: entities.user_mentions ?? [],
+      urls: entities.urls ?? [],
+      symbols: entities.symbols ?? [],
+    },
+    ...(tweet && "quoted_tweet" in tweet && tweet.quoted_tweet
+      ? { quoted_tweet: withEntities(tweet.quoted_tweet as Tweet) }
+      : {}),
+  };
+}
 
 async function TweetContent({ id }: { id: string }) {
   let tweet;
@@ -15,7 +35,7 @@ async function TweetContent({ id }: { id: string }) {
 
   let enriched;
   try {
-    enriched = enrichTweet(tweet);
+    enriched = enrichTweet(withEntities(tweet));
   } catch {
     return null;
   }
