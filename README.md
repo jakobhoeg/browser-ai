@@ -94,7 +94,16 @@ for await (const chunk of result.textStream) {
 }
 ```
 
-## Example applications
+## Resources
+
+### Articles & guides
+
+- Chrome for Developers: [Use the Prompt API with the Vercel AI SDK](https://developer.chrome.com/blog/prompt-api-with-vercel-ai?hl=en)
+- Chrome for Developers: [Use the Vercel AI SDK UI and AI Elements with the Prompt API](https://developer.chrome.com/blog/prompt-ui-ai-elements-with-vercel-ai?hl=en)
+- Hugging Face: [Building a Next.js application with the AI SDK](https://huggingface.co/docs/transformers.js/tutorials/next-ai-sdk)
+- Hugging Face: [Transformers.js × Vercel AI SDK integration](https://huggingface.co/docs/transformers.js/integrations/vercel-ai-sdk)
+
+### Example applications
 
 - Huggingface Transformers.js AI SDK v5: [next-vercel-ai-sdk-v5-transformers-js-example](https://github.com/huggingface/transformers.js-examples/tree/main/next-vercel-ai-sdk-v5)
 - Huggingface Transformers.js AI SDK v6: [next-vercel-ai-sdk-v6-transformers-js-example](https://github.com/huggingface/transformers.js-examples/blob/main/next-vercel-ai-sdk-v6-tool-calling)
