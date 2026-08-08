@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { MoveUpRight } from "lucide-react";
 import Link from "next/link";
 import { VercelOSSLogo } from "@/components/logos/vercel-oss-logo";
+import { Badge } from "@/components/ui/badge";
 
 const tweetIds = [
   "1995030252259774593",
@@ -24,7 +25,7 @@ const tweetIds = [
 const sponsors = [
   {
     name: "Chrome for Developers",
-    href: "https://developer.chrome.com/",
+    href: "https://developer.chrome.com/blog/prompt-api-with-vercel-ai?hl=en",
     logo: ChromeLogo,
   },
   {
@@ -43,8 +44,17 @@ export default function HomePage() {
       {/* Main content */}
       <main className="grid gap-24 pb-24 text-gray-950 sm:gap-40 md:pb-40 dark:text-white">
         <div>
-          <div className="relative flex h-16 items-end px-2 font-mono tracking-tighter text-xs/6 whitespace-pre text-black/40 max-sm:px-4 sm:h-24 dark:text-white/40 after:absolute after:bottom-0 after:h-px after:w-[200vw] after:bg-gray-950/5 dark:after:bg-white/10 after:-left-[100vw]">
-            Model providers for Vercel AI SDK v5 & v6
+          <div className="relative flex h-16 items-end pb-2 px-2 font-mono tracking-tighter text-xs/6 whitespace-pre text-black/40 max-sm:px-4 sm:h-24 dark:text-white/40 after:absolute after:bottom-0 after:h-px after:w-[200vw] after:bg-gray-950/5 dark:after:bg-white/10 after:-left-[100vw]">
+            <Badge asChild className="gap-1 rounded-none" variant="outline">
+              <Link
+                href="https://developer.chrome.com/blog/prompt-api-with-vercel-ai?hl=en"
+                target="_blank"
+                rel="noopener"
+              >
+                Read the Chrome for Developers post
+                <MoveUpRight className="size-3" />
+              </Link>
+            </Badge>
           </div>
 
           <div className="relative before:absolute before:top-0 before:h-px before:w-[200vw] before:-left-[100vw] after:absolute after:bottom-0 after:h-px after:w-[200vw] after:bg-gray-950/5 dark:after:bg-white/10 after:-left-[100vw]">
