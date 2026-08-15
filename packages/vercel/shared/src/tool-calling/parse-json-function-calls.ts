@@ -58,6 +58,34 @@ function parseCallColonParams(params: string): Record<string, unknown> {
 }
 
 /**
+ * Decides whether the quote at `index` actually terminates the string.
+ *
+ * Models rarely escape apostrophes, so `'What's the budget?'` is common. A
+ * single quote therefore only closes when the next meaningful character is
+ * structural; otherwise it is a literal apostrophe. Double quotes are
+ * unambiguous and always close.
+ */
+function closesQuote(text: string, index: number, quote: string): boolean {
+  if (quote !== "'") return true;
+
+  for (let i = index + 1; i < text.length; i++) {
+    const char = text[i];
+    if (char === " " || char === "\t" || char === "\n" || char === "\r") {
+      continue;
+    }
+    return (
+      char === "," ||
+      char === ":" ||
+      char === "}" ||
+      char === "]" ||
+      char === ")"
+    );
+  }
+
+  return true; // end of input
+}
+
+/**
  * Splits an argument list on commas that are not inside quotes or brackets,
  * so values like `query="Doe, Jane"` survive intact.
  */
@@ -75,7 +103,7 @@ function splitArguments(args: string): string[] {
         current += char + args[++i];
         continue;
       }
-      if (char === quote) quote = null;
+      if (char === quote && closesQuote(args, i, quote)) quote = null;
       current += char;
       continue;
     }
@@ -102,42 +130,184 @@ function splitArguments(args: string): string[] {
 }
 
 /**
+ * Rewrites a Python literal into JSON: single-quoted strings become
+ * double-quoted, and `True`/`False`/`None` become their JSON equivalents.
+ * Tokenizes rather than string-replacing so quotes and keywords appearing
+ * inside string values are left alone.
+ */
+function pythonLiteralToJson(input: string): string {
+  let out = "";
+
+  for (let i = 0; i < input.length; i++) {
+    const char = input[i];
+
+    if (char === "'" || char === '"') {
+      const quote = char;
+      let value = "";
+      i++;
+
+      for (
+        ;
+        i < input.length &&
+        !(input[i] === quote && closesQuote(input, i, quote));
+        i++
+      ) {
+        if (input[i] === "\\" && i + 1 < input.length) {
+          // Unescape into the raw value; JSON.stringify re-escapes below
+          const next = input[++i];
+          value +=
+            next === "n"
+              ? "\n"
+              : next === "t"
+                ? "\t"
+                : next === "r"
+                  ? "\r"
+                  : next;
+          continue;
+        }
+        value += input[i];
+      }
+
+      out += JSON.stringify(value);
+      continue;
+    }
+
+    if (/[A-Za-z]/.test(char)) {
+      let word = "";
+      while (i < input.length && /[A-Za-z]/.test(input[i])) word += input[i++];
+      i--;
+
+      out +=
+        word === "True"
+          ? "true"
+          : word === "False"
+            ? "false"
+            : word === "None"
+              ? "null"
+              : word;
+      continue;
+    }
+
+    out += char;
+  }
+
+  return out;
+}
+
+/**
+ * Parses a single Python-style argument value into its JavaScript equivalent.
+ * Handles JSON, Python literals (lists, dicts, `True`/`None`), numbers, and
+ * quoted strings; anything unrecognized is returned as a trimmed string.
+ */
+function parsePythonValue(raw: string): unknown {
+  const value = raw.trim();
+  if (!value) return "";
+
+  const isQuoted =
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"));
+
+  // Structured or scalar literals — try JSON first, then Python syntax
+  if (!isQuoted) {
+    try {
+      return JSON.parse(value);
+    } catch {
+      // not JSON, fall through
+    }
+
+    try {
+      return JSON.parse(pythonLiteralToJson(value));
+    } catch {
+      return value;
+    }
+  }
+
+  // Quoted string: reuse the same tokenizer so escapes are handled
+  try {
+    return JSON.parse(pythonLiteralToJson(value));
+  } catch {
+    return value.substring(1, value.length - 1);
+  }
+}
+
+/**
+ * Finds `name(...)` calls in text, tracking quotes and nesting so arguments
+ * containing parentheses (e.g. `q="budget (roughly)?"`) are not truncated.
+ */
+function scanPythonCalls(text: string): Array<{ name: string; args: string }> {
+  const calls: Array<{ name: string; args: string }> = [];
+  const nameRegex = /(\w+)\s*\(/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = nameRegex.exec(text)) !== null) {
+    const start = match.index + match[0].length;
+    let depth = 1;
+    let quote: string | null = null;
+    let i = start;
+
+    for (; i < text.length && depth > 0; i++) {
+      const char = text[i];
+
+      if (quote) {
+        if (char === "\\") i++;
+        else if (char === quote && closesQuote(text, i, quote)) quote = null;
+        continue;
+      }
+
+      if (char === '"' || char === "'") quote = char;
+      else if (char === "(") depth++;
+      else if (char === ")") depth--;
+    }
+
+    // Unbalanced — no closing paren, so this is not a complete call
+    if (depth !== 0) continue;
+
+    calls.push({ name: match[1], args: text.slice(start, i - 1) });
+    nameRegex.lastIndex = i;
+  }
+
+  return calls;
+}
+
+/**
  * Parses Python-style calls such as `func(arg="value")`. Accepts several calls
  * separated by commas, with or without the surrounding brackets.
  */
 function parsePythonStyleCalls(text: string): ParsedToolCall[] {
   const calls: ParsedToolCall[] = [];
-  const callRegex = /(\w+)\(([^)]*)\)/g;
 
-  for (const match of text.matchAll(callRegex)) {
-    const [, funcName, rawArgs] = match;
+  for (const { name, args: rawArgs } of scanPythonCalls(text)) {
     const args: Record<string, unknown> = {};
 
-    for (const pair of splitArguments(rawArgs ?? "")) {
+    for (const pair of splitArguments(rawArgs)) {
       const equalIndex = pair.indexOf("=");
       if (equalIndex <= 0) continue;
 
       const key = pair.substring(0, equalIndex).trim();
-      let value = pair.substring(equalIndex + 1).trim();
-      if (
-        (value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))
-      ) {
-        value = value.substring(1, value.length - 1);
-      }
-      args[key] = value;
+      args[key] = parsePythonValue(pair.substring(equalIndex + 1));
     }
 
     calls.push({
       type: "tool-call",
       toolCallId: generateToolCallId(),
-      toolName: funcName,
+      toolName: name,
       args,
     });
   }
 
   return calls;
 }
+
+/**
+ * A quoted string, either single or double, with escapes. An unescaped `'` is
+ * treated as content unless followed by a structural character, mirroring
+ * `closesQuote` so detection agrees with tokenization.
+ */
+const QUOTED = `"(?:[^"\\\\]|\\\\.)*"|'(?:[^'\\\\]|\\\\.|'(?!\\s*(?:[,:}\\])]|$)))*'`;
+/** Argument list body: bare chars, quoted strings, or one level of nesting */
+const CALL_ARGS = `(?:[^()"']|${QUOTED}|\\((?:[^()"']|${QUOTED})*\\))*`;
+/** A single Python-style call: `name(args)` */
+const PY_CALL = `\\w+\\(${CALL_ARGS}\\)`;
 
 function buildRegex(options: ParseJsonFunctionCallsOptions): RegExp {
   const patterns: string[] = [];
@@ -151,7 +321,7 @@ function buildRegex(options: ParseJsonFunctionCallsOptions): RegExp {
 
   if (options.supportPythonStyle) {
     // One or more `func(args)` calls inside brackets: [f(a="b"), g(c="d")]
-    patterns.push("\\[\\s*\\w+\\([^)]*\\)(?:\\s*,\\s*\\w+\\([^)]*\\))*\\s*\\]");
+    patterns.push(`\\[\\s*${PY_CALL}(?:\\s*,\\s*${PY_CALL})*\\s*\\]`);
   }
 
   if (options.supportCallColonStyle) {
