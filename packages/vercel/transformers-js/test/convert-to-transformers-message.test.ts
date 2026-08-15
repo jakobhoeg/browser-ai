@@ -123,8 +123,29 @@ describe("convertToTransformersMessages", () => {
       type: "function",
       function: {
         name: "calculate",
-        arguments: '{"x":5,"y":10}',
+        arguments: { x: 5, y: 10 },
       },
+    });
+  });
+
+  it("parses JSON-string tool-call input into a mapping", () => {
+    const prompt: LanguageModelV4Prompt = [
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "call_str",
+            toolName: "calculate",
+            input: '{"x":5,"y":10}',
+          } as any,
+        ],
+      },
+    ];
+    const result = convertToTransformersMessages(prompt);
+    expect(result[0].tool_calls![0].function.arguments).toEqual({
+      x: 5,
+      y: 10,
     });
   });
 

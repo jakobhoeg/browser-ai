@@ -12,6 +12,8 @@ export interface ParseJsonFunctionCallsOptions {
   supportParametersField?: boolean;
   /** Support call:name{key:value} style delimited with <|tool_call>...<tool_call|> */
   supportCallColonStyle?: boolean;
+  /** Support <|tool_call_start|>...<|tool_call_end|> delimiters (LFM2 / LFM2.5) */
+  supportToolCallStartEnd?: boolean;
 }
 
 const DEFAULT_OPTIONS: ParseJsonFunctionCallsOptions = {
@@ -19,6 +21,7 @@ const DEFAULT_OPTIONS: ParseJsonFunctionCallsOptions = {
   supportPythonStyle: true,
   supportParametersField: true,
   supportCallColonStyle: true,
+  supportToolCallStartEnd: true,
 };
 
 function generateToolCallId(): string {
@@ -54,6 +57,88 @@ function parseCallColonParams(params: string): Record<string, unknown> {
   return args;
 }
 
+/**
+ * Splits an argument list on commas that are not inside quotes or brackets,
+ * so values like `query="Doe, Jane"` survive intact.
+ */
+function splitArguments(args: string): string[] {
+  const parts: string[] = [];
+  let current = "";
+  let quote: string | null = null;
+  let depth = 0;
+
+  for (let i = 0; i < args.length; i++) {
+    const char = args[i];
+
+    if (quote) {
+      if (char === "\\" && i + 1 < args.length) {
+        current += char + args[++i];
+        continue;
+      }
+      if (char === quote) quote = null;
+      current += char;
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      current += char;
+    } else if (char === "[" || char === "{" || char === "(") {
+      depth++;
+      current += char;
+    } else if (char === "]" || char === "}" || char === ")") {
+      depth--;
+      current += char;
+    } else if (char === "," && depth === 0) {
+      parts.push(current);
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  if (current.trim()) parts.push(current);
+  return parts.map((part) => part.trim()).filter(Boolean);
+}
+
+/**
+ * Parses Python-style calls such as `func(arg="value")`. Accepts several calls
+ * separated by commas, with or without the surrounding brackets.
+ */
+function parsePythonStyleCalls(text: string): ParsedToolCall[] {
+  const calls: ParsedToolCall[] = [];
+  const callRegex = /(\w+)\(([^)]*)\)/g;
+
+  for (const match of text.matchAll(callRegex)) {
+    const [, funcName, rawArgs] = match;
+    const args: Record<string, unknown> = {};
+
+    for (const pair of splitArguments(rawArgs ?? "")) {
+      const equalIndex = pair.indexOf("=");
+      if (equalIndex <= 0) continue;
+
+      const key = pair.substring(0, equalIndex).trim();
+      let value = pair.substring(equalIndex + 1).trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.substring(1, value.length - 1);
+      }
+      args[key] = value;
+    }
+
+    calls.push({
+      type: "tool-call",
+      toolCallId: generateToolCallId(),
+      toolName: funcName,
+      args,
+    });
+  }
+
+  return calls;
+}
+
 function buildRegex(options: ParseJsonFunctionCallsOptions): RegExp {
   const patterns: string[] = [];
 
@@ -65,11 +150,20 @@ function buildRegex(options: ParseJsonFunctionCallsOptions): RegExp {
   }
 
   if (options.supportPythonStyle) {
-    patterns.push("\\[(\\w+)\\(([^)]*)\\)\\]");
+    // One or more `func(args)` calls inside brackets: [f(a="b"), g(c="d")]
+    patterns.push(
+      "\\[\\s*\\w+\\([^)]*\\)(?:\\s*,\\s*\\w+\\([^)]*\\))*\\s*\\]",
+    );
   }
 
   if (options.supportCallColonStyle) {
     patterns.push("<\\|tool_call>\\s*([\\s\\S]*?)\\s*<tool_call\\|>");
+  }
+
+  if (options.supportToolCallStartEnd) {
+    patterns.push(
+      "<\\|tool_call_start\\|>\\s*([\\s\\S]*?)\\s*<\\|tool_call_end\\|>",
+    );
   }
 
   return new RegExp(patterns.join("|"), "gi");
@@ -112,37 +206,11 @@ export function parseJsonFunctionCalls(
     textContent = textContent.replace(fullMatch, "");
 
     try {
-      // Check for Python-style match: [functionName(args)]
-      if (mergedOptions.supportPythonStyle && match[0].startsWith("[")) {
-        const pythonMatch = /\[(\w+)\(([^)]*)\)\]/.exec(match[0]);
-        if (pythonMatch) {
-          const [, funcName, pythonArgs] = pythonMatch;
-          const args: Record<string, unknown> = {};
-
-          if (pythonArgs && pythonArgs.trim()) {
-            const argPairs = pythonArgs.split(",").map((s) => s.trim());
-            for (const pair of argPairs) {
-              const equalIndex = pair.indexOf("=");
-              if (equalIndex > 0) {
-                const key = pair.substring(0, equalIndex).trim();
-                let value = pair.substring(equalIndex + 1).trim();
-                if (
-                  (value.startsWith('"') && value.endsWith('"')) ||
-                  (value.startsWith("'") && value.endsWith("'"))
-                ) {
-                  value = value.substring(1, value.length - 1);
-                }
-                args[key] = value;
-              }
-            }
-          }
-
-          toolCalls.push({
-            type: "tool-call",
-            toolCallId: generateToolCallId(),
-            toolName: funcName,
-            args: args,
-          });
+      // Check for Python-style match: [functionName(args), ...]
+      if (mergedOptions.supportPythonStyle && fullMatch.startsWith("[")) {
+        const pythonCalls = parsePythonStyleCalls(fullMatch);
+        if (pythonCalls.length > 0) {
+          toolCalls.push(...pythonCalls);
           continue;
         }
       }
@@ -167,6 +235,16 @@ export function parseJsonFunctionCalls(
       const trimmed = innerContent.trim();
 
       if (!trimmed) continue;
+
+      // Delimited blocks may wrap Python-style calls rather than JSON
+      // (LFM2/LFM2.5 emit `<|tool_call_start|>[f(a="b")]<|tool_call_end|>`)
+      if (mergedOptions.supportPythonStyle && /^\[?\s*\w+\(/.test(trimmed)) {
+        const pythonCalls = parsePythonStyleCalls(trimmed);
+        if (pythonCalls.length > 0) {
+          toolCalls.push(...pythonCalls);
+          continue;
+        }
+      }
 
       // Try parsing as a single JSON value first (object or array)
       try {

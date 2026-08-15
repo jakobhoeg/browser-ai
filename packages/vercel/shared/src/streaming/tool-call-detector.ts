@@ -72,6 +72,12 @@ export const EXTENDED_FENCE_PATTERNS: FencePattern[] = [
     end: "<tool_call|>",
     reconstructStart: "<|tool_call>",
   },
+  {
+    // LFM2 / LFM2.5
+    start: "<|tool_call_start|>",
+    end: "<|tool_call_end|>",
+    reconstructStart: "<|tool_call_start|>",
+  },
 ];
 
 /**

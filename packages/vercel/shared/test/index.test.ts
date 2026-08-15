@@ -121,6 +121,41 @@ describe("@browser-ai/shared exports", () => {
       expect(result.toolCalls[0].args).toEqual({ query: "hello" });
     });
 
+    it("should parse Python-style arguments containing commas", () => {
+      const result = parseJsonFunctionCalls(
+        '[search(query="Doe, Jane", limit="5")]',
+      );
+      expect(result.toolCalls).toHaveLength(1);
+      expect(result.toolCalls[0].args).toEqual({
+        query: "Doe, Jane",
+        limit: "5",
+      });
+    });
+
+    it("should parse multiple Python-style calls in one bracket", () => {
+      const result = parseJsonFunctionCalls('[a(x="1"), b(y="2")]');
+      expect(result.toolCalls.map((c) => c.toolName)).toEqual(["a", "b"]);
+    });
+
+    it("should parse <|tool_call_start|> delimited calls and strip the delimiters", () => {
+      const result = parseJsonFunctionCalls(
+        'Sure.<|tool_call_start|>[webSearch(query="hello")]<|tool_call_end|>',
+      );
+      expect(result.toolCalls).toHaveLength(1);
+      expect(result.toolCalls[0].toolName).toBe("webSearch");
+      expect(result.toolCalls[0].args).toEqual({ query: "hello" });
+      expect(result.textContent).toBe("Sure.");
+    });
+
+    it("should parse JSON inside <|tool_call_start|> delimiters", () => {
+      const result = parseJsonFunctionCalls(
+        '<|tool_call_start|>{"name": "search", "arguments": {"q": "x"}}<|tool_call_end|>',
+      );
+      expect(result.toolCalls).toHaveLength(1);
+      expect(result.toolCalls[0].toolName).toBe("search");
+      expect(result.toolCalls[0].args).toEqual({ q: "x" });
+    });
+
     it("should parse call:name{} style without parameters", () => {
       const result = parseJsonFunctionCalls(
         "<|tool_call>call:getLocation{}<tool_call|>",
@@ -301,6 +336,31 @@ describe("@browser-ai/shared exports", () => {
         "<|tool_call>call:randomNumber{max:6,min:1}<tool_call|>",
       );
       expect(detector.detectFence().fence).not.toBeNull();
+    });
+
+    it("should detect <|tool_call_start|> fence without leaking delimiters", () => {
+      const detector = createExtendedDetector();
+      detector.addChunk("Sure.<|tool_call_start|>");
+      detector.addChunk('[webSearch(query="hello")]');
+      detector.addChunk("<|tool_call_end|>");
+
+      const start = detector.detectStreamingFence();
+      expect(start.inFence).toBe(true);
+      expect(start.safeContent).toBe("Sure.");
+
+      let completeFence: string | null = null;
+      while (detector.hasContent()) {
+        const result = detector.detectStreamingFence();
+        if (result.completeFence) {
+          completeFence = result.completeFence;
+          break;
+        }
+        if (!result.safeContent) break;
+      }
+
+      expect(completeFence).toBe(
+        '<|tool_call_start|>[webSearch(query="hello")]<|tool_call_end|>',
+      );
     });
   });
 
