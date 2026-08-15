@@ -151,9 +151,7 @@ function buildRegex(options: ParseJsonFunctionCallsOptions): RegExp {
 
   if (options.supportPythonStyle) {
     // One or more `func(args)` calls inside brackets: [f(a="b"), g(c="d")]
-    patterns.push(
-      "\\[\\s*\\w+\\([^)]*\\)(?:\\s*,\\s*\\w+\\([^)]*\\))*\\s*\\]",
-    );
+    patterns.push("\\[\\s*\\w+\\([^)]*\\)(?:\\s*,\\s*\\w+\\([^)]*\\))*\\s*\\]");
   }
 
   if (options.supportCallColonStyle) {
