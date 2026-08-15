@@ -5,11 +5,6 @@ export interface ModelConfig extends Omit<WorkerLoadOptions, "modelId"> {
   name: string;
   supportsWorker: boolean;
   enableThinking?: boolean;
-  /**
-   * True when the model's chat template already emits the opening `<think>` tag
-   * as part of the generation prompt, so the model only ever generates the
-   * closing `</think>`. Reasoning extraction has to assume it starts open.
-   */
   thinkingPrefilled?: boolean;
 }
 
