@@ -27,6 +27,9 @@ export function normalizeStreamedTextChunk(output: string): string | null {
     trimmed === "<|tool_call|>" ||
     trimmed === "<|tool_call>" ||
     trimmed === "<tool_call|>" ||
+    // LFM2 / LFM2.5 delimiters — kept so the fence detector can pair them up
+    trimmed === "<|tool_call_start|>" ||
+    trimmed === "<|tool_call_end|>" ||
     /^<\/?tool_call>$/.test(trimmed);
 
   if (isSpecialToken && !isToolCallToken && !trimmed.includes("channel")) {

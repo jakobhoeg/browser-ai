@@ -95,6 +95,7 @@ function TransformersJSChat({
         name,
         supportsWorker,
         enableThinking: _defaultThinking,
+        thinkingPrefilled: _thinkingPrefilled,
         ...modelOptions
       } = modelConfig;
 
@@ -116,6 +117,7 @@ function TransformersJSChat({
   // Sync thinking toggle to transport
   if (chatTransport instanceof TransformersChatTransport) {
     chatTransport.enableThinking = enableThinking;
+    chatTransport.thinkingPrefilled = modelConfig.thinkingPrefilled ?? false;
   }
 
   const {
