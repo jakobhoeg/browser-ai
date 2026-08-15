@@ -39,7 +39,12 @@ export interface TransformersMessage {
     type: "function";
     function: {
       name: string;
-      arguments: string;
+      /**
+       * A mapping, not a JSON string. HuggingFace chat templates serialize this
+       * themselves (`arguments | tojson`), and some templates (e.g. LFM2.5)
+       * reject a pre-serialized string outright.
+       */
+      arguments: unknown;
     };
   }>;
   tool_call_id?: string;
@@ -146,12 +151,7 @@ export function convertToTransformersMessages(
               type: "function" as const,
               function: {
                 name: (part as any).toolName,
-                arguments:
-                  typeof (part as any).input === "string"
-                    ? (part as any).input
-                    : JSON.stringify(
-                        normalizeToolArguments((part as any).input),
-                      ),
+                arguments: normalizeToolArguments((part as any).input),
               },
             }));
 

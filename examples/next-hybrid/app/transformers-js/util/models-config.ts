@@ -5,9 +5,20 @@ export interface ModelConfig extends Omit<WorkerLoadOptions, "modelId"> {
   name: string;
   supportsWorker: boolean;
   enableThinking?: boolean;
+  thinkingPrefilled?: boolean;
 }
 
 export const MODELS: ModelConfig[] = [
+  {
+    id: "LiquidAI/LFM2.5-2.6B-ONNX",
+    name: "LFM2.5 2.6B",
+    device: "webgpu",
+    dtype: "q4f16",
+    enableThinking: true,
+    thinkingPrefilled: true,
+    isVisionModel: false,
+    supportsWorker: true,
+  },
   {
     id: "onnx-community/gemma-4-E2B-it-ONNX",
     name: "Gemma4 E2B",

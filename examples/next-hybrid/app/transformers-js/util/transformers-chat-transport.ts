@@ -84,6 +84,11 @@ export const createTools = () => ({
 export class TransformersChatTransport implements ChatTransport<TransformersUIMessage> {
   private readonly model: TransformersJSLanguageModel;
   public enableThinking = false;
+  /**
+   * Set for models whose chat template pre-fills the opening `<think>` tag, so
+   * the generated text only contains the closing `</think>`.
+   */
+  public thinkingPrefilled = false;
   private tools: ReturnType<typeof createTools>;
 
   constructor(model: TransformersJSLanguageModel) {
@@ -153,6 +158,7 @@ export class TransformersChatTransport implements ChatTransport<TransformersUIMe
             model,
             middleware: extractReasoningMiddleware({
               tagName: "think",
+              startWithReasoning: this.enableThinking && this.thinkingPrefilled,
             }),
           }),
           tools: this.tools,
