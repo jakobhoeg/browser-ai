@@ -13,7 +13,7 @@
     "test:ci": "turbo run test:run",
     "changeset": "changeset",
     "ci:version": "changeset version",
-    "ci:release": "turbo clean && turbo build && changeset publish"
+    "ci:release": "turbo clean && turbo build && changeset publish --tag v2"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.5",

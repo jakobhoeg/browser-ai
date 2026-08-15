@@ -1,9 +1,9 @@
-name: Release
+name: Release (v2)
 
 on:
   push:
     branches:
-      - main
+      - v2
     paths:
       - '.changeset/**'
       - '.github/workflows/release.yml'
