@@ -1,5 +1,19 @@
 # @browser-ai/web-llm
 
+## 2.1.10
+
+### Patch Changes
+
+- d5cf173: Parse structured argument values in Python-style tool calls.
+
+  Argument values were stored as raw text, so a call like
+  `[ask_user(questions=[{'question': 'How many?'}])]` produced a string
+  containing Python syntax instead of an array. Values are now parsed as JSON or
+  Python literals, covering lists, dicts, numbers, and `True`/`False`/`None`.
+
+  Calls whose arguments contain parentheses (`q="budget (roughly)?"`) are also no
+  longer truncated at the first `)`.
+
 ## 2.1.9
 
 ### Patch Changes
