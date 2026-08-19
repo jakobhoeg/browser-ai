@@ -11,8 +11,10 @@ import { VercelOSSLogo } from "@/components/logos/vercel-oss-logo";
 import { Badge } from "@/components/ui/badge";
 
 const tweetIds = [
+  "2087263743721775279",
+  "2086899270456607051",
   "1995030252259774593",
-  "2012275639865217189",
+  "2087302948569452773",
   "2008848683857830005",
   "1980659099445653624",
   "1981060426315288776",
@@ -131,7 +133,7 @@ export default function HomePage() {
             </div>
             <div className="relative before:absolute before:top-0 before:h-px before:w-[200vw] before:bg-gray-950/5 dark:before:bg-white/10 before:-left-[100vw] after:absolute after:bottom-0 after:h-px">
               <h2 className="max-w-2xl px-2 text-4xl font-medium tracking-tighter text-balance max-sm:px-4">
-                What developers are saying
+                What the community is saying
               </h2>
             </div>
             <TweetGrid totalCount={tweetIds.length}>
