@@ -30,6 +30,7 @@ import {
   parseJsonFunctionCalls,
   createUnsupportedSettingWarning,
   createUnsupportedToolWarning,
+  isAutoToolChoice,
   isFunctionTool,
   processToolCallStream,
   type ParsedToolCall,
@@ -453,7 +454,10 @@ export class TransformersJSLanguageModel implements LanguageModelV4 {
       );
     }
 
-    if (toolChoice != null) {
+    // `{ type: "auto" }` is the AI SDK's implicit default, sent on every call
+    // whether or not tools are in play — and auto is what this provider does
+    // anyway, so warning about it would fire on every request.
+    if (toolChoice != null && !isAutoToolChoice(toolChoice)) {
       warnings.push(
         createUnsupportedSettingWarning(
           "toolChoice",

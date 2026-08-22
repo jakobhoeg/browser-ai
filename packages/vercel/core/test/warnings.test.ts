@@ -3,6 +3,7 @@ import {
   createUnsupportedSettingWarning,
   createUnsupportedToolWarning,
   gatherUnsupportedSettingWarnings,
+  isAutoToolChoice,
 } from "../src/utils/warnings";
 import type { LanguageModelV4ProviderTool } from "@ai-sdk/provider";
 
@@ -54,6 +55,24 @@ describe("warnings", () => {
         feature: "tool:testTool",
         details: "Only function tools are supported by the Prompt API polyfill",
       });
+    });
+  });
+
+  describe("isAutoToolChoice", () => {
+    it("should recognize the auto tool choice", () => {
+      expect(isAutoToolChoice({ type: "auto" })).toBe(true);
+    });
+
+    it("should reject explicit tool choices", () => {
+      expect(isAutoToolChoice({ type: "none" })).toBe(false);
+      expect(isAutoToolChoice({ type: "required" })).toBe(false);
+      expect(isAutoToolChoice({ type: "tool", toolName: "x" })).toBe(false);
+    });
+
+    it("should reject non-object values", () => {
+      expect(isAutoToolChoice(undefined)).toBe(false);
+      expect(isAutoToolChoice(null)).toBe(false);
+      expect(isAutoToolChoice("auto")).toBe(false);
     });
   });
 
@@ -141,9 +160,9 @@ describe("warnings", () => {
       });
     });
 
-    it("should warn about toolChoice", () => {
+    it("should warn about an explicit toolChoice", () => {
       const warnings = gatherUnsupportedSettingWarnings({
-        toolChoice: { type: "auto" },
+        toolChoice: { type: "required" },
       });
 
       expect(warnings).toHaveLength(1);
@@ -152,6 +171,25 @@ describe("warnings", () => {
         feature: "toolChoice",
         details: "toolChoice is not supported by Prompt API",
       });
+    });
+
+    it("should warn about a specific tool toolChoice", () => {
+      const warnings = gatherUnsupportedSettingWarnings({
+        toolChoice: { type: "tool", toolName: "getWeather" },
+      });
+
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toMatchObject({ feature: "toolChoice" });
+    });
+
+    // The AI SDK normalizes an unset toolChoice to { type: "auto" } and sends
+    // it on every call, tools or not — warning about it fires on every request.
+    it("should not warn about the AI SDK's default auto toolChoice", () => {
+      const warnings = gatherUnsupportedSettingWarnings({
+        toolChoice: { type: "auto" },
+      });
+
+      expect(warnings).toEqual([]);
     });
 
     it("should gather multiple warnings", () => {
