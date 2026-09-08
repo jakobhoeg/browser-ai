@@ -3,12 +3,16 @@
  */
 
 import type { SharedV4Warning } from "@ai-sdk/provider";
-import { createUnsupportedSettingWarning } from "@browser-ai/shared";
+import {
+  createUnsupportedSettingWarning,
+  isAutoToolChoice,
+} from "@browser-ai/shared";
 
 // Re-export shared utilities
 export {
   createUnsupportedSettingWarning,
   createUnsupportedToolWarning,
+  isAutoToolChoice,
 } from "@browser-ai/shared";
 
 /**
@@ -92,7 +96,10 @@ export function gatherUnsupportedSettingWarnings(options: {
     );
   }
 
-  if (options.toolChoice != null) {
+  // `{ type: "auto" }` is the AI SDK's implicit default, sent on every call
+  // whether or not tools are in play — and auto is what this provider does
+  // anyway, so warning about it would fire on every request.
+  if (options.toolChoice != null && !isAutoToolChoice(options.toolChoice)) {
     warnings.push(
       createUnsupportedSettingWarning(
         "toolChoice",

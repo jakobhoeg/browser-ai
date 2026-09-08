@@ -13,6 +13,7 @@ export { isFunctionTool } from "./utils/tool-utils";
 export {
   createUnsupportedSettingWarning,
   createUnsupportedToolWarning,
+  isAutoToolChoice,
 } from "./utils/warnings";
 
 // Tool Calling
