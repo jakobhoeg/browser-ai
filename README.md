@@ -34,6 +34,7 @@ For detailed documentation, browser requirements and advanced usage, refer to th
 | `@browser-ai/core`            | ✓ `1.0.0` |  ✓ `2.x`  | ✓ `≥ 3.0.0` |
 | `@browser-ai/transformers-js` | ✓ `1.0.0` |  ✓ `2.x`  | ✓ `≥ 3.0.0` |
 | `@browser-ai/web-llm`         | ✓ `1.0.0` |  ✓ `2.x`  | ✓ `≥ 3.0.0` |
+| `@browser-ai/litert-lm`       |           |           |   ✓ `0.1.0` |
 
 ```bash
 # For Chrome/Edge built-in browser AI models
@@ -44,6 +45,9 @@ npm i @browser-ai/web-llm
 
 # For 🤗 Transformers.js models
 npm i @browser-ai/transformers-js
+
+# For Google LiteRT-LM (Gemma) running in the browser via WebGPU
+npm i @browser-ai/litert-lm
 ```
 
 ### Basic Usage with Chrome/Edge AI
@@ -86,6 +90,22 @@ import { transformersJS } from "@browser-ai/transformers-js";
 
 const result = streamText({
   model: transformersJS("HuggingFaceTB/SmolLM2-360M-Instruct"),
+  prompt: "Invent a new holiday and describe its traditions.",
+});
+
+for await (const chunk of result.textStream) {
+  console.log(chunk);
+}
+```
+
+### Basic Usage with LiteRT-LM (Google, in-browser via WebGPU)
+
+```typescript
+import { streamText } from "ai";
+import { liteRTLM, GEMMA_4_E2B_WEB } from "@browser-ai/litert-lm";
+
+const result = streamText({
+  model: liteRTLM(GEMMA_4_E2B_WEB),
   prompt: "Invent a new holiday and describe its traditions.",
 });
 
