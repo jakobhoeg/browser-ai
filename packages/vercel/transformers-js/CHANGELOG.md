@@ -1,5 +1,12 @@
 # @browser-ai/transformers-js
 
+## 3.0.4
+
+### Patch Changes
+
+- 64e648b: chore: bump dependencies
+- 64e648b: fix(@browser-ai/transformers-js): use the correct `return_tensor` tokenizer option so embedding token usage is reported instead of always being 0
+
 ## 3.0.3
 
 ### Patch Changes

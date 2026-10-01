@@ -1,5 +1,11 @@
 # @browser-ai/core
 
+## 3.0.4
+
+### Patch Changes
+
+- 64e648b: chore: bump dependencies
+
 ## 3.0.3
 
 ### Patch Changes
