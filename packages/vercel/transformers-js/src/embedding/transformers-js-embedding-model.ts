@@ -320,7 +320,7 @@ export class TransformersJSEmbeddingModel implements EmbeddingModelV4 {
             padding: true,
             truncation: true,
             max_length: this.config.maxTokens,
-            return_tensors: false,
+            return_tensor: false,
           });
 
           // Get embeddings
