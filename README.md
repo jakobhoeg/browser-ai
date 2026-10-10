@@ -34,6 +34,7 @@ For detailed documentation, browser requirements and advanced usage, refer to th
 | `@browser-ai/core`            | ✓ `1.0.0` |  ✓ `2.x`  | ✓ `≥ 3.0.0` |
 | `@browser-ai/transformers-js` | ✓ `1.0.0` |  ✓ `2.x`  | ✓ `≥ 3.0.0` |
 | `@browser-ai/web-llm`         | ✓ `1.0.0` |  ✓ `2.x`  | ✓ `≥ 3.0.0` |
+| `@browser-ai/wllama`          |     -     |     -     | ✓ `≥ 0.0.1` |
 
 ```bash
 # For Chrome/Edge built-in browser AI models
@@ -44,6 +45,9 @@ npm i @browser-ai/web-llm
 
 # For 🤗 Transformers.js models
 npm i @browser-ai/transformers-js
+
+# For GGUF models via wllama (llama.cpp)
+npm i @browser-ai/wllama
 ```
 
 ### Basic Usage with Chrome/Edge AI
@@ -86,6 +90,22 @@ import { transformersJS } from "@browser-ai/transformers-js";
 
 const result = streamText({
   model: transformersJS("HuggingFaceTB/SmolLM2-360M-Instruct"),
+  prompt: "Invent a new holiday and describe its traditions.",
+});
+
+for await (const chunk of result.textStream) {
+  console.log(chunk);
+}
+```
+
+### Basic Usage with wllama (llama.cpp)
+
+```typescript
+import { streamText } from "ai";
+import { wllama } from "@browser-ai/wllama";
+
+const result = streamText({
+  model: wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf"),
   prompt: "Invent a new holiday and describe its traditions.",
 });
 
