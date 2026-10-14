@@ -1,0 +1,74 @@
+{
+  "name": "@browser-ai/wllama",
+  "version": "0.0.0",
+  "description": "wllama (llama.cpp WebGPU/WASM) provider for Vercel AI SDK v5+ (Run GGUF models directly in the browser)",
+  "author": {
+    "name": "Jakob Hoeg Mørk",
+    "url": "https://jakobhoeg.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jakobhoeg/browser-ai.git",
+    "directory": "packages/vercel/wllama"
+  },
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "npm run clean && tsup",
+    "build:prod": "tsup",
+    "build:test": "npm run test:run && tsup",
+    "dev": "tsup --watch",
+    "clean": "rimraf dist",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "test:run": "vitest run",
+    "dev:example": "npm run build && npm run -w examples/next-hybrid dev"
+  },
+  "keywords": [
+    "ai",
+    "ai-sdk",
+    "vercel",
+    "wllama",
+    "llama.cpp",
+    "gguf",
+    "browser-ai",
+    "webgpu",
+    "wasm",
+    "language-model",
+    "llm",
+    "inference",
+    "built-in-ai"
+  ],
+  "license": "Apache-2.0",
+  "peerDependencies": {
+    "@wllama/wllama": "3.6.1",
+    "ai": "^7.0.0"
+  },
+  "devDependencies": {
+    "@browser-ai/shared": "*",
+    "@types/node": "^25.2.3",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@webgpu/types": "^0.1.69",
+    "jsdom": "^28.1.0",
+    "rimraf": "^6.1.2",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0",
+    "zod": "^4.3.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

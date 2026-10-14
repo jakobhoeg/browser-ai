@@ -26,6 +26,10 @@ const demos = [
     href: "/transformers-js",
     label: "@browser-ai/transformers-js",
   },
+  {
+    href: "/wllama",
+    label: "@browser-ai/wllama",
+  },
 ];
 
 export function ModelSelector() {
