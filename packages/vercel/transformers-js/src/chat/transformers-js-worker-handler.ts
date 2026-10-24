@@ -168,7 +168,7 @@ export class TransformersJSWorkerHandler {
     messages: WorkerGenerateData[],
     userGenerationOptions?: GenerationOptions,
     tools?: ToolDefinition[],
-    enableThinking: boolean = false,
+    enableThinking?: boolean,
   ) {
     const [processor, model] = modelInstance;
     const isVision = this.isVisionModel;

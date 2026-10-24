@@ -62,7 +62,7 @@ export async function* createMainThreadGenerationStream(
     generationOptions: userGenerationOptions,
     tools,
     isVisionModel,
-    enableThinking = false,
+    enableThinking,
     stoppingCriteria,
     abortSignal,
   } = options;
