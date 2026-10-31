@@ -3,7 +3,7 @@ import { convertToolsToHuggingFaceFormat } from "./convert-tools";
 
 export function buildApplyChatTemplateOptions({
   tools,
-  enableThinking = false,
+  enableThinking,
 }: {
   tools?: ToolDefinition[];
   enableThinking?: boolean;
@@ -15,7 +15,9 @@ export function buildApplyChatTemplateOptions({
   return {
     add_generation_prompt: true,
     ...(hfTools ? { tools: hfTools } : {}),
-    ...(enableThinking ? { enable_thinking: true } : {}),
+    ...(enableThinking !== undefined
+      ? { enable_thinking: enableThinking }
+      : {}),
   };
 }
 
