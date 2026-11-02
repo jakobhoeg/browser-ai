@@ -13,6 +13,8 @@ import {
 } from "@ai-sdk/provider";
 import {
   Wllama,
+  type AssetsPathConfig,
+  type WllamaCompat,
   type ChatCompletionParams,
   type ChatCompletionUsage,
   type LoadModelParams,
@@ -70,6 +72,10 @@ export interface WllamaSettings {
    */
   loadParams?: LoadModelParams;
   initProgressCallback?: DownloadProgressCallback;
+  /** Self-hosted WASM URLs. Default: jsDelivr. */
+  wasmPaths?: AssetsPathConfig;
+  /** Self-hosted compat build (Safari), or `null` to disable it. Default: jsDelivr. */
+  compat?: WllamaCompat | null;
 }
 
 type Usage = Pick<ChatCompletionUsage, "prompt_tokens" | "completion_tokens">;
@@ -143,6 +149,7 @@ export class WllamaLanguageModel implements LanguageModelV4 {
   private readonly settings: WllamaSettings;
   private engine?: Wllama;
   private initializationPromise?: Promise<Wllama>;
+  private progressListeners = new Set<DownloadProgressCallback>();
   private unloadingPromise?: Promise<void>;
 
   constructor(modelId: WllamaModelId, settings: WllamaSettings = {}) {
@@ -205,7 +212,10 @@ export class WllamaLanguageModel implements LanguageModelV4 {
   ): Promise<Wllama> {
     // A new request can reload the model once disposal is complete.
     while (this.unloadingPromise) await this.unloadingPromise;
-    if (this.engine) return this.engine;
+    if (this.engine) {
+      onDownloadProgress?.(1);
+      return this.engine;
+    }
 
     if (!doesBrowserSupportWllama()) {
       throw new LoadSettingError({
@@ -213,18 +223,29 @@ export class WllamaLanguageModel implements LanguageModelV4 {
       });
     }
 
-    // Concurrent callers share one load; a failed load can be retried.
-    const initializationPromise = (this.initializationPromise ??=
-      this.initializeEngine(
-        onDownloadProgress ?? this.settings.initProgressCallback,
+    // Concurrent callers share one load and all receive its progress;
+    // a failed load can be retried.
+    if (!this.initializationPromise) this.progressListeners = new Set();
+    const onProgress = onDownloadProgress ?? this.settings.initProgressCallback;
+    if (onProgress) this.progressListeners.add(onProgress);
+
+    if (!this.initializationPromise) {
+      const initializationPromise = this.initializeEngine(
+        this.progressListeners,
       ).catch((error) => {
         if (this.initializationPromise === initializationPromise) {
           this.initializationPromise = undefined;
         }
-        throw new LoadSettingError({
-          message: `Failed to initialize wllama engine: ${error instanceof Error ? error.message : "Unknown error"}`,
-        });
-      }));
+        throw Object.assign(
+          new LoadSettingError({
+            message: `Failed to initialize wllama engine: ${error instanceof Error ? error.message : "Unknown error"}`,
+          }),
+          { cause: error },
+        );
+      });
+      this.initializationPromise = initializationPromise;
+    }
+    const initializationPromise = this.initializationPromise;
 
     const engine = await initializationPromise;
     if (this.initializationPromise !== initializationPromise) {
@@ -235,7 +256,7 @@ export class WllamaLanguageModel implements LanguageModelV4 {
   }
 
   private async initializeEngine(
-    onProgress?: DownloadProgressCallback,
+    progressListeners: Set<DownloadProgressCallback>,
   ): Promise<Wllama> {
     const source = parseModelId(this.modelId);
     const params = {
@@ -248,10 +269,16 @@ export class WllamaLanguageModel implements LanguageModelV4 {
       }: {
         loaded: number;
         total: number;
-      }) => onProgress?.(total > 0 ? Math.min(loaded / total, 1) : 0),
+      }) => {
+        const progress = total > 0 ? Math.min(loaded / total, 1) : 0;
+        for (const listener of progressListeners) listener(progress);
+      },
     };
 
-    const engine = new Wllama(WASM_FROM_CDN);
+    const engine = new Wllama(this.settings.wasmPaths ?? WASM_FROM_CDN);
+    if (this.settings.compat !== undefined) {
+      engine.setCompat(this.settings.compat);
+    }
     try {
       if (source.type === "url") {
         await engine.loadModelFromUrl(source.url, params);
@@ -307,6 +334,12 @@ export class WllamaLanguageModel implements LanguageModelV4 {
       seed: options.seed,
       response_format: convertToWllamaResponseFormat(options.responseFormat),
     };
+
+    const wllamaOptions = options.providerOptions?.[this.provider];
+    const enableThinking = wllamaOptions?.enableThinking as boolean | undefined;
+    if (enableThinking !== undefined) {
+      request.chat_template_kwargs = { enable_thinking: enableThinking };
+    }
 
     if (functionTools.length > 0) {
       request.tools = convertToWllamaTools(functionTools);

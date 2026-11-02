@@ -83,6 +83,7 @@ export const createTools = () => ({
 export class WllamaChatTransport implements ChatTransport<WllamaUIMessage> {
   private readonly model: WllamaLanguageModel;
   private tools: ReturnType<typeof createTools>;
+  public enableThinking = true;
 
   constructor(model: WllamaLanguageModel) {
     this.model = model;
@@ -159,6 +160,11 @@ export class WllamaChatTransport implements ChatTransport<WllamaUIMessage> {
           },
           messages: prompt,
           abortSignal,
+          providerOptions: {
+            wllama: {
+              enableThinking: this.enableThinking,
+            },
+          },
           onChunk: (event) => {
             if (event.chunk.type === "text-delta" && downloadProgressId) {
               writer.write({

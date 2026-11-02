@@ -23,20 +23,8 @@ export function checkJSPI(): boolean {
  * We should change this logics if there are browsers that cannot run.
  */
 export function doesBrowserSupportWllama(): boolean {
-  return true;
+  return typeof WebAssembly !== "undefined";
 }
-
-export const isSupportMem64 = (): boolean => {
-  try {
-    new WebAssembly.Memory({
-      address: 'i64',
-      initial: 1n, // 1 page (64 KiB)
-    } as any);
-    return true;
-  } catch {
-    return false;
-  }
-};
 
 /**
  * Check if the browser is Firefox
