@@ -15,6 +15,7 @@ import {
   PromptInputModelSelectValue,
   PromptInputSubmit,
   PromptInputTextarea,
+  PromptInputThinkingToggle,
   PromptInputToolbar,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
@@ -91,6 +92,7 @@ function WllamaChat({
   const usesGPU = support.webgpu;
   const useJSPI = support.jspi;
   const [input, setInput] = useState("");
+  const [enableThinking, setEnableThinking] = useState(true);
 
   // wllama runs inference in its own worker; no worker setup needed here.
   // wllama defaults to n_ctx 1024, too small once tool schemas and <think> output are in the prompt
@@ -118,6 +120,10 @@ function WllamaChat({
       api: "/api/chat",
     });
   }, [model]);
+
+  if (chatTransport instanceof WllamaChatTransport) {
+    chatTransport.enableThinking = enableThinking;
+  }
 
   const {
     error,
@@ -487,6 +493,10 @@ function WllamaChat({
                   ))}
                 </PromptInputModelSelectContent>
               </PromptInputModelSelect>
+              <PromptInputThinkingToggle
+                enabled={enableThinking}
+                onToggle={setEnableThinking}
+              />
             </PromptInputTools>
             <PromptInputSubmit
               disabled={status === "ready" && !input.trim()}

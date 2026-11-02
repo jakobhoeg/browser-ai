@@ -14,6 +14,7 @@ const mockCreateChatCompletion = vi.fn();
 const mockLoadModelFromHF = vi.fn();
 const mockLoadModelFromUrl = vi.fn();
 const mockExit = vi.fn();
+const mockSetCompat = vi.fn();
 const mockConstructor = vi.fn();
 
 vi.mock("@wllama/wllama/esm/index.js", () => ({
@@ -27,6 +28,7 @@ vi.mock("@wllama/wllama/esm/index.js", () => ({
       loadModelFromUrl: mockLoadModelFromUrl,
       createChatCompletion: mockCreateChatCompletion,
       exit: mockExit,
+      setCompat: mockSetCompat,
     };
   }),
 }));
@@ -194,6 +196,30 @@ describe("WllamaLanguageModel", () => {
       expect(loadParams.n_ctx).toBeUndefined();
       expect(loadParams.n_gpu_layers).toBeUndefined();
       expect(typeof loadParams.progressCallback).toBe("function");
+      expect(mockSetCompat).not.toHaveBeenCalled();
+    });
+
+    it("loads self-hosted WASM and compat builds", async () => {
+      const compat = {
+        worker: "/wllama-compat/wllama.js",
+        wasm: "/wllama-compat/wllama.wasm",
+      };
+      const model = new WllamaLanguageModel(MODEL_ID, {
+        wasmPaths: { default: "/wllama/wllama.wasm" },
+        compat,
+      });
+      await model.createSessionWithProgress();
+      expect(mockConstructor).toHaveBeenCalledWith(
+        { default: "/wllama/wllama.wasm" },
+        undefined,
+      );
+      expect(mockSetCompat).toHaveBeenCalledWith(compat);
+    });
+
+    it("disables the compat build with compat: null", async () => {
+      const model = new WllamaLanguageModel(MODEL_ID, { compat: null });
+      await model.createSessionWithProgress();
+      expect(mockSetCompat).toHaveBeenCalledWith(null);
     });
 
     it("runs on the CPU when WebGPU is unavailable", async () => {
@@ -266,12 +292,51 @@ describe("WllamaLanguageModel", () => {
       expect(mockLoadModelFromHF).toHaveBeenCalledTimes(1);
     });
 
-    it("wraps load failures in LoadSettingError and allows retry", async () => {
-      mockLoadModelFromHF.mockRejectedValueOnce(new Error("boom"));
-      const model = new WllamaLanguageModel(MODEL_ID);
-      await expect(model.createSessionWithProgress()).rejects.toBeInstanceOf(
-        LoadSettingError,
+    it("reports progress to every caller sharing a load", async () => {
+      let reportProgress!: (loaded: number) => void;
+      let finishLoad!: () => void;
+      mockLoadModelFromHF.mockImplementation(
+        (_hf, params) =>
+          new Promise<void>((resolve) => {
+            reportProgress = (loaded) =>
+              params.progressCallback({ loaded, total: 100 });
+            finishLoad = resolve;
+          }),
       );
+      const model = new WllamaLanguageModel(MODEL_ID);
+      const first: number[] = [];
+      const second: number[] = [];
+
+      const firstLoad = model.createSessionWithProgress((p) => first.push(p));
+      await vi.waitFor(() => expect(reportProgress).toBeDefined());
+      reportProgress(30);
+      const secondLoad = model.createSessionWithProgress((p) => second.push(p));
+      await Promise.resolve();
+      reportProgress(100);
+      finishLoad();
+      await Promise.all([firstLoad, secondLoad]);
+
+      expect(mockLoadModelFromHF).toHaveBeenCalledTimes(1);
+      expect(first).toEqual([0.3, 1]);
+      expect(second).toEqual([1]);
+    });
+
+    it("reports 1 right away when the model is already loaded", async () => {
+      const model = new WllamaLanguageModel(MODEL_ID);
+      await model.createSessionWithProgress();
+      const progress: number[] = [];
+      await model.createSessionWithProgress((p) => progress.push(p));
+      expect(progress).toEqual([1]);
+      expect(mockLoadModelFromHF).toHaveBeenCalledTimes(1);
+    });
+
+    it("wraps load failures in LoadSettingError and allows retry", async () => {
+      const loadError = new Error("boom");
+      mockLoadModelFromHF.mockRejectedValueOnce(loadError);
+      const model = new WllamaLanguageModel(MODEL_ID);
+      const error = await model.createSessionWithProgress().catch((e) => e);
+      expect(error).toBeInstanceOf(LoadSettingError);
+      expect(error.cause).toBe(loadError);
       expect(mockExit).toHaveBeenCalledTimes(1);
       await model.createSessionWithProgress();
       expect(mockLoadModelFromHF).toHaveBeenCalledTimes(2);
@@ -550,6 +615,27 @@ describe("WllamaLanguageModel", () => {
         type: "object",
         properties: { name: { type: "string" }, age: { type: "number" } },
       });
+    });
+
+    it("passes enableThinking as chat_template_kwargs", async () => {
+      mockCreateChatCompletion.mockResolvedValue(chatResponse());
+      const model = new WllamaLanguageModel(MODEL_ID);
+      await model.doGenerate({
+        prompt: userPrompt("hi"),
+        providerOptions: { wllama: { enableThinking: false } },
+      });
+      expect(mockCreateChatCompletion.mock.calls[0][0]).toMatchObject({
+        chat_template_kwargs: { enable_thinking: false },
+      });
+    });
+
+    it("leaves chat_template_kwargs unset without enableThinking", async () => {
+      mockCreateChatCompletion.mockResolvedValue(chatResponse());
+      const model = new WllamaLanguageModel(MODEL_ID);
+      await model.doGenerate({ prompt: userPrompt("hi") });
+      expect(
+        mockCreateChatCompletion.mock.calls[0][0].chat_template_kwargs,
+      ).toBeUndefined();
     });
 
     it("warns about unsupported stopSequences", async () => {

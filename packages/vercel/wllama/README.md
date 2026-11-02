@@ -22,6 +22,7 @@ npm i @browser-ai/wllama @wllama/wllama@3.6.1
 - `@wllama/wllama` must be exactly `3.6.1`, matching the WASM binary loaded from jsDelivr.
 - GGUF files are limited to 2GB each. Split larger models with `llama-gguf-split` and pass the first shard.
 - WebGPU is used when available (except on Firefox); otherwise the model runs on the CPU.
+- The WASM is loaded from jsDelivr by default. To self-host it, pass `wasmPaths: { default: "/wllama.wasm" }` (from `@wllama/wllama/esm/wasm/`) and optionally `compat: { worker, wasm }` (from `@wllama/wllama-compat`).
 
 ## Author
 
