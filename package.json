@@ -16,7 +16,7 @@
     "ci:release": "turbo clean && turbo build && changeset publish"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.5",
+    "@changesets/cli": "^3.0.3",
     "prettier": "^3.6.2",
     "turbo": "^2.9.14",
     "typescript": "5.8.3"
