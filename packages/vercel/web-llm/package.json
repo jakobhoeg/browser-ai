@@ -58,7 +58,7 @@
   "devDependencies": {
     "@browser-ai/shared": "*",
     "@types/node": "^25.2.3",
-    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/coverage-v8": "^5.1.0",
     "@webgpu/types": "^0.1.69",
     "jsdom": "^28.1.0",
     "rimraf": "^6.1.2",
