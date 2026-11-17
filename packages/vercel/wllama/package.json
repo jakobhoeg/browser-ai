@@ -1,6 +1,6 @@
 {
   "name": "@browser-ai/wllama",
-  "version": "0.0.0",
+  "version": "2.0.0",
   "description": "wllama (llama.cpp WebGPU/WASM) provider for Vercel AI SDK v7 (Run GGUF models directly in the browser)",
   "author": {
     "name": "Jakob Hoeg Mørk",

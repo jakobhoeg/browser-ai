@@ -34,7 +34,7 @@ For detailed documentation, browser requirements and advanced usage, refer to th
 | `@browser-ai/core`            | ✓ `1.0.0` |  ✓ `2.x`  | ✓ `≥ 3.0.0` |
 | `@browser-ai/transformers-js` | ✓ `1.0.0` |  ✓ `2.x`  | ✓ `≥ 3.0.0` |
 | `@browser-ai/web-llm`         | ✓ `1.0.0` |  ✓ `2.x`  | ✓ `≥ 3.0.0` |
-| `@browser-ai/wllama`          |     -     |     -     | ✓ `≥ 0.0.1` |
+| `@browser-ai/wllama`          |     -     |     -     | ✓ `≥ 3.0.0` |
 
 ```bash
 # For Chrome/Edge built-in browser AI models
