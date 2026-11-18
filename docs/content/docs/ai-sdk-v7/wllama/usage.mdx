@@ -1,0 +1,274 @@
+---
+title: Usage
+description: Features and usage examples for @browser-ai/wllama with AI SDK v7
+---
+
+## Basic Text Generation
+
+### Streaming Text
+
+```typescript
+import { streamText } from "ai";
+import { wllama } from "@browser-ai/wllama";
+
+const result = streamText({
+  model: wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf"),
+  prompt: "Invent a new holiday and describe its traditions.",
+});
+
+for await (const textPart of result.textStream) {
+  console.log(textPart);
+}
+```
+
+### Non-streaming Text
+
+```typescript
+import { generateText } from "ai";
+import { wllama } from "@browser-ai/wllama";
+
+const result = await generateText({
+  model: wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf"),
+  prompt: "Invent a new holiday and describe its traditions.",
+});
+
+console.log(result.text);
+```
+
+## Model Sources
+
+Model ids accept a GGUF file hosted on Hugging Face or any direct URL:
+
+```typescript
+import { wllama } from "@browser-ai/wllama";
+
+// A file inside a Hugging Face repo
+const hfModel = wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf");
+
+// A direct URL to a .gguf file
+const urlModel = wllama("https://example.com/models/Qwen3-0.6B-Q8_0.gguf");
+```
+
+<Callout type="info">
+  GGUF files are limited to 2GB each. For larger models, split the file with
+  `llama-gguf-split` and pass the first shard; wllama downloads the remaining
+  shards automatically.
+</Callout>
+
+## Download Progress Tracking
+
+When using a GGUF model for the first time, the model needs to be downloaded. Track progress to improve UX:
+
+```typescript
+import { streamText } from "ai";
+import { wllama } from "@browser-ai/wllama";
+
+const model = wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf");
+const availability = await model.availability();
+
+if (availability === "unavailable") {
+  console.log("Browser doesn't support wllama");
+  return;
+}
+
+if (availability === "downloadable") {
+  await model.createSessionWithProgress((progress) => {
+    console.log(`Download progress: ${Math.round(progress * 100)}%`);
+  });
+}
+
+// Model is ready
+const result = streamText({
+  model,
+  messages: [{ role: "user", content: "Hello!" }],
+});
+```
+
+## Tool Calling
+
+<Callout type="info">
+  For best tool calling results, use reasoning models like Qwen3.
+</Callout>
+
+The `wllama` model supports tool calling with multi-step execution:
+
+```typescript
+import { streamText, tool, isStepCount } from "ai";
+import { wllama } from "@browser-ai/wllama";
+import { z } from "zod";
+
+const result = await streamText({
+  model: wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf", {
+    loadParams: { n_ctx: 4096 }, // tool schemas need room in the context
+  }),
+  messages: [{ role: "user", content: "What's the weather in San Francisco?" }],
+  tools: {
+    weather: tool({
+      description: "Get the weather in a location",
+      inputSchema: z.object({
+        location: z.string().describe("The location to get the weather for"),
+      }),
+      execute: async ({ location }) => ({
+        location,
+        temperature: 72 + Math.floor(Math.random() * 21) - 10,
+      }),
+    }),
+  },
+  stopWhen: isStepCount(5), // multiple steps
+});
+```
+
+It also supports [tool execution approval](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#tool-execution-approval), which in AI SDK v7 is configured with the `toolApproval` option on the call (or agent) instead of `needsApproval` on the tool.
+
+Only function tools are supported; other tool types are ignored with a warning.
+
+## Structured Output
+
+Generate structured JSON output with schema validation, enforced by llama.cpp's grammar-constrained sampling:
+
+### Using generateText
+
+```typescript
+import { generateText, Output } from "ai";
+import { wllama } from "@browser-ai/wllama";
+import { z } from "zod";
+
+const { output } = await generateText({
+  model: wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf"),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(
+          z.object({ name: z.string(), amount: z.string() }),
+        ),
+        steps: z.array(z.string()),
+      }),
+    }),
+  }),
+  prompt: "Generate a lasagna recipe.",
+});
+```
+
+### Using streamText
+
+```typescript
+import { streamText, Output } from "ai";
+import { wllama } from "@browser-ai/wllama";
+import { z } from "zod";
+
+const { partialOutputStream } = streamText({
+  model: wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf"),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(
+          z.object({ name: z.string(), amount: z.string() }),
+        ),
+        steps: z.array(z.string()),
+      }),
+    }),
+  }),
+  prompt: "Generate a lasagna recipe.",
+});
+```
+
+## Thinking Control
+
+For models with a thinking mode (like Qwen3), pass `enableThinking` via `providerOptions`:
+
+```typescript
+import { streamText } from "ai";
+import { wllama } from "@browser-ai/wllama";
+
+const result = streamText({
+  model: wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf"),
+  prompt: "How many golf balls fit inside a school bus?",
+  providerOptions: {
+    wllama: {
+      enableThinking: true, // some models default to thinking off
+    },
+  },
+});
+```
+
+Reasoning is emitted inline inside `<think>...</think>` tags. To surface it as separate reasoning parts, wrap the model with the AI SDK's `extractReasoningMiddleware`:
+
+```typescript
+import {
+  streamText,
+  wrapLanguageModel,
+  extractReasoningMiddleware,
+} from "ai";
+import { wllama } from "@browser-ai/wllama";
+
+const model = wrapLanguageModel({
+  model: wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf"),
+  middleware: extractReasoningMiddleware({ tagName: "think" }),
+});
+
+const result = streamText({
+  model,
+  prompt: "How many golf balls fit inside a school bus?",
+});
+```
+
+## Memory Management
+
+Models are kept in memory after loading. Call `unload()` to free the wasm heap and WebGPU buffers when you're done, for example when the user leaves a chat page:
+
+```typescript
+import { wllama } from "@browser-ai/wllama";
+
+const model = wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf");
+
+const result = await generateText({ model, prompt: "Hello!" });
+
+await model.unload(); // frees RAM and GPU memory
+```
+
+The model is loaded again automatically on the next call. `unload()` is safe to call while a load is still in progress; callers waiting on that load receive an `AbortError`.
+
+## Context Window
+
+wllama defaults to a context size (`n_ctx`) of 1024 tokens. This is quickly exhausted by system prompts, tool schemas, and tool results, and results in an `InvalidPromptError` when the conversation grows past it:
+
+```typescript
+import { wllama } from "@browser-ai/wllama";
+
+// Raise the context size for tool use and long conversations
+const model = wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf", {
+  loadParams: { n_ctx: 4096 },
+});
+```
+
+<Callout type="info">
+  Context size is allocated upfront. On CPU inference, large `n_ctx` values
+  noticeably increase memory usage.
+</Callout>
+
+## Browser Support & Performance
+
+wllama runs inference in its own Web Worker, so no manual worker setup is needed.
+
+- **WebGPU** is used when available (JSPI + Memory64 build). On Firefox, WebGPU is deliberately disabled because it is very slow there, and the model runs on the CPU instead.
+- **Safari** (and other browsers without JSPI) automatically use wllama's compat build, fetched from jsDelivr.
+- Use `checkWebGPU()` and `checkJSPI()` to inspect what the current browser supports.
+
+## Self-hosting the WASM Binaries
+
+By default the WASM binaries are loaded from jsDelivr. To self-host them, copy the files from `@wllama/wllama/esm/wasm/` (and `@wllama/wllama-compat` if you need the compat build) and point the provider at your copies:
+
+```typescript
+import { wllama } from "@browser-ai/wllama";
+
+const model = wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf", {
+  wasmPaths: { default: "/wllama/wllama.wasm" },
+  compat: {
+    worker: "/wllama/wllama-compat.worker.js",
+    wasm: "/wllama/wllama-compat.wasm",
+  },
+  // or: compat: null, to disable the compat build entirely
+});
+```

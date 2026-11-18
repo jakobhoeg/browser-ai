@@ -10,6 +10,7 @@ description: Introduction to using @browser-ai packages with Vercel AI SDK v7
 | `@browser-ai/core`            | ✓ `≥ 3.0.0` |
 | `@browser-ai/transformers-js` | ✓ `≥ 3.0.0` |
 | `@browser-ai/web-llm`         | ✓ `≥ 3.0.0` |
+| `@browser-ai/wllama`          | ✓ `≥ 3.0.0` |
 
 <Callout type="info">
   Version 3 of the `@browser-ai` packages requires AI SDK `ai@^7.0.0` and Node.js `>=22`. If you are still on AI SDK v6, use the v2 packages and the [AI SDK v6 documentation](/docs/ai-sdk-v6).
@@ -26,6 +27,9 @@ npm i @browser-ai/transformers-js
 
 # For WebLLM (MLC models)
 npm i @browser-ai/web-llm
+
+# For wllama (GGUF / llama.cpp models)
+npm i @browser-ai/wllama @wllama/wllama@3.6.1
 ```
 
 ## Available Packages
@@ -65,6 +69,19 @@ High-performance in-browser LLM inference using [WebLLM](https://github.com/mlc-
 - **Tool Calling**: Function calling support
 
 [View Web-LLM Documentation →](/docs/ai-sdk-v7/web-llm)
+
+### @browser-ai/wllama
+
+Run any [GGUF](https://github.com/ggml-org/ggml) model directly in the browser with [wllama](https://github.com/ngxson/wllama), a WebAssembly port of [llama.cpp](https://github.com/ggml-org/llama.cpp). If a model exists as a GGUF file, you can run it - no pre-compiled model list, no conversion step:
+
+- **Any GGUF Model**: Load models from Hugging Face or a direct URL
+- **WebGPU Acceleration**: GPU inference when available, with CPU fallback
+- **Download Progress**: Real-time model download tracking
+- **Tool Calling**: Native llama.cpp function calling support
+- **Structured Output**: JSON schema enforcement via grammar-constrained sampling
+- **Memory Management**: Unload models to free RAM and VRAM at runtime
+
+[View wllama Documentation →](/docs/ai-sdk-v7/wllama)
 
 ## Easy Server Fallback
 

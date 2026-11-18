@@ -8,6 +8,7 @@
     "migration",
     "core",
     "transformers-js",
-    "web-llm"
+    "web-llm",
+    "wllama"
   ]
 }
