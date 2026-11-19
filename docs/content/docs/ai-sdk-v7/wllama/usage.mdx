@@ -219,6 +219,7 @@ const result = streamText({
 Models are kept in memory after loading. Call `unload()` to free the wasm heap and WebGPU buffers when you're done, for example when the user leaves a chat page:
 
 ```typescript
+import { generateText } from "ai";
 import { wllama } from "@browser-ai/wllama";
 
 const model = wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf");

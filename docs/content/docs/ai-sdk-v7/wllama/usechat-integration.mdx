@@ -219,6 +219,7 @@ export class SimpleWllamaChatTransport implements ChatTransport<WllamaUIMessage>
 You can then use the `useChat()` hook in your components:
 
 ```ts
+import { useChat } from "@ai-sdk/react";
 import { wllama, WllamaUIMessage } from "@browser-ai/wllama";
 
 const model = wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf", {
@@ -233,6 +234,8 @@ const { sendMessage, messages, stop } = useChat<WllamaUIMessage>({
 In case the device is incompatible with local in-browser LLMs, and we want to use a server-side AI model, we can simply use the utility function from the package first:
 
 ```ts
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, UIMessage } from "ai";
 import {
   wllama,
   WllamaUIMessage,
