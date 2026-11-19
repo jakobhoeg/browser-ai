@@ -252,8 +252,8 @@ const model = wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf", {
 
 wllama runs inference in its own Web Worker, so no manual worker setup is needed.
 
-- **WebGPU** is used when available (JSPI + Memory64 build). On Firefox, WebGPU is deliberately disabled because it is very slow there, and the model runs on the CPU instead.
-- **Safari** (and other browsers without JSPI) automatically use wllama's compat build, fetched from jsDelivr.
+- wllama ships two builds: the default build (JSPI + Memory64) and the compat build (Asyncify, 32-bit memory). Browsers without JSPI or Memory64 (e.g. Safari) automatically use the compat build, fetched from jsDelivr. Both builds support WebGPU.
+- On Firefox, WebGPU is always disabled because it is very slow there, and the model runs on the CPU.
 - Use `checkWebGPU()` and `checkJSPI()` to inspect what the current browser supports.
 
 ## Self-hosting the WASM Binaries
