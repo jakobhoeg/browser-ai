@@ -383,7 +383,7 @@ export class TransformersJSLanguageModel implements LanguageModelV4 {
     warnings: SharedV4Warning[];
     generationOptions: GenerationOptions;
     functionTools: ToolDefinition[];
-    enableThinking: boolean;
+    enableThinking?: boolean;
   } {
     const warnings: SharedV4Warning[] = [];
     // Filter and warn about unsupported tools
@@ -475,8 +475,9 @@ export class TransformersJSLanguageModel implements LanguageModelV4 {
     const transformersJsOptions = providerOptions?.["transformers-js"] as
       | Record<string, unknown>
       | undefined;
-    const enableThinking =
-      (transformersJsOptions?.enableThinking as boolean) ?? false;
+    const enableThinking = transformersJsOptions?.enableThinking as
+      | boolean
+      | undefined;
 
     const generationOptions: GenerationOptions = {
       max_new_tokens: maxOutputTokens || (enableThinking ? 8192 : 4096),
