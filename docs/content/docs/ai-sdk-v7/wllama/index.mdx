@@ -1,0 +1,43 @@
+---
+title: "Overview"
+description: wllama (llama.cpp) model provider for Vercel AI SDK v7
+---
+
+The `@browser-ai/wllama` package enables you to run GGUF language models directly in the browser with [wllama](https://github.com/ngxson/wllama), a WebAssembly port of [llama.cpp](https://github.com/ggml-org/llama.cpp), with seamless integration with the Vercel AI SDK v7. No pre-compiled model list, no conversion step. Currently supports text input only.
+
+### What's Included
+
+- **Any GGUF Model**: Load models from Hugging Face or a direct URL
+- **WebGPU Acceleration**: GPU inference when available, with CPU fallback
+- **Tool Calling**: Native llama.cpp function calling support
+- **Structured Output**: JSON schema enforcement via grammar-constrained sampling
+
+## Quick Links
+
+<Cards>
+  <Card
+    title="Installation"
+    href="/docs/ai-sdk-v7/wllama/installation"
+    description="Setup and browser requirements"
+  />
+  <Card
+    title="Usage"
+    href="/docs/ai-sdk-v7/wllama/usage"
+    description="Features and usage examples"
+  />
+  <Card
+    title="useChat Integration"
+    href="/docs/ai-sdk-v7/wllama/usechat-integration"
+    description="React hook integration"
+  />
+  <Card
+    title="Agents"
+    href="/docs/ai-sdk-v7/wllama/agents"
+    description="Build autonomous AI agents"
+  />
+  <Card
+    title="API Reference"
+    href="/docs/ai-sdk-v7/wllama/api-reference"
+    description="Complete API documentation"
+  />
+</Cards>

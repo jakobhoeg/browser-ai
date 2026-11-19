@@ -9,6 +9,7 @@ const PACKAGES = [
   { id: "core", label: "@browser-ai/core" },
   { id: "transformers-js", label: "@browser-ai/transformers-js" },
   { id: "web-llm", label: "@browser-ai/web-llm" },
+  { id: "wllama", label: "@browser-ai/wllama" },
 ] as const;
 
 export type PackageId = (typeof PACKAGES)[number]["id"];

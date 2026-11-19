@@ -28,6 +28,11 @@ const packages: { id: PackageId; name: string; description: string }[] = [
     name: "@browser-ai/web-llm",
     description: "WebLLM models",
   },
+  {
+    id: "wllama",
+    name: "@browser-ai/wllama",
+    description: "GGUF models (llama.cpp)",
+  },
 ];
 
 const codeExamples: Record<
@@ -77,6 +82,23 @@ import { webLLM } from "@browser-ai/web-llm";
 
 const result = streamText({
   model: webLLM("Qwen3-0.6B-q0f16-MLC"),
+  prompt: 'Hello, how are you',
+});
+
+for await (const chunk of result.textStream) {
+  console.log(chunk);
+}`,
+    },
+  ],
+  wllama: [
+    {
+      language: "typescript",
+      filename: "example.ts",
+      code: `import { streamText } from "ai";
+import { wllama } from "@browser-ai/wllama";
+
+const result = streamText({
+  model: wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf"),
   prompt: 'Hello, how are you',
 });
 

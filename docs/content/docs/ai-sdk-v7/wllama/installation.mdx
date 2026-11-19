@@ -1,0 +1,44 @@
+---
+title: Installation
+description: Setup @browser-ai/wllama for AI SDK v7
+---
+
+## Package Installation
+
+```bash
+npm i @browser-ai/wllama @wllama/wllama@3.6.1
+```
+
+<Callout type="info">
+  `@wllama/wllama` must be exactly version `3.6.1`, matching the WASM binary the
+  provider loads by default. Avoid `^` or `~` ranges here.
+</Callout>
+
+## Version Compatibility
+
+| @browser-ai/wllama | AI SDK | Notes                        |
+| ------------------ | ------ | ---------------------------- |
+| v3.0.0 and above   | v7.x   | Current stable for AI SDK v7 |
+| -                  | v6.x   | Not available for AI SDK v6  |
+| -                  | v5.x   | Not available for AI SDK v5  |
+
+<Callout type="info">
+  The wllama provider was introduced with AI SDK v7 support and is only
+  available for `ai@^7.0.0`.
+</Callout>
+
+## Verifying Installation
+
+After installation, you can verify browser support:
+
+```typescript
+import { doesBrowserSupportWllama } from "@browser-ai/wllama";
+
+if (doesBrowserSupportWllama()) {
+  console.log("Browser supports wllama!");
+} else {
+  console.log("wllama not available, use server fallback");
+}
+```
+
+wllama runs in any browser with WebAssembly support. WebGPU is used for GPU acceleration when available (except on Firefox), otherwise the model runs on the CPU.

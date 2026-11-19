@@ -1,0 +1,13 @@
+{
+  "title": "@browser-ai/wllama",
+  "description": "GGUF models in the browser (llama.cpp)",
+  "icon": "Boxes",
+  "pages": [
+    "index",
+    "installation",
+    "usage",
+    "usechat-integration",
+    "agents",
+    "api-reference"
+  ]
+}

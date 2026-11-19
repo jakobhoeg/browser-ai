@@ -1,0 +1,172 @@
+---
+title: API Reference
+description: Complete API documentation for @browser-ai/wllama with AI SDK v7
+---
+
+## Provider Functions
+
+### `wllama(modelId, settings?)`
+
+Creates a wllama model instance.
+
+**Parameters:**
+
+- `modelId`: The model identifier, either `hf:owner/repo/path/model.gguf` for a file inside a Hugging Face repo, or a direct `https://...` URL to a `.gguf` file
+- `settings` (optional): Configuration options
+  - `loadParams?: LoadModelParams` - llama.cpp parameters used when loading the model (`n_ctx`, `n_gpu_layers`, ...). Defaults to `{ reasoning_format: "none" }`, plus `n_gpu_layers: 0` (CPU inference) when WebGPU is unavailable. `n_ctx` falls back to wllama's default (1024); raise it for long conversations or tool use
+  - `initProgressCallback?: (progress: number) => void` - Progress callback for model download
+  - `wasmPaths?: AssetsPathConfig` - Self-hosted WASM URLs. Default: jsDelivr
+  - `compat?: WllamaCompat | null` - Self-hosted compat build (used on browsers without JSPI, e.g. Safari), or `null` to disable it. Default: jsDelivr
+
+**Returns:** `WllamaLanguageModel`
+
+### `wllama.languageModel(modelId, settings?)` / `wllama.chat(modelId, settings?)`
+
+Create a model for text generation. Both accept the same arguments as `wllama()`.
+
+**Returns:** `WllamaLanguageModel`
+
+### `createWllama()`
+
+Creates a custom wllama provider instance.
+
+**Returns:** `WllamaProvider`
+
+<Callout type="info">
+  Embedding models are not supported. Calling `wllama.embeddingModel()`
+  throws a `NoSuchModelError`.
+</Callout>
+
+---
+
+## Utility Functions
+
+### `doesBrowserSupportWllama()`
+
+Quick check if the browser supports wllama. Useful for component-level decisions and feature flags.
+
+**Returns:** `boolean` - `true` if browser supports WebAssembly, `false` otherwise
+
+### `checkWebGPU()`
+
+Check if the browser exposes WebGPU (and is not Firefox, where WebGPU is disabled because it is very slow).
+
+**Returns:** `boolean`
+
+### `checkJSPI()`
+
+Check if the runtime supports WebAssembly JavaScript Promise Integration (JSPI). Browsers without JSPI (e.g. Safari) automatically use wllama's compat build.
+
+**Returns:** `boolean`
+
+---
+
+## Model Methods
+
+### `WllamaLanguageModel.availability()`
+
+Checks the current availability status of the wllama model.
+
+**Returns:** `Promise<"unavailable" | "downloadable" | "available">`
+
+| Status           | Description                                            |
+| ---------------- | ------------------------------------------------------ |
+| `"unavailable"`  | Model is not supported in the browser (no WebAssembly) |
+| `"downloadable"` | Model is supported but needs to be downloaded first    |
+| `"available"`    | Model is loaded and ready to use                       |
+
+### `WllamaLanguageModel.createSessionWithProgress(onDownloadProgress?)`
+
+Loads the model, with optional download progress monitoring.
+
+**Parameters:**
+
+- `onDownloadProgress?: (progress: number) => void` - Optional callback that receives progress values from 0 to 1 during model download
+
+**Returns:** `Promise<WllamaLanguageModel>` - The loaded language model instance
+
+### `WllamaLanguageModel.unload()`
+
+Unloads the model and frees its memory (wasm heap, WebGPU buffers). Safe to call while a load is still in progress; callers waiting on that load receive an `AbortError`. The model is loaded again automatically on the next call.
+
+**Returns:** `Promise<void>`
+
+---
+
+## Provider Options
+
+Pass wllama-specific options via `providerOptions` on the call:
+
+```typescript
+streamText({
+  model: wllama("hf:ggml-org/Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf"),
+  prompt: "...",
+  providerOptions: {
+    wllama: {
+      enableThinking: true, // toggle thinking mode for models like Qwen3
+    },
+  },
+});
+```
+
+| Option           | Type      | Description                                                             |
+| ---------------- | --------- | ----------------------------------------------------------------------- |
+| `enableThinking` | `boolean` | Toggles the model's thinking mode via its chat template (`enable_thinking`) |
+
+---
+
+## Types
+
+### `WllamaUIMessage`
+
+Extended UI message type for use with the `useChat` hook that includes custom data parts for wllama functionality.
+
+```typescript
+type WllamaUIMessage = UIMessage<
+  never,
+  {
+    modelDownloadProgress: {
+      status: "downloading" | "complete" | "error";
+      progress?: number;
+      message: string;
+    };
+    notification: {
+      message: string;
+      level: "info" | "warning" | "error";
+    };
+  }
+>;
+```
+
+### `DownloadProgressCallback`
+
+The callback type for receiving model download progress. Shared across all `@browser-ai` packages.
+
+```typescript
+type DownloadProgressCallback = (progress: number) => void;
+```
+
+### `WllamaModelId`
+
+Type alias for model identifiers: `hf:owner/repo/path/model.gguf` or `https://.../model.gguf`.
+
+```typescript
+type WllamaModelId = string;
+```
+
+### `WllamaSettings`
+
+Configuration options for the wllama model.
+
+```typescript
+interface WllamaSettings {
+  loadParams?: LoadModelParams;
+  initProgressCallback?: DownloadProgressCallback;
+  wasmPaths?: AssetsPathConfig;
+  compat?: WllamaCompat | null;
+}
+```
+
+### `WllamaProvider`
+
+Provider instance returned by `createWllama()`. Callable as a function, with `languageModel` and `chat` methods for creating language models.

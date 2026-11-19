@@ -27,6 +27,11 @@ const commands: { id: PackageId; label: string; code: string }[] = [
     label: "@browser-ai/web-llm",
     code: "npm i @browser-ai/web-llm",
   },
+  {
+    id: "wllama",
+    label: "@browser-ai/wllama",
+    code: "npm i @browser-ai/wllama @wllama/wllama@3.6.1",
+  },
 ];
 
 interface HomeSnippetInstallProps {
