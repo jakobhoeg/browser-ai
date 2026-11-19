@@ -18,6 +18,7 @@
 [![NPM Downloads](https://img.shields.io/npm/dm/%40browser-ai%2Fcore)](https://www.npmjs.com/package/@browser-ai/core)
 [![NPM Downloads](https://img.shields.io/npm/dm/%40browser-ai%2Fweb-llm)](https://www.npmjs.com/package/@browser-ai/web-llm)
 [![NPM Downloads](https://img.shields.io/npm/dm/%40browser-ai%2Ftransformers-js)](https://www.npmjs.com/package/@browser-ai/transformers-js)
+[![NPM Downloads](https://img.shields.io/npm/dm/%40browser-ai%2Fwllama)](https://www.npmjs.com/package/@browser-ai/wllama)
 
 </div>
 
